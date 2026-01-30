@@ -92,7 +92,7 @@ export default function Users() {
     createMutation.mutate({
       email: values.email,
       password: values.password,
-      siteId: values.siteId || null,
+      siteId: values.siteId && values.siteId !== "none" ? values.siteId : null,
     });
   };
 
@@ -100,7 +100,7 @@ export default function Users() {
     if (!editingUser) return;
     const updateData: Partial<InsertUser> = {
       email: values.email,
-      siteId: values.siteId || null,
+      siteId: values.siteId && values.siteId !== "none" ? values.siteId : null,
     };
     if (values.password) {
       updateData.password = values.password;

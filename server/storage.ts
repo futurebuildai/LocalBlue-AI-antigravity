@@ -14,6 +14,7 @@ export interface IStorage {
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   getUsersBySiteId(siteId: string): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
 
   // Site operations
   getSite(id: string): Promise<Site | undefined>;
@@ -54,6 +55,10 @@ export class DatabaseStorage implements IStorage {
 
   async getUsersBySiteId(siteId: string): Promise<User[]> {
     return db.select().from(users).where(eq(users.siteId, siteId));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users);
   }
 
   // Site operations

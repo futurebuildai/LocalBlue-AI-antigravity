@@ -121,13 +121,7 @@ export async function registerRoutes(
       if (siteId) {
         users = await storage.getUsersBySiteId(siteId);
       } else {
-        // Get all users from all sites - need to implement this
-        const sites = await storage.getAllSites();
-        users = [];
-        for (const site of sites) {
-          const siteUsers = await storage.getUsersBySiteId(site.id);
-          users.push(...siteUsers);
-        }
+        users = await storage.getAllUsers();
       }
       
       // Remove passwords from response
