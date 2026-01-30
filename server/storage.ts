@@ -82,12 +82,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createSite(insertSite: InsertSite): Promise<Site> {
-    const [site] = await db.insert(sites).values(insertSite).returning();
+    const [site] = await db.insert(sites).values({
+      ...insertSite,
+      services: insertSite.services as string[] | undefined,
+    }).returning();
     return site;
   }
 
   async updateSite(id: string, siteData: Partial<InsertSite>): Promise<Site | undefined> {
-    const [site] = await db.update(sites).set(siteData).where(eq(sites.id, id)).returning();
+    const updateData = {
+      ...siteData,
+      services: siteData.services as string[] | undefined,
+    };
+    const [site] = await db.update(sites).set(updateData).where(eq(sites.id, id)).returning();
     return site || undefined;
   }
 
