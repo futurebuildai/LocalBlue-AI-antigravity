@@ -32,6 +32,23 @@ Built with Express.js and React, supporting:
 4. **Preview & Publish**: Review site in tenant admin, connect custom domain, single-click publish
 5. **Ongoing Management**: Edit pages, view leads, manage users - all from their own domain
 
+## Trade Types & Styles
+
+### Supported Trades
+- General Contractor
+- Plumber
+- Electrician
+- Roofer
+- HVAC
+- Painter
+- Landscaper
+
+### Style Options
+- Professional (deep blue, trust-focused)
+- Bold (high-energy, bright colors)
+- Warm (earthy, approachable)
+- Luxury (premium, elegant)
+
 ## Data Models
 
 ### User
@@ -40,7 +57,7 @@ Built with Express.js and React, supporting:
 - `password` (hashed with bcrypt)
 - `siteId` (foreign key to Site)
 
-### Site
+### Site (Enhanced)
 - `id` (UUID, auto-generated)
 - `subdomain` (unique)
 - `customDomain` (optional)
@@ -48,6 +65,33 @@ Built with Express.js and React, supporting:
 - `brandColor` (hex color)
 - `services` (JSON array)
 - `isPublished` (boolean)
+- `tradeType` - contractor trade (plumber, electrician, etc.)
+- `stylePreference` - chosen style (professional, bold, warm, luxury)
+- `selectedPages` - JSON array of page slugs to include
+- `businessStory`, `yearsInBusiness`, `uniqueSellingPoints`
+- `serviceArea`, `serviceAreaRadius`, `certifications`
+- `contactPhone`, `contactEmail`, `address`
+- `businessHours`, `socialMedia`
+- `enableChatbot`, `enableQuoteCalculator`, `enableAppointmentScheduler`
+
+### OnboardingProgress
+- Tracks current onboarding phase for each site
+- Phases: welcome → business_basics → trade_detection → services → story → differentiators → service_area → contact_info → photos → style → pages → review
+
+### SitePhoto
+- `id`, `siteId`, `url`, `type` (project/team/before-after), `caption`
+
+### Testimonial
+- `id`, `siteId`, `customerName`, `quote`, `rating`, `projectType`
+
+### ServicePricing
+- `id`, `siteId`, `serviceName`, `description`, `priceType`, `minPrice`, `maxPrice`
+
+### Appointment
+- `id`, `siteId`, `customerName`, `email`, `phone`, `preferredDate`, `preferredTime`, `serviceType`, `message`, `status`
+
+### ChatbotConversation
+- `id`, `siteId`, `sessionId`, `messages` (JSON), `leadCaptured`
 
 ### Page (CMS)
 - `id`, `siteId`, `slug`, `title`, `content` (JSON)
@@ -104,6 +148,9 @@ The tenant middleware (`server/middleware/tenantMiddleware.ts`) intercepts all r
 - `GET /api/onboarding/session` - Get current onboarding session
 - `POST /api/onboarding/chat` - Chat with AI (streaming SSE)
 - `POST /api/onboarding/generate` - Generate site from conversation
+- `GET /api/onboarding/photos` - Get photos for current site
+- `POST /api/onboarding/photos` - Upload photo for current site
+- `POST /api/onboarding/preferences` - Save style/page preferences
 
 ### Public Tenant Routes
 - `GET /api/site` - Get current tenant's site info
@@ -111,9 +158,18 @@ The tenant middleware (`server/middleware/tenantMiddleware.ts`) intercepts all r
 - `POST /api/site/leads` - Submit contact form
 - `GET /api/tenant` - Check tenant detection status
 
+### Appointment Routes (public)
+- `POST /api/appointments` - Create appointment request
+- `GET /api/appointments` - List appointments for tenant (admin)
+
+### Chatbot Routes
+- `POST /api/chatbot/message` - Send message to AI chatbot (streaming SSE)
+- `POST /api/chatbot/capture-lead` - Capture lead from chatbot conversation
+
 ## Key Files
 
 - `shared/schema.ts` - Database models and TypeScript types
+- `shared/tradeTemplates.ts` - Trade templates with services, styles, certifications
 - `server/db.ts` - Database connection
 - `server/storage.ts` - Storage layer with CRUD operations
 - `server/routes.ts` - All API routes
@@ -122,7 +178,23 @@ The tenant middleware (`server/middleware/tenantMiddleware.ts`) intercepts all r
 - `client/src/App.tsx` - Main React app with dual-mode routing (platform/tenant admin)
 - `client/src/pages/admin/` - Platform admin dashboard pages
 - `client/src/pages/tenant-admin/` - Tenant admin pages (Login, Dashboard, Settings, Users)
+- `client/src/pages/Onboarding.tsx` - Enhanced AI onboarding with progress tracking
+- `client/src/pages/PublicSite.tsx` - Spectacular public website template
 - `client/src/components/TenantAdminLayout.tsx` - Tenant admin layout with sidebar
+
+### Interactive Components
+- `client/src/components/ChatBot.tsx` - AI sales chatbot with lead capture
+- `client/src/components/QuoteCalculator.tsx` - Interactive price estimator
+- `client/src/components/AppointmentScheduler.tsx` - Booking form
+- `client/src/components/BeforeAfterSlider.tsx` - Before/after image comparison
+- `client/src/components/ProjectGallery.tsx` - Filterable photo gallery with lightbox
+- `client/src/components/ServiceAreaMap.tsx` - Service area display
+
+### Onboarding Components
+- `client/src/components/OnboardingProgress.tsx` - Phase progress indicator
+- `client/src/components/PhotoUpload.tsx` - Drag-drop photo uploads
+- `client/src/components/StylePicker.tsx` - 4 style options with previews
+- `client/src/components/PageSelector.tsx` - Page selection checklist
 
 ## Development
 
@@ -138,5 +210,13 @@ The application seeds the database with sample data on startup:
 - SESSION_SECRET required in production (fails immediately if missing)
 
 ## Recent Changes
+- 2026-01-31: Major enhancement - "Best in Class" contractor website builder
+  - Added comprehensive data model with trade types, style preferences, onboarding progress
+  - Created trade templates system (7 trades x 4 styles) with default services, certifications, FAQs
+  - Built enhanced onboarding UI with progress indicator, split-panel layout (chat + preview)
+  - Implemented phase-based AI onboarding that asks one question at a time with deep follow-ups
+  - Created 10 interactive components: ChatBot, QuoteCalculator, AppointmentScheduler, BeforeAfterSlider, ProjectGallery, ServiceAreaMap, StylePicker, PageSelector, PhotoUpload, OnboardingProgress
+  - Built spectacular PublicSite template with sticky header, hero section, trust badges, services, about, testimonials, contact form, and AI chatbot integration
+  - Added photo upload persistence, style/page selection, and appointment scheduling APIs
 - 2026-01-31: Added tenant-specific admin portal at `admin.{subdomain}` with login, dashboard, settings, and user management
 - 2026-01-30: Initial implementation of multi-tenant structure with User and Site models, hostname-based middleware, and platform admin dashboard
