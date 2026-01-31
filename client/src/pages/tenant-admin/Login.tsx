@@ -57,8 +57,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <LogIn className="h-6 w-6" />
           </div>
-          <CardTitle className="text-2xl" data-testid="text-login-title">Tenant Admin</CardTitle>
-          <CardDescription>Sign in to manage your site</CardDescription>
+          <CardTitle className="text-2xl" data-testid="text-login-title">Site Admin</CardTitle>
+          <CardDescription>Sign in to manage your business site</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
