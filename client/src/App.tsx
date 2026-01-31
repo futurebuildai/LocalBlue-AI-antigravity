@@ -201,12 +201,31 @@ function detectDomainType(): DomainType {
     return "main";
   }
   
+  // Replit dev domains are the main site (e.g., xxxxx.replit.dev, xxxxx-00-xxxxx.replit.dev)
+  if (hostname.endsWith(".replit.dev") || hostname.endsWith(".repl.co") || hostname.endsWith(".picard.replit.dev")) {
+    // Count the parts - Replit dev URLs have a specific pattern
+    // For the main app, treat any direct replit.dev URL as main
+    // Subdomains would be like: tenant.xxxxx.replit.dev
+    const parts = hostname.split(".");
+    // If the hostname matches the pattern of a Replit dev URL (not a subdomain of it), treat as main
+    // Replit URLs typically: [random]-00-[username].replit.dev or [repname].[username].repl.co
+    // We check if there are tenant-like subdomains (starts with known tenant patterns)
+    const firstPart = parts[0];
+    // If the first part looks like a tenant subdomain (not a Replit-generated ID)
+    // Tenant subdomains would be like: acme, smithplumbing, etc.
+    // Replit IDs are alphanumeric with hyphens and specific patterns
+    if (parts.length <= 3 || firstPart.includes("-00-") || /^[a-f0-9-]{20,}$/.test(firstPart)) {
+      return "main";
+    }
+    return "tenantPublic";
+  }
+  
   // Check if this is a subdomain of localblue.ai or localhost (tenant public site)
   const parts = hostname.split(".");
   if (parts.length >= 2) {
     const tld = parts.slice(-1)[0];
     // Subdomain patterns like: acme.localblue.ai, acme.localhost
-    if (tld === "localhost" || hostname.endsWith(".localblue.ai") || hostname.endsWith(".repl.co")) {
+    if (tld === "localhost" || hostname.endsWith(".localblue.ai")) {
       return "tenantPublic";
     }
   }
