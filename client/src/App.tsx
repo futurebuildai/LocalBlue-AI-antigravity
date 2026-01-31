@@ -17,11 +17,14 @@ import {
   SidebarHeader,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Building2, Users, Globe } from "lucide-react";
+import { LayoutDashboard, Building2, Users } from "lucide-react";
 import Dashboard from "@/pages/admin/Dashboard";
 import Sites from "@/pages/admin/Sites";
 import UsersPage from "@/pages/admin/Users";
 import NotFound from "@/pages/not-found";
+import Landing from "@/pages/Landing";
+import SignUp from "@/pages/SignUp";
+import Onboarding from "@/pages/Onboarding";
 import TenantLogin from "@/pages/tenant-admin/Login";
 import TenantDashboard from "@/pages/tenant-admin/Dashboard";
 import TenantSettings from "@/pages/tenant-admin/Settings";
@@ -168,18 +171,60 @@ function TenantAdminApp() {
   );
 }
 
-function isAdminSubdomain(): boolean {
+type DomainType = "admin" | "tenant" | "main";
+
+function detectDomainType(): DomainType {
   const hostname = window.location.hostname;
-  return hostname.startsWith("admin.");
+  
+  if (hostname.startsWith("admin.")) {
+    return "admin";
+  }
+  
+  if (hostname === "localhost" || 
+      hostname.endsWith(".localblue.ai") === false ||
+      hostname === "localblue.ai" ||
+      hostname === "www.localblue.ai") {
+    return "main";
+  }
+  
+  return "tenant";
+}
+
+function MainSiteApp() {
+  return (
+    <Switch>
+      <Route path="/landing" component={Landing} />
+      <Route path="/signup" component={SignUp} />
+      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/">
+        <Landing />
+      </Route>
+      <Route path="/sites" component={Sites} />
+      <Route path="/users" component={UsersPage} />
+      <Route component={NotFound} />
+    </Switch>
+  );
 }
 
 function App() {
-  const isOnAdminSubdomain = isAdminSubdomain();
+  const domainType = detectDomainType();
+
+  const renderContent = () => {
+    switch (domainType) {
+      case "admin":
+        return <TenantAdminApp />;
+      case "tenant":
+        return <TenantAdminApp />;
+      case "main":
+      default:
+        return <MainSiteApp />;
+    }
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {isOnAdminSubdomain ? <TenantAdminApp /> : <PlatformAdmin />}
+        {renderContent()}
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

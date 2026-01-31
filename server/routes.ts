@@ -11,7 +11,27 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const signupSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  businessName: z.string().min(2),
+});
+
 const SALT_ROUNDS = 10;
+
+function generateSubdomain(businessName: string): string {
+  return businessName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 30);
+}
+
+function generateRandomSuffix(): string {
+  return Math.random().toString(36).substring(2, 6);
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -230,6 +250,69 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting user:", error);
       res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // ============================================
+  // Public Signup Route (for contractors)
+  // ============================================
+
+  app.post("/api/signup", async (req, res) => {
+    try {
+      const result = signupSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid signup data", details: result.error.flatten() });
+      }
+
+      const { email, password, businessName } = result.data;
+
+      // Check if email is already taken
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ error: "Email already registered" });
+      }
+
+      // Generate subdomain from business name
+      let subdomain = generateSubdomain(businessName);
+      
+      // Ensure subdomain is not empty
+      if (!subdomain) {
+        subdomain = "site";
+      }
+
+      // Check if subdomain exists, add suffix if needed
+      let existingSite = await storage.getSiteBySubdomain(subdomain);
+      while (existingSite) {
+        subdomain = `${generateSubdomain(businessName)}-${generateRandomSuffix()}`;
+        existingSite = await storage.getSiteBySubdomain(subdomain);
+      }
+
+      // Create the site
+      const site = await storage.createSite({
+        subdomain,
+        businessName,
+        brandColor: "#2563EB",
+        services: [],
+        isPublished: false,
+      });
+
+      // Hash password and create user
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        siteId: site.id,
+      });
+
+      // Set session so user is logged in
+      req.session.userId = user.id;
+      req.session.siteId = site.id;
+
+      const { password: _, ...sanitizedUser } = user;
+      res.status(201).json({ user: sanitizedUser, site });
+    } catch (error) {
+      console.error("Error during signup:", error);
+      res.status(500).json({ error: "Signup failed" });
     }
   });
 
