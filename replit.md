@@ -24,6 +24,14 @@ Built with Express.js and React, supporting:
 - **Routing**: Wouter
 - **Styling**: Tailwind CSS
 
+## User Flow
+
+1. **Sign Up**: Contractor visits LocalBlue.ai, enters email, password, business name
+2. **AI Onboarding**: Chat with Claude Opus 4.5 to describe their business, services, service area
+3. **Site Generation**: AI extracts business details and creates website pages
+4. **Preview & Publish**: Review site in tenant admin, connect custom domain, single-click publish
+5. **Ongoing Management**: Edit pages, view leads, manage users - all from their own domain
+
 ## Data Models
 
 ### User
@@ -40,6 +48,15 @@ Built with Express.js and React, supporting:
 - `brandColor` (hex color)
 - `services` (JSON array)
 - `isPublished` (boolean)
+
+### Page (CMS)
+- `id`, `siteId`, `slug`, `title`, `content` (JSON)
+
+### Lead (Contact Form)
+- `id`, `siteId`, `name`, `email`, `phone`, `message`
+
+### Conversation/Message (AI Onboarding)
+- Stores chat history for site generation
 
 ## Multi-Tenant Middleware
 
@@ -74,11 +91,24 @@ The tenant middleware (`server/middleware/tenantMiddleware.ts`) intercepts all r
 - `GET /api/tenant/auth/me` - Get current logged-in user
 - `GET /api/tenant/settings` - Get tenant's site settings
 - `PATCH /api/tenant/settings` - Update tenant's site settings
+- `PATCH /api/tenant/settings/domain` - Update custom domain
+- `POST /api/tenant/publish` - Toggle publish status
+- `GET /api/tenant/pages` - List all pages for this tenant
+- `GET /api/tenant/pages/:slug` - Get page by slug
+- `PATCH /api/tenant/pages/:slug` - Update page content
+- `GET /api/tenant/leads` - List leads for this tenant
 - `GET /api/tenant/users` - List users for this tenant
 - `POST /api/tenant/users` - Create user for this tenant
 
+### Onboarding Routes (require session)
+- `GET /api/onboarding/session` - Get current onboarding session
+- `POST /api/onboarding/chat` - Chat with AI (streaming SSE)
+- `POST /api/onboarding/generate` - Generate site from conversation
+
 ### Public Tenant Routes
-- `GET /api/site` - Get current tenant's site info (requires published site)
+- `GET /api/site` - Get current tenant's site info
+- `GET /api/site/pages/:slug` - Get page content
+- `POST /api/site/leads` - Submit contact form
 - `GET /api/tenant` - Check tenant detection status
 
 ## Key Files

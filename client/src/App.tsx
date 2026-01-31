@@ -29,7 +29,11 @@ import TenantLogin from "@/pages/tenant-admin/Login";
 import TenantDashboard from "@/pages/tenant-admin/Dashboard";
 import TenantSettings from "@/pages/tenant-admin/Settings";
 import TenantUsers from "@/pages/tenant-admin/TenantUsers";
+import TenantPages from "@/pages/tenant-admin/Pages";
+import TenantPageEditor from "@/pages/tenant-admin/PageEditor";
+import TenantLeads from "@/pages/tenant-admin/Leads";
 import TenantAdminLayout from "@/components/TenantAdminLayout";
+import PublicSite from "@/pages/PublicSite";
 import type { Site, User } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -159,11 +163,20 @@ function TenantAdminApp() {
         <Route path="/">
           <TenantDashboard site={authData.site} />
         </Route>
+        <Route path="/pages/:slug">
+          <TenantPageEditor />
+        </Route>
+        <Route path="/pages">
+          <TenantPages />
+        </Route>
         <Route path="/settings">
           <TenantSettings site={authData.site} />
         </Route>
         <Route path="/users">
           <TenantUsers />
+        </Route>
+        <Route path="/leads">
+          <TenantLeads />
         </Route>
         <Route component={NotFound} />
       </Switch>
@@ -171,23 +184,64 @@ function TenantAdminApp() {
   );
 }
 
-type DomainType = "admin" | "tenant" | "main";
+type DomainType = "tenantAdmin" | "tenantPublic" | "main";
 
 function detectDomainType(): DomainType {
   const hostname = window.location.hostname;
   
+  // Check if this is an admin subdomain (admin.acme.localblue.ai or admin.acme.localhost)
   if (hostname.startsWith("admin.")) {
-    return "admin";
+    return "tenantAdmin";
   }
   
+  // Main site: localhost without subdomain, or the main domain
   if (hostname === "localhost" || 
-      hostname.endsWith(".localblue.ai") === false ||
       hostname === "localblue.ai" ||
       hostname === "www.localblue.ai") {
     return "main";
   }
   
-  return "tenant";
+  // Check if this is a subdomain of localblue.ai or localhost (tenant public site)
+  const parts = hostname.split(".");
+  if (parts.length >= 2) {
+    const tld = parts.slice(-1)[0];
+    // Subdomain patterns like: acme.localblue.ai, acme.localhost
+    if (tld === "localhost" || hostname.endsWith(".localblue.ai") || hostname.endsWith(".repl.co")) {
+      return "tenantPublic";
+    }
+  }
+  
+  // Custom domain (like smithplumbing.com) - treat as tenant public
+  return "tenantPublic";
+}
+
+function TenantPublicApp() {
+  const { data: site, isLoading, error } = useQuery<Site>({
+    queryKey: ["/api/site"],
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground" data-testid="text-loading">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error || !site) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Site Not Found</h1>
+          <p className="text-muted-foreground">
+            The site you're looking for doesn't exist or hasn't been configured yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return <PublicSite site={site} />;
 }
 
 function MainSiteApp() {
@@ -211,10 +265,10 @@ function App() {
 
   const renderContent = () => {
     switch (domainType) {
-      case "admin":
+      case "tenantAdmin":
         return <TenantAdminApp />;
-      case "tenant":
-        return <TenantAdminApp />;
+      case "tenantPublic":
+        return <TenantPublicApp />;
       case "main":
       default:
         return <MainSiteApp />;

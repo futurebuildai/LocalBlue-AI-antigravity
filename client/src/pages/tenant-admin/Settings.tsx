@@ -10,13 +10,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Save } from "lucide-react";
+import DomainSetup from "@/components/DomainSetup";
+import PublishButton from "@/components/PublishButton";
 import type { Site } from "@shared/schema";
 
 const settingsSchema = z.object({
   businessName: z.string().min(1, "Business name is required"),
   brandColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a valid hex color"),
   services: z.string().optional(),
-  customDomain: z.string().optional().nullable(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -34,7 +35,6 @@ export default function Settings({ site }: SettingsProps) {
       businessName: site.businessName,
       brandColor: site.brandColor,
       services: Array.isArray(site.services) ? site.services.join(", ") : "",
-      customDomain: site.customDomain || "",
     },
   });
 
@@ -47,7 +47,6 @@ export default function Settings({ site }: SettingsProps) {
         businessName: data.businessName,
         brandColor: data.brandColor,
         services,
-        customDomain: data.customDomain || null,
       });
     },
     onSuccess: () => {
@@ -77,7 +76,19 @@ export default function Settings({ site }: SettingsProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Site Settings</CardTitle>
+          <CardTitle>Publishing</CardTitle>
+          <CardDescription>Control when your site goes live</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PublishButton site={site} variant="card" />
+        </CardContent>
+      </Card>
+
+      <DomainSetup site={site} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Brand Settings</CardTitle>
           <CardDescription>Update your site's appearance and configuration</CardDescription>
         </CardHeader>
         <CardContent>
@@ -139,28 +150,6 @@ export default function Settings({ site }: SettingsProps) {
                     </FormControl>
                     <FormDescription>
                       Comma-separated list of services you offer
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="customDomain"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Custom Domain</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="e.g., www.yourdomain.com" 
-                        {...field} 
-                        value={field.value || ""}
-                        data-testid="input-settings-custom-domain" 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Optional custom domain for your site
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

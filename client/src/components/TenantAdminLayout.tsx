@@ -17,7 +17,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Settings, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, Users, MessageSquare, LogOut } from "lucide-react";
 import type { Site, User } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -31,8 +31,10 @@ interface TenantAdminLayoutProps {
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Pages", url: "/pages", icon: FileText },
   { title: "Settings", url: "/settings", icon: Settings },
   { title: "Users", url: "/users", icon: Users },
+  { title: "Leads", url: "/leads", icon: MessageSquare },
 ];
 
 export default function TenantAdminLayout({ site, user, onLogout, children }: TenantAdminLayoutProps) {
