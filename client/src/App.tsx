@@ -54,21 +54,21 @@ function AppSidebar() {
   const [location] = useLocation();
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-600 text-white font-bold text-sm">
+    <Sidebar className="border-r-0">
+      <SidebarHeader className="p-4 pb-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl gradient-primary text-white font-bold text-lg shadow-lg shadow-primary/25">
             LB
           </div>
           <div>
-            <h2 className="text-sm font-semibold">LocalBlue.ai</h2>
+            <h2 className="text-sm font-bold">LocalBlue<span className="text-primary">.ai</span></h2>
             <p className="text-xs text-muted-foreground">Platform Admin</p>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 mb-1">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -102,18 +102,18 @@ function PlatformAdminRouter() {
 
 function PlatformAdmin() {
   const style = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3rem",
+    "--sidebar-width": "17rem",
+    "--sidebar-width-icon": "3.5rem",
   };
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <div className="flex h-screen w-full">
         <AppSidebar />
-        <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center gap-2 border-b px-4 py-3">
+        <div className="flex flex-col flex-1 min-w-0 bg-muted/30">
+          <header className="flex items-center gap-4 bg-background border-b px-6 py-4">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <h1 className="text-lg font-semibold">Admin</h1>
+            <h1 className="text-lg font-semibold">Platform Admin</h1>
           </header>
           <main className="flex-1 overflow-auto p-6">
             <PlatformAdminRouter />
