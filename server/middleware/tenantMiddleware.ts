@@ -7,7 +7,15 @@ declare global {
     interface Request {
       site?: Site;
       tenantId?: string;
+      isTenantAdmin?: boolean;
     }
+  }
+}
+
+declare module "express-session" {
+  interface SessionData {
+    userId?: string;
+    siteId?: string;
   }
 }
 
@@ -25,6 +33,7 @@ export async function tenantMiddleware(
     }
 
     let site: Site | undefined;
+    let isTenantAdmin = false;
 
     // First, try to match by custom domain (full hostname)
     site = await storage.getSiteByCustomDomain(hostname);
@@ -36,7 +45,14 @@ export async function tenantMiddleware(
       const parts = hostname.split(".");
       
       if (parts.length >= 2) {
-        const subdomain = parts[0];
+        let subdomain = parts[0];
+        
+        // Check if this is an admin subdomain (admin.acme.localhost, admin.acme.repl.co)
+        if (subdomain === "admin" && parts.length >= 3) {
+          // Strip "admin." and use the next part as the tenant subdomain
+          subdomain = parts[1];
+          isTenantAdmin = true;
+        }
         
         // Skip common non-subdomain prefixes
         if (subdomain !== "www" && subdomain !== "api") {
@@ -48,6 +64,7 @@ export async function tenantMiddleware(
     if (site) {
       req.site = site;
       req.tenantId = site.id;
+      req.isTenantAdmin = isTenantAdmin;
     }
 
     next();
@@ -74,6 +91,63 @@ export function requireTenant(
     res.status(403).json({ 
       error: "Site not published",
       message: "This site is not yet published" 
+    });
+    return;
+  }
+  
+  next();
+}
+
+export function requireTenantAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  if (!req.site) {
+    res.status(404).json({ 
+      error: "Site not found",
+      message: "No site is configured for this domain" 
+    });
+    return;
+  }
+
+  if (!req.isTenantAdmin) {
+    res.status(403).json({ 
+      error: "Forbidden",
+      message: "This endpoint requires tenant admin access" 
+    });
+    return;
+  }
+  
+  next();
+}
+
+export function requireTenantAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  if (!req.site) {
+    res.status(404).json({ 
+      error: "Site not found",
+      message: "No site is configured for this domain" 
+    });
+    return;
+  }
+
+  if (!req.session.userId || !req.session.siteId) {
+    res.status(401).json({ 
+      error: "Unauthorized",
+      message: "Authentication required" 
+    });
+    return;
+  }
+
+  // Verify the session is for the current site
+  if (req.session.siteId !== req.site.id) {
+    res.status(403).json({ 
+      error: "Forbidden",
+      message: "Session is not valid for this site" 
     });
     return;
   }

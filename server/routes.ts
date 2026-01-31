@@ -1,10 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { tenantMiddleware, requireTenant } from "./middleware/tenantMiddleware";
+import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth } from "./middleware/tenantMiddleware";
 import { insertUserSchema, insertSiteSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
 
 const SALT_ROUNDS = 10;
 
@@ -249,10 +254,164 @@ export async function registerRoutes(
           businessName: req.site.businessName,
           brandColor: req.site.brandColor,
           isPublished: req.site.isPublished,
-        }
+        },
+        isTenantAdmin: req.isTenantAdmin || false,
       });
     } else {
       res.json({ found: false, message: "No tenant detected for this hostname" });
+    }
+  });
+
+  // ============================================
+  // Tenant Admin API Routes
+  // ============================================
+
+  // Tenant Auth: Login
+  app.post("/api/tenant/auth/login", requireTenantAdmin, async (req, res) => {
+    try {
+      const result = loginSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid credentials format", details: result.error.flatten() });
+      }
+
+      const { email, password } = result.data;
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Verify user belongs to the detected site
+      if (user.siteId !== req.site!.id) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Set session
+      req.session.userId = user.id;
+      req.session.siteId = user.siteId!;
+
+      const { password: _, ...sanitizedUser } = user;
+      res.json({ user: sanitizedUser });
+    } catch (error) {
+      console.error("Error during tenant login:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Tenant Auth: Logout
+  app.post("/api/tenant/auth/logout", requireTenantAdmin, (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Error destroying session:", err);
+        return res.status(500).json({ error: "Logout failed" });
+      }
+      res.clearCookie("connect.sid");
+      res.json({ success: true });
+    });
+  });
+
+  // Tenant Auth: Get current user
+  app.get("/api/tenant/auth/me", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const { password, ...sanitizedUser } = user;
+      res.json({ user: sanitizedUser });
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  // Tenant Settings: Get settings
+  app.get("/api/tenant/settings", requireTenantAdmin, requireTenantAuth, (req, res) => {
+    const { id, subdomain, businessName, brandColor, services, isPublished, customDomain } = req.site!;
+    res.json({ id, subdomain, businessName, brandColor, services, isPublished, customDomain });
+  });
+
+  // Tenant Settings: Update settings
+  app.patch("/api/tenant/settings", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      // Only allow updating certain fields (not subdomain or id)
+      const allowedFields = ["businessName", "brandColor", "services", "isPublished"];
+      const updateData: Record<string, any> = {};
+      
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+
+      const updatedSite = await storage.updateSite(req.site!.id, updateData);
+      if (!updatedSite) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+
+      const { id, subdomain, businessName, brandColor, services, isPublished, customDomain } = updatedSite;
+      res.json({ id, subdomain, businessName, brandColor, services, isPublished, customDomain });
+    } catch (error) {
+      console.error("Error updating tenant settings:", error);
+      res.status(500).json({ error: "Failed to update settings" });
+    }
+  });
+
+  // Tenant Users: Get users belonging to this tenant
+  app.get("/api/tenant/users", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const users = await storage.getUsersBySiteId(req.site!.id);
+      const sanitizedUsers = users.map(({ password, ...user }) => user);
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching tenant users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Tenant Users: Create a user for this tenant
+  app.post("/api/tenant/users", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const result = insertUserSchema.safeParse({
+        ...req.body,
+        siteId: req.site!.id, // Force the user to belong to this tenant
+      });
+      
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid user data", details: result.error.flatten() });
+      }
+
+      // Check if email is already taken
+      const existingUser = await storage.getUserByEmail(result.data.email);
+      if (existingUser) {
+        return res.status(409).json({ error: "Email already registered" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(result.data.password, SALT_ROUNDS);
+
+      const user = await storage.createUser({
+        ...result.data,
+        password: hashedPassword,
+      });
+
+      const { password, ...sanitizedUser } = user;
+      res.status(201).json(sanitizedUser);
+    } catch (error) {
+      console.error("Error creating tenant user:", error);
+      res.status(500).json({ error: "Failed to create user" });
     }
   });
 
