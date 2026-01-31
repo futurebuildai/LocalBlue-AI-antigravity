@@ -31,6 +31,7 @@ type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 interface PublicSiteProps {
   site: Site;
+  isPreview?: boolean;
 }
 
 function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {

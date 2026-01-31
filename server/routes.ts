@@ -141,6 +141,38 @@ export async function registerRoutes(
     }
   });
 
+  // Preview site by subdomain (for development)
+  app.get("/api/preview/:subdomain", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+      res.json(site);
+    } catch (error) {
+      console.error("Error fetching site for preview:", error);
+      res.status(500).json({ error: "Failed to fetch site" });
+    }
+  });
+
+  // Get pages for preview site
+  app.get("/api/preview/:subdomain/pages/:slug", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+      const page = await storage.getPageBySiteAndSlug(site.id, req.params.slug);
+      if (!page) {
+        return res.status(404).json({ error: "Page not found" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error fetching page for preview:", error);
+      res.status(500).json({ error: "Failed to fetch page" });
+    }
+  });
+
   // --- Users CRUD ---
 
   // Get all users (optionally filtered by site)
@@ -922,8 +954,11 @@ Only return valid JSON, nothing else.`,
         }
       }
 
-      // Generate redirect URL for tenant admin
-      const redirectUrl = `https://${site.subdomain}.localblue.ai/`;
+      // Generate redirect URL - use preview route in development
+      const isDev = process.env.NODE_ENV === "development";
+      const redirectUrl = isDev 
+        ? `/preview/${site.subdomain}`
+        : `https://${site.subdomain}.localblue.ai/`;
 
       res.json({
         success: true,
