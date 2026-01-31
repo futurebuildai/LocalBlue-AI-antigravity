@@ -35,8 +35,19 @@ export async function tenantMiddleware(
     let site: Site | undefined;
     let isTenantAdmin = false;
 
-    // First, try to match by custom domain (full hostname)
-    site = await storage.getSiteByCustomDomain(hostname);
+    // Check if this is an admin subdomain for a custom domain (admin.customdomain.com)
+    if (hostname.startsWith("admin.")) {
+      const customDomainPart = hostname.slice(6); // Remove "admin." prefix
+      site = await storage.getSiteByCustomDomain(customDomainPart);
+      if (site) {
+        isTenantAdmin = true;
+      }
+    }
+
+    // If not found via admin.customdomain, try to match by exact custom domain
+    if (!site) {
+      site = await storage.getSiteByCustomDomain(hostname);
+    }
 
     if (!site) {
       // Extract subdomain from hostname

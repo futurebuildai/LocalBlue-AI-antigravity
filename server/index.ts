@@ -24,9 +24,20 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  if (process.env.NODE_ENV === "production") {
+    console.error("CRITICAL SECURITY ERROR: SESSION_SECRET environment variable is not set in production!");
+    console.error("Sessions will be insecure. Please set SESSION_SECRET to a strong random value.");
+    process.exit(1);
+  } else {
+    console.warn("WARNING: SESSION_SECRET not set. Using insecure fallback for development only.");
+  }
+}
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "fallback-secret-for-dev",
+    secret: sessionSecret || "fallback-secret-for-dev-only",
     resave: false,
     saveUninitialized: false,
     cookie: {
