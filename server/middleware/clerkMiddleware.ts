@@ -1,7 +1,14 @@
-import { clerkMiddleware, getAuth, requireAuth } from "@clerk/express";
+import { clerkMiddleware as clerkMiddlewareBase, getAuth, requireAuth } from "@clerk/express";
 import type { Request, Response, NextFunction } from "express";
 
-export { clerkMiddleware, getAuth, requireAuth };
+export { getAuth, requireAuth };
+
+export function clerkMiddleware() {
+  return clerkMiddlewareBase({
+    publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY,
+    secretKey: process.env.CLERK_SECRET_KEY,
+  });
+}
 
 export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
   const auth = getAuth(req);
