@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth } from "./middleware/tenantMiddleware";
+import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth, requirePlatformAdmin } from "./middleware/tenantMiddleware";
 import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES, type TradeType, type StylePreference } from "@shared/schema";
 import { TRADE_TEMPLATES, STYLE_TEMPLATES, AVAILABLE_PAGES, getTradeTemplate, getStyleTemplate } from "@shared/tradeTemplates";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
@@ -54,8 +54,11 @@ export async function registerRoutes(
   app.use(tenantMiddleware);
 
   // ============================================
-  // Admin API Routes (no tenant context required)
+  // Admin API Routes (Platform Admin only)
   // ============================================
+  
+  // Apply platform admin auth to all /api/admin routes
+  app.use("/api/admin", requirePlatformAdmin);
 
   // --- Sites CRUD ---
   

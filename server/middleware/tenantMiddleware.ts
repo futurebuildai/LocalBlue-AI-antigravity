@@ -8,8 +8,18 @@ declare global {
       site?: Site;
       tenantId?: string;
       isTenantAdmin?: boolean;
+      platformAdmin?: {
+        email: string;
+        id: string;
+      };
     }
   }
+}
+
+// Get allowed platform admin emails from environment
+function getPlatformAdminEmails(): string[] {
+  const emails = process.env.PLATFORM_ADMIN_EMAILS || "";
+  return emails.split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
 }
 
 declare module "express-session" {
@@ -163,5 +173,49 @@ export function requireTenantAuth(
     return;
   }
   
+  next();
+}
+
+/**
+ * Middleware to require platform admin access (for LocalBlue company admin)
+ * Checks if user is authenticated via Replit Auth and their email is in allowed list
+ */
+export function requirePlatformAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  const user = req.user as any;
+  
+  // Check if authenticated via Replit Auth
+  if (!req.isAuthenticated() || !user?.claims) {
+    res.status(401).json({ 
+      error: "Unauthorized",
+      message: "Platform admin authentication required. Please log in." 
+    });
+    return;
+  }
+  
+  const userEmail = (user.claims.email || "").toLowerCase();
+  const allowedEmails = getPlatformAdminEmails();
+  
+  // If no admin emails configured, allow any authenticated Replit user (for dev convenience)
+  // In production, PLATFORM_ADMIN_EMAILS should always be set
+  if (allowedEmails.length === 0) {
+    console.warn("PLATFORM_ADMIN_EMAILS not configured - allowing any authenticated user");
+    req.platformAdmin = { email: userEmail, id: user.claims.sub };
+    return next();
+  }
+  
+  // Check if user's email is in allowed list
+  if (!allowedEmails.includes(userEmail)) {
+    res.status(403).json({ 
+      error: "Forbidden",
+      message: "You do not have platform admin access" 
+    });
+    return;
+  }
+  
+  req.platformAdmin = { email: userEmail, id: user.claims.sub };
   next();
 }

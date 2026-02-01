@@ -15,9 +15,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import type { Site, User, InsertUser } from "@shared/schema";
+import type { Site, TenantUser, InsertTenantUser } from "@shared/schema";
 
-type SanitizedUser = Omit<User, "password">;
+type SanitizedUser = Omit<TenantUser, "password">;
 
 const userFormSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -48,7 +48,7 @@ export default function Users() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: InsertUser) => {
+    mutationFn: async (data: InsertTenantUser) => {
       return apiRequest("POST", "/api/admin/users", data);
     },
     onSuccess: () => {
@@ -62,7 +62,7 @@ export default function Users() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertUser> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertTenantUser> }) => {
       return apiRequest("PATCH", `/api/admin/users/${id}`, data);
     },
     onSuccess: () => {
@@ -98,7 +98,7 @@ export default function Users() {
 
   const handleUpdate = (values: UserUpdateValues) => {
     if (!editingUser) return;
-    const updateData: Partial<InsertUser> = {
+    const updateData: Partial<InsertTenantUser> = {
       email: values.email,
       siteId: values.siteId && values.siteId !== "none" ? values.siteId : null,
     };

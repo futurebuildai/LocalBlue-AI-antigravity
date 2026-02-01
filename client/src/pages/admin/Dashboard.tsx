@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Globe, Palette } from "lucide-react";
-import type { Site, User } from "@shared/schema";
+import type { Site, TenantUser } from "@shared/schema";
 
-type SanitizedUser = Omit<User, "password">;
+type SanitizedUser = Omit<TenantUser, "password">;
 
 export default function Dashboard() {
   const { data: sites = [], isLoading: sitesLoading } = useQuery<Site[]>({
