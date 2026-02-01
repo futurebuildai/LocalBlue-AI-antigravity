@@ -44,6 +44,7 @@ import {
 import type { Site, Page, Testimonial, TradeType, StylePreference } from "@shared/schema";
 import { TRADE_TEMPLATES, STYLE_TEMPLATES } from "@shared/tradeTemplates";
 import ChatBot from "@/components/ChatBot";
+import { useSEO } from "@/hooks/use-seo";
 
 import plumberHero from "@assets/plumber-hero.jpg";
 import electricianHero from "@assets/electrician-hero.jpg";
@@ -136,36 +137,44 @@ function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean })
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled 
-          ? "bg-background/95 backdrop-blur-md shadow-md border-b" 
-          : "bg-transparent"
+          ? "bg-background/95 backdrop-blur-md shadow-sm border-b" 
+          : "bg-black/20 backdrop-blur-sm"
       }`}
       data-testid="header-sticky"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between h-16 md:h-18 gap-4">
+          <a 
+            href="#hero" 
+            onClick={(e) => { e.preventDefault(); scrollToSection("hero"); }}
+            className="flex items-center gap-2.5 min-w-0 flex-shrink"
+          >
             <div 
-              className="w-10 h-10 rounded-md flex items-center justify-center"
+              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
               style={{ backgroundColor: site.brandColor }}
             >
-              <span className="text-lg font-bold text-white">
-                {site.businessName.charAt(0)}
+              <span className="text-base font-bold text-white">
+                {site.businessName.charAt(0).toUpperCase()}
               </span>
             </div>
-            <span className={`font-bold text-lg md:text-xl ${isScrolled ? "text-foreground" : "text-white"}`}>
+            <span 
+              className={`font-semibold text-base md:text-lg truncate max-w-[140px] sm:max-w-[200px] md:max-w-none ${
+                isScrolled ? "text-foreground" : "text-white"
+              }`}
+            >
               {site.businessName}
             </span>
-          </div>
+          </a>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
               <button
                 key={link.id}
                 onClick={() => scrollToSection(link.id)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isScrolled 
                     ? "text-muted-foreground hover:text-foreground hover:bg-muted" 
-                    : "text-white/80 hover:text-white hover:bg-white/10"
+                    : "text-white/90 hover:text-white hover:bg-white/10"
                 }`}
                 data-testid={`nav-${link.id}`}
               >
@@ -174,61 +183,65 @@ function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean })
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {site.phone && (
               <a
                 href={`tel:${site.phone}`}
-                className="hidden sm:flex items-center gap-2"
+                className="hidden md:block"
                 data-testid="header-phone"
               >
                 <Button 
                   size="sm"
                   style={{ backgroundColor: site.brandColor }}
-                  className="border-0"
+                  className="border-0 shadow-sm gap-2"
                 >
                   <Phone className="h-4 w-4" />
-                  <span className="hidden lg:inline">{site.phone}</span>
-                  <span className="lg:hidden">Call</span>
+                  <span className="hidden xl:inline">{site.phone}</span>
+                  <span className="xl:hidden">Call Now</span>
                 </Button>
               </a>
             )}
             <button
-              className={`md:hidden p-2 rounded-md ${isScrolled ? "text-foreground" : "text-white"}`}
+              className={`lg:hidden p-2 rounded-md transition-colors ${
+                isScrolled 
+                  ? "text-foreground hover:bg-muted" 
+                  : "text-white hover:bg-white/10"
+              }`}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               data-testid="button-mobile-menu"
+              aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
       </div>
 
       {mobileMenuOpen && (
-        <div className="md:hidden bg-background border-t shadow-lg">
-          <nav className="px-4 py-4 space-y-1">
+        <div className="lg:hidden bg-background/98 backdrop-blur-md border-t">
+          <nav className="px-4 py-3 space-y-1">
             {navLinks.map((link) => (
               <button
                 key={link.id}
                 onClick={() => scrollToSection(link.id)}
-                className="block w-full text-left px-4 py-3 rounded-md text-foreground hover:bg-muted transition-colors"
+                className="block w-full text-left px-4 py-3 rounded-lg text-foreground font-medium hover:bg-muted transition-colors"
                 data-testid={`nav-mobile-${link.id}`}
               >
                 {link.label}
               </button>
             ))}
             {site.phone && (
-              <a
-                href={`tel:${site.phone}`}
-                className="block w-full mt-4"
-              >
-                <Button 
-                  className="w-full"
-                  style={{ backgroundColor: site.brandColor }}
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  Call {site.phone}
-                </Button>
-              </a>
+              <div className="pt-3 border-t mt-3">
+                <a href={`tel:${site.phone}`} className="block">
+                  <Button 
+                    className="w-full gap-2"
+                    style={{ backgroundColor: site.brandColor }}
+                  >
+                    <Phone className="h-4 w-4" />
+                    Call {site.phone}
+                  </Button>
+                </a>
+              </div>
             )}
           </nav>
         </div>
@@ -638,6 +651,13 @@ function TestimonialsSection({ site }: { site: Site }) {
     return null;
   }
 
+  const avgRating = testimonials.length > 0 
+    ? testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length 
+    : 5;
+  const reviewCount = testimonials.length;
+  const featuredTestimonial = testimonials[0];
+  const otherTestimonials = testimonials.slice(1, 7);
+
   return (
     <section id="testimonials" className="py-16 md:py-24 bg-muted/30" data-testid="section-testimonials">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -650,32 +670,116 @@ function TestimonialsSection({ site }: { site: Site }) {
             Customer Reviews
           </div>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">What Our Customers Say</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Don't just take our word for it. Here's what our satisfied customers have to say.
-          </p>
+          
+          <div className="flex items-center justify-center gap-4 mt-6" data-testid="testimonials-aggregate-rating">
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star 
+                  key={i}
+                  className={`h-6 w-6 ${i < Math.round(avgRating) ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
+                />
+              ))}
+            </div>
+            <div className="text-left">
+              <span className="text-2xl font-bold">{avgRating.toFixed(1)}</span>
+              <span className="text-muted-foreground ml-2">out of 5</span>
+              <p className="text-sm text-muted-foreground">Based on {reviewCount} review{reviewCount !== 1 ? "s" : ""}</p>
+            </div>
+          </div>
         </div>
 
+        {featuredTestimonial && (
+          <Card 
+            className="mb-8 overflow-hidden border-2"
+            style={{ borderColor: `${site.brandColor}30` }}
+            data-testid={`card-testimonial-featured-${featuredTestimonial.id}`}
+          >
+            <CardContent className="p-8 md:p-12">
+              <div className="grid md:grid-cols-[1fr,auto] gap-8 items-center">
+                <div>
+                  <div className="flex items-center gap-1 mb-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star 
+                        key={i}
+                        className={`h-6 w-6 ${i < featuredTestimonial.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
+                      />
+                    ))}
+                    <span 
+                      className="ml-3 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide"
+                      style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
+                    >
+                      Featured Review
+                    </span>
+                  </div>
+                  <Quote className="h-10 w-10 mb-4" style={{ color: `${site.brandColor}40` }} />
+                  <p className="text-lg md:text-xl text-foreground leading-relaxed mb-6">
+                    "{featuredTestimonial.content}"
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-14 h-14 rounded-full flex items-center justify-center text-white text-xl font-bold"
+                      style={{ backgroundColor: site.brandColor }}
+                    >
+                      {featuredTestimonial.customerName.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-bold text-lg">{featuredTestimonial.customerName}</p>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        {featuredTestimonial.customerLocation && (
+                          <span>{featuredTestimonial.customerLocation}</span>
+                        )}
+                        {featuredTestimonial.projectType && featuredTestimonial.customerLocation && (
+                          <span className="text-muted">|</span>
+                        )}
+                        {featuredTestimonial.projectType && (
+                          <span className="text-sm">{featuredTestimonial.projectType}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div 
+                  className="hidden md:flex items-center justify-center w-32 h-32 rounded-full"
+                  style={{ backgroundColor: `${site.brandColor}10` }}
+                >
+                  <CheckCircle className="h-16 w-16" style={{ color: site.brandColor }} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {testimonials.slice(0, 6).map((testimonial) => (
+          {otherTestimonials.map((testimonial) => (
             <Card 
               key={testimonial.id} 
-              className="hover-elevate"
+              className="hover-elevate group"
               data-testid={`card-testimonial-${testimonial.id}`}
             >
               <CardContent className="p-6 md:p-8">
-                <div className="flex items-center gap-1 mb-4">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star 
-                      key={i}
-                      className={`h-5 w-5 ${i < testimonial.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
-                    />
-                  ))}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star 
+                        key={i}
+                        className={`h-5 w-5 ${i < testimonial.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
+                      />
+                    ))}
+                  </div>
+                  {testimonial.projectType && (
+                    <span 
+                      className="px-2 py-1 rounded text-xs font-medium"
+                      style={{ backgroundColor: `${site.brandColor}10`, color: site.brandColor }}
+                    >
+                      {testimonial.projectType}
+                    </span>
+                  )}
                 </div>
-                <Quote className="h-8 w-8 text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground mb-6 leading-relaxed">
+                <Quote className="h-8 w-8 text-muted-foreground/30 mb-3 group-hover:text-muted-foreground/50 transition-colors" />
+                <p className="text-muted-foreground mb-6 leading-relaxed line-clamp-4">
                   "{testimonial.content}"
                 </p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 pt-4 border-t">
                   <div 
                     className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
                     style={{ backgroundColor: site.brandColor }}
@@ -1178,6 +1282,30 @@ function ComingSoon({ site }: { site: Site }) {
 
 export default function PublicSite({ site, isPreview }: PublicSiteProps) {
   const [isScrolled, setIsScrolled] = useState(false);
+
+  const tradeLabel = site.tradeType && TRADE_TEMPLATES[site.tradeType] 
+    ? TRADE_TEMPLATES[site.tradeType].name 
+    : "Contractor";
+  
+  const seoTitle = `${site.businessName} | ${tradeLabel} in ${site.serviceArea || "Your Area"}`;
+  const seoDescription = site.businessDescription 
+    || site.tagline 
+    || `${site.businessName} offers professional ${tradeLabel.toLowerCase()} services${site.serviceArea ? ` in ${site.serviceArea}` : ""}. Contact us today for a free estimate.`;
+
+  useSEO({
+    title: seoTitle,
+    description: seoDescription.slice(0, 160),
+    ogTitle: site.businessName,
+    ogDescription: seoDescription.slice(0, 200),
+    ogType: "business.business",
+    businessName: site.businessName,
+    phone: site.phone || undefined,
+    email: site.email || undefined,
+    address: site.address || undefined,
+    serviceArea: site.serviceArea || undefined,
+    priceRange: "$$",
+    tradeType: site.tradeType || undefined,
+  });
 
   useEffect(() => {
     const handleScroll = () => {
