@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/Logo";
 import { 
   MessageSquare, 
   Globe, 
@@ -153,17 +154,37 @@ const pricingPlans = [
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-[9999] glass border-b">
-        <div className="max-w-7xl mx-auto flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center">
-            <img src="/logo-wordmark.png" alt="LocalBlue" className="h-9 object-contain" />
-          </Link>
-          <div className="flex items-center gap-3 flex-wrap">
+      {/* Header - Apple/Google-level premium design */}
+      <header className="fixed top-0 left-0 right-0 z-[9999]">
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-xl border-b border-border/40" />
+        <div className="relative max-w-7xl mx-auto flex h-16 items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
+          <Logo size="md" linkTo="/" />
+          
+          <nav className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="link-nav-features">
+              Features
+            </a>
+            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="link-nav-how-it-works">
+              How It Works
+            </a>
+            <a href="#pricing" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="link-nav-pricing">
+              Pricing
+            </a>
+            <Link href="/demo" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="link-nav-demo">
+              Demo
+            </Link>
+          </nav>
+          
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="hidden sm:block">
+              <Button variant="ghost" size="sm" data-testid="link-header-login">
+                Sign In
+              </Button>
+            </Link>
             <Link href="/signup">
-              <Button data-testid="link-header-signup">
-                Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Button size="sm" className="shadow-lg shadow-primary/20" data-testid="link-header-signup">
+                Get Started
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Button>
             </Link>
           </div>
@@ -283,7 +304,7 @@ export default function Landing() {
         </section>
 
         {/* Features Section */}
-        <section className="py-20 md:py-32 bg-muted/30">
+        <section id="features" className="py-20 md:py-32 bg-muted/30 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
@@ -320,7 +341,7 @@ export default function Landing() {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-20 md:py-32">
+        <section id="how-it-works" className="py-20 md:py-32 scroll-mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
@@ -400,7 +421,7 @@ export default function Landing() {
         </section>
 
         {/* Pricing Section */}
-        <section className="py-20 md:py-32" data-testid="section-pricing">
+        <section id="pricing" className="py-20 md:py-32 scroll-mt-20" data-testid="section-pricing">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
@@ -504,15 +525,25 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-card border-t py-12" data-testid="footer">
+      <footer className="bg-card border-t py-16" data-testid="footer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 flex-wrap">
-            <div className="flex items-center" data-testid="footer-logo">
-              <img src="/logo-wordmark.png" alt="LocalBlue" className="h-8 object-contain" />
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex flex-col items-center md:items-start gap-4">
+              <Logo size="md" />
+              <p className="text-muted-foreground text-sm max-w-xs text-center md:text-left">
+                Build professional contractor websites in minutes with AI.
+              </p>
             </div>
-            <p className="text-muted-foreground text-sm" data-testid="footer-copyright">
-              &copy; {new Date().getFullYear()} LocalBlue. All rights reserved.
-            </p>
+            <div className="flex flex-col items-center md:items-end gap-4">
+              <nav className="flex items-center gap-6">
+                <a href="#features" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-features">Features</a>
+                <a href="#pricing" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-pricing">Pricing</a>
+                <Link href="/demo" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-demo">Demo</Link>
+              </nav>
+              <p className="text-muted-foreground text-sm" data-testid="footer-copyright">
+                &copy; {new Date().getFullYear()} LocalBlue. All rights reserved.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
