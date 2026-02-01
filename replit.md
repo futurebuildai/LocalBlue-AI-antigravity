@@ -1,7 +1,7 @@
-# LocalBlue.ai Platform
+# LocalBlue Platform
 
 ## Overview
-LocalBlue.ai is an AI-powered website builder platform designed for local general contractors and trade contractors (mostly residential). Its core differentiator is enabling contractors to manage their websites directly from their custom domain (e.g., `admin.smithplumbing.com`) after initial setup, rather than requiring them to return to the LocalBlue.ai platform. The platform supports both a global Platform Admin for the LocalBlue.ai team and individual Tenant Admins for each contractor. The project aims to provide "Best in Class" contractor website builder capabilities.
+LocalBlue is a website builder platform designed for local general contractors and trade contractors (mostly residential). Its core differentiator is enabling contractors to manage their websites directly from their custom domain (e.g., `admin.smithplumbing.com`) after initial setup, rather than requiring them to return to the LocalBlue platform. The platform supports both a global Platform Admin for the LocalBlue team and individual Tenant Admins for each contractor. The project aims to provide "Best in Class" contractor website builder capabilities.
 
 ## User Preferences
 None
@@ -11,7 +11,7 @@ None
 ### Core Design Principles
 - **Multi-tenancy**: The platform is built from the ground up to support multiple independent contractor websites, each with its own administrative panel and data.
 - **AI-driven Onboarding**: Utilizes advanced AI for an interactive onboarding process to gather business details and generate website content.
-- **Custom Domain Management**: Contractors manage their sites directly from their custom domain, abstracting away the LocalBlue.ai platform post-creation.
+- **Custom Domain Management**: Contractors manage their sites directly from their custom domain, abstracting away the LocalBlue platform post-creation.
 - **Modern Web Technologies**: Leverages a modern stack for both backend and frontend development to ensure scalability, performance, and a rich user experience.
 
 ### Backend

@@ -20,7 +20,7 @@ export default function DomainSetup({ site }: DomainSetupProps) {
   const [customDomain, setCustomDomain] = useState(site.customDomain || "");
   const [copied, setCopied] = useState(false);
 
-  const subdomainUrl = `${site.subdomain}.localblue.ai`;
+  const subdomainUrl = `${site.subdomain}.localblue`;
 
   const updateDomainMutation = useMutation({
     mutationFn: async (domain: string | null) => {
@@ -144,12 +144,12 @@ export default function DomainSetup({ site }: DomainSetupProps) {
                     <span><strong>Host/Name:</strong> {customDomain?.startsWith("www.") ? "www" : "@"}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span><strong>Points to:</strong> localblue.ai</span>
+                    <span><strong>Points to:</strong> localblue</span>
                     <Button
                       size="sm"
                       variant="ghost"
                       className="h-6"
-                      onClick={() => copyToClipboard("localblue.ai")}
+                      onClick={() => copyToClipboard("localblue")}
                     >
                       <Copy className="h-3 w-3" />
                     </Button>

@@ -642,7 +642,7 @@ export default function Onboarding() {
 
                 <div className="p-2 border-t bg-muted/30 text-center">
                   <p className="text-[10px] text-muted-foreground">
-                    Powered by LocalBlue.ai
+                    Powered by LocalBlue
                   </p>
                 </div>
               </div>

@@ -1260,7 +1260,7 @@ function Footer({ site }: { site: Site }) {
               &copy; {currentYear} {site.businessName}. All rights reserved.
             </p>
             <p className="text-background/40 text-sm">
-              Powered by LocalBlue.ai
+              Powered by LocalBlue
             </p>
           </div>
         </div>

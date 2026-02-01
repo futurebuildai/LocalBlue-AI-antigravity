@@ -32,7 +32,7 @@ const features = [
   {
     icon: Globe,
     title: "Your Domain, Your Brand",
-    description: "Manage everything from admin.yoursite.com - not on LocalBlue.ai. Your customers see only your brand.",
+    description: "Manage everything from admin.yoursite.com - not on LocalBlue. Your customers see only your brand.",
     gradient: "from-violet-500 to-purple-600",
   },
   {
@@ -98,7 +98,7 @@ const pricingPlans = [
     icon: Rocket,
     features: [
       "AI-built professional website",
-      "LocalBlue.ai subdomain",
+      "LocalBlue subdomain",
       "Contact form with email alerts",
       "Mobile-responsive design",
       "Basic SEO optimization",
@@ -160,7 +160,7 @@ export default function Landing() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-white font-bold text-lg shadow-lg">
               LB
             </div>
-            <span className="text-xl font-bold tracking-tight">LocalBlue<span className="gradient-text">.ai</span></span>
+            <span className="text-xl font-bold tracking-tight">LocalBlue</span>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <Link href="/signup">
@@ -213,7 +213,7 @@ export default function Landing() {
               data-testid="text-hero-subheadline"
             >
               Just chat with our AI, and we'll create a stunning website for your business. 
-              Manage everything from your own domain - your customers never see LocalBlue.ai.
+              Manage everything from your own domain - your customers never see LocalBlue.
             </p>
             
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row flex-wrap">
@@ -372,7 +372,7 @@ export default function Landing() {
                 <span className="gradient-text"> Contractors</span>
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-lg">
-                See what business owners like you are saying about LocalBlue.ai
+                See what business owners like you are saying about LocalBlue
               </p>
             </div>
 
@@ -489,7 +489,7 @@ export default function Landing() {
               Ready to Build Your Website?
             </h2>
             <p className="text-white/80 text-lg md:text-xl mb-10 max-w-2xl mx-auto">
-              Join hundreds of contractors who have already launched their professional websites with LocalBlue.ai
+              Join hundreds of contractors who have already launched their professional websites with LocalBlue
             </p>
             <Link href="/signup">
               <Button 
@@ -514,10 +514,10 @@ export default function Landing() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-white font-bold text-lg">
                 LB
               </div>
-              <span className="text-lg font-bold">LocalBlue<span className="text-primary">.ai</span></span>
+              <span className="text-lg font-bold">LocalBlue</span>
             </div>
             <p className="text-muted-foreground text-sm" data-testid="footer-copyright">
-              &copy; {new Date().getFullYear()} LocalBlue.ai. All rights reserved.
+              &copy; {new Date().getFullYear()} LocalBlue. All rights reserved.
             </p>
           </div>
         </div>

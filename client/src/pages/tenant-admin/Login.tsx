@@ -138,7 +138,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         </Card>
 
         <p className="text-center text-white/50 text-sm mt-6">
-          Powered by LocalBlue.ai
+          Powered by LocalBlue
         </p>
       </div>
     </div>

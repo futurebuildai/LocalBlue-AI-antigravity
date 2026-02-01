@@ -131,19 +131,19 @@ export async function sendLeadNotification(data: LeadNotificationData): Promise<
     </div>
     
     <p style="margin: 24px 0 0; text-align: center; color: #94a3b8; font-size: 14px;">
-      This lead was submitted through your ${safeBusinessName} website powered by LocalBlue.ai
+      This lead was submitted through your ${safeBusinessName} website powered by LocalBlue
     </p>
   </div>
   
   <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-    <p style="margin: 0;">Powered by <a href="https://localblue.ai" style="color: #2563eb; text-decoration: none;">LocalBlue.ai</a></p>
+    <p style="margin: 0;">Powered by <a href="https://localblue" style="color: #2563eb; text-decoration: none;">LocalBlue</a></p>
   </div>
 </body>
 </html>
     `;
 
     const result = await client.emails.send({
-      from: fromEmail || 'LocalBlue.ai <notifications@localblue.ai>',
+      from: fromEmail || 'LocalBlue <notifications@localblue>',
       to: data.businessEmail,
       subject: `New Lead: ${data.leadName} - ${data.businessName}`,
       html: emailHtml,
@@ -168,8 +168,8 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   try {
     const { client, fromEmail } = await getResendClient();
     
-    const siteUrl = `https://${data.subdomain}.localblue.ai`;
-    const adminUrl = `https://admin.${data.subdomain}.localblue.ai`;
+    const siteUrl = `https://${data.subdomain}.localblue`;
+    const adminUrl = `https://admin.${data.subdomain}.localblue`;
     
     const emailHtml = `
 <!DOCTYPE html>
@@ -177,11 +177,11 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to LocalBlue.ai</title>
+  <title>Welcome to LocalBlue</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 30px; border-radius: 12px 12px 0 0; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to LocalBlue.ai!</h1>
+    <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to LocalBlue!</h1>
     <p style="color: rgba(255,255,255,0.9); margin: 16px 0 0; font-size: 18px;">Your professional website is ready</p>
   </div>
   
@@ -224,14 +224,14 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   </div>
   
   <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-    <p style="margin: 0;">Powered by <a href="https://localblue.ai" style="color: #2563eb; text-decoration: none;">LocalBlue.ai</a></p>
+    <p style="margin: 0;">Powered by <a href="https://localblue" style="color: #2563eb; text-decoration: none;">LocalBlue</a></p>
   </div>
 </body>
 </html>
     `;
 
     const result = await client.emails.send({
-      from: fromEmail || 'LocalBlue.ai <hello@localblue.ai>',
+      from: fromEmail || 'LocalBlue <hello@localblue>',
       to: data.businessEmail,
       subject: `Your ${data.businessName} website is ready!`,
       html: emailHtml,

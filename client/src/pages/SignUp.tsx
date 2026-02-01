@@ -185,7 +185,7 @@ export default function SignUp() {
               Get your professional website in minutes
             </h2>
             <p className="text-white/70 text-lg mb-10">
-              Join hundreds of contractors who trust LocalBlue.ai to power their online presence.
+              Join hundreds of contractors who trust LocalBlue to power their online presence.
             </p>
             
             <div className="space-y-4">

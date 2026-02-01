@@ -199,7 +199,7 @@ export default function SiteDetail() {
                   }
                 </Badge>
               )}
-              <span className="text-sm text-muted-foreground">{site.subdomain}.localblue.ai</span>
+              <span className="text-sm text-muted-foreground">{site.subdomain}.localblue</span>
             </div>
           </div>
         </div>

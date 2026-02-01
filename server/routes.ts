@@ -1208,7 +1208,7 @@ IMPORTANT:
   // Onboarding API Routes
   // ============================================
 
-  const ENHANCED_ONBOARDING_PROMPT = `You are an expert website consultant for LocalBlue.ai, helping contractors create spectacular, best-in-class websites. Your goal is to have a thorough 5-15 minute conversation to deeply understand their business and create a truly personalized website.
+  const ENHANCED_ONBOARDING_PROMPT = `You are an expert website consultant for LocalBlue, helping contractors create spectacular, best-in-class websites. Your goal is to have a thorough 5-15 minute conversation to deeply understand their business and create a truly personalized website.
 
 ## CONVERSATION PHASES
 You must progress through these phases one at a time, asking only ONE question per response:
@@ -1953,7 +1953,7 @@ Return ONLY valid JSON.`;
       const isDev = process.env.NODE_ENV === "development";
       const redirectUrl = isDev 
         ? `/preview/${site.subdomain}`
-        : `https://${site.subdomain}.localblue.ai/`;
+        : `https://${site.subdomain}.localblue/`;
 
       res.json({
         success: true,

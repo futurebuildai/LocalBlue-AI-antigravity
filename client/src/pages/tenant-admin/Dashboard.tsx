@@ -32,7 +32,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
 
   const publicUrl = site.customDomain 
     ? `https://${site.customDomain}`
-    : `https://${site.subdomain}.localblue.ai`;
+    : `https://${site.subdomain}.localblue`;
 
   const copyUrl = () => {
     navigator.clipboard.writeText(publicUrl);
@@ -227,7 +227,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {site.customDomain || `${site.subdomain}.localblue.ai`}
+              {site.customDomain || `${site.subdomain}.localblue`}
             </p>
           </CardContent>
         </Card>
@@ -375,7 +375,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Subdomain</span>
-              <span className="font-medium">{site.subdomain}.localblue.ai</span>
+              <span className="font-medium">{site.subdomain}.localblue</span>
             </div>
             {site.customDomain && (
               <div className="flex justify-between gap-4">

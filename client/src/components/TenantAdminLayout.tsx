@@ -134,7 +134,7 @@ export default function TenantAdminLayout({ site, user, onLogout, children }: Te
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <a 
-                        href={site.customDomain ? `https://${site.customDomain}` : `https://${site.subdomain}.localblue.ai`}
+                        href={site.customDomain ? `https://${site.customDomain}` : `https://${site.subdomain}.localblue`}
                         target="_blank"
                         rel="noopener noreferrer"
                         data-testid="link-view-site"

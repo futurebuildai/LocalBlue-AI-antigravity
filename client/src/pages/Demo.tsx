@@ -325,7 +325,7 @@ export default function Demo() {
                 Ready to Build Your Contractor Website?
               </h2>
               <p className="text-blue-200 mb-4">
-                Join 500+ contractors who've built professional websites with LocalBlue.ai.
+                Join 500+ contractors who've built professional websites with LocalBlue.
               </p>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link href="/signup">

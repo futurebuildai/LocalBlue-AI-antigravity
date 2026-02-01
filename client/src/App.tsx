@@ -65,7 +65,7 @@ function AppSidebar() {
             LB
           </div>
           <div>
-            <h2 className="text-sm font-bold">LocalBlue<span className="text-primary">.ai</span></h2>
+            <h2 className="text-sm font-bold">LocalBlue</h2>
             <p className="text-xs text-muted-foreground">Platform Admin</p>
           </div>
         </div>
@@ -201,15 +201,15 @@ type DomainType = "tenantAdmin" | "tenantPublic" | "main";
 function detectDomainType(): DomainType {
   const hostname = window.location.hostname;
   
-  // Check if this is an admin subdomain (admin.acme.localblue.ai or admin.acme.localhost)
+  // Check if this is an admin subdomain (admin.acme.localblue or admin.acme.localhost)
   if (hostname.startsWith("admin.")) {
     return "tenantAdmin";
   }
   
   // Main site: localhost without subdomain, or the main domain
   if (hostname === "localhost" || 
-      hostname === "localblue.ai" ||
-      hostname === "www.localblue.ai") {
+      hostname === "localblue" ||
+      hostname === "www.localblue") {
     return "main";
   }
   
@@ -232,12 +232,12 @@ function detectDomainType(): DomainType {
     return "tenantPublic";
   }
   
-  // Check if this is a subdomain of localblue.ai or localhost (tenant public site)
+  // Check if this is a subdomain of localblue or localhost (tenant public site)
   const parts = hostname.split(".");
   if (parts.length >= 2) {
     const tld = parts.slice(-1)[0];
-    // Subdomain patterns like: acme.localblue.ai, acme.localhost
-    if (tld === "localhost" || hostname.endsWith(".localblue.ai")) {
+    // Subdomain patterns like: acme.localblue, acme.localhost
+    if (tld === "localhost" || hostname.endsWith(".localblue")) {
       return "tenantPublic";
     }
   }
@@ -277,11 +277,11 @@ function TenantPublicApp() {
             The site you're looking for doesn't exist or hasn't been configured yet.
           </p>
           <a 
-            href="https://localblue.ai" 
+            href="https://localblue" 
             className="inline-flex items-center gap-2 text-foreground hover:text-muted-foreground transition-colors"
             data-testid="link-localblue"
           >
-            Visit LocalBlue.ai
+            Visit LocalBlue
             <ArrowRight className="h-4 w-4" />
           </a>
         </div>
