@@ -4,7 +4,6 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { seedDatabase } from "./seed";
-import { clerkMiddleware } from "./middleware/clerkMiddleware";
 
 const app = express();
 const httpServer = createServer(app);
@@ -49,8 +48,6 @@ app.use(
     },
   })
 );
-
-app.use(clerkMiddleware());
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
