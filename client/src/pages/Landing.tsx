@@ -227,15 +227,17 @@ export default function Landing() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Button 
-                size="lg" 
-                variant="outline"
-                className="bg-white/5 border-white/20 text-white"
-                data-testid="button-hero-demo"
-              >
-                <Play className="mr-2 h-5 w-5" />
-                Watch Demo
-              </Button>
+              <Link href="/demo">
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="bg-white/5 border-white/20 text-white"
+                  data-testid="button-hero-demo"
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  Watch Demo
+                </Button>
+              </Link>
             </div>
 
             {/* Trust badges */}

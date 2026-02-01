@@ -36,6 +36,7 @@ import TenantLeads from "@/pages/tenant-admin/Leads";
 import TenantAdminLayout from "@/components/TenantAdminLayout";
 import PublicSite from "@/pages/PublicSite";
 import PreviewSite from "@/pages/PreviewSite";
+import Demo from "@/pages/Demo";
 import type { Site, User } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -292,6 +293,7 @@ function MainSiteApp() {
   return (
     <Switch>
       <Route path="/landing" component={Landing} />
+      <Route path="/demo" component={Demo} />
       <Route path="/signup" component={SignUp} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/preview/:subdomain" component={PreviewSite} />
