@@ -280,32 +280,35 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Smooth gradient transition to next section */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+          {/* Smooth gradient transition to dark stats section */}
+          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
         </section>
 
-        {/* Stats Section */}
-        <section className="py-20 bg-background relative" data-testid="section-stats">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
+        {/* Stats Section - Dark striking background */}
+        <section className="py-24 relative section-gradient-dark" data-testid="section-stats">
+          <div className="absolute inset-0 mesh-gradient opacity-50" />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
               {stats.map((stat, index) => (
                 <div key={index} className="text-center group" data-testid={`stat-${index}`}>
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/10 to-violet-500/10 mb-5 group-hover:scale-105 transition-transform">
-                    <stat.icon className="h-6 w-6 text-primary" />
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 border border-white/10 mb-6 group-hover:scale-110 transition-transform pulse-glow">
+                    <stat.icon className="h-7 w-7 text-blue-400" />
                   </div>
-                  <div className="text-4xl md:text-5xl font-bold gradient-text mb-2 tracking-tight">{stat.value}</div>
-                  <div className="text-muted-foreground text-sm font-medium">{stat.label}</div>
+                  <div className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-white via-blue-100 to-violet-200 bg-clip-text text-transparent mb-3 tracking-tight">{stat.value}</div>
+                  <div className="text-white/60 text-sm font-medium tracking-wide uppercase">{stat.label}</div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Features Section */}
-        <section id="features" className="py-24 md:py-32 bg-muted/20 scroll-mt-20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Features Section - Vibrant with gradient accents */}
+        <section id="features" className="py-24 md:py-32 relative scroll-mt-20 overflow-hidden">
+          <div className="absolute inset-0 section-gradient-accent" />
+          <div className="absolute inset-0 grid-pattern" />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-6">
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-500/10 to-violet-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-sm font-semibold mb-8 shimmer">
                 <Zap className="h-4 w-4" />
                 Features
               </div>
@@ -322,14 +325,14 @@ export default function Landing() {
               {features.map((feature, index) => (
                 <Card 
                   key={index} 
-                  className="group hover-elevate border border-border/50 shadow-sm bg-card overflow-visible"
+                  className="group card-lift border border-border/50 shadow-lg bg-card/80 backdrop-blur-sm overflow-visible border-accent-top"
                   data-testid={`card-feature-${index}`}
                 >
-                  <CardContent className="p-8">
-                    <div className={`mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${feature.gradient} shadow-lg shadow-primary/10 group-hover:scale-105 transition-transform duration-300`}>
-                      <feature.icon className="h-6 w-6 text-white" />
+                  <CardContent className="p-8 pt-10">
+                    <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.gradient} shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300`}>
+                      <feature.icon className="h-7 w-7 text-white" />
                     </div>
-                    <h3 className="mb-3 text-xl font-semibold tracking-tight">{feature.title}</h3>
+                    <h3 className="mb-3 text-xl font-bold tracking-tight">{feature.title}</h3>
                     <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                   </CardContent>
                 </Card>
@@ -338,36 +341,37 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="py-24 md:py-32 scroll-mt-20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* How It Works Section - Dark immersive */}
+        <section id="how-it-works" className="py-24 md:py-32 relative scroll-mt-20 section-gradient-dark overflow-hidden">
+          <div className="absolute inset-0 mesh-gradient opacity-40" />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-6">
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold mb-8 shimmer">
                 <Rocket className="h-4 w-4" />
                 How It Works
               </div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight text-white">
                 Three Simple Steps to
-                <span className="gradient-text block sm:inline"> Launch</span>
+                <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent block sm:inline"> Launch</span>
               </h2>
-              <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg font-light leading-relaxed">
+              <p className="mx-auto mt-6 max-w-2xl text-white/60 text-lg font-light leading-relaxed">
                 From sign-up to live website in under 5 minutes. It's that easy.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 md:gap-16">
+            <div className="grid md:grid-cols-3 gap-8 md:gap-12">
               {steps.map((step, index) => (
                 <div key={index} className="relative group">
                   {/* Connector line */}
                   {index < steps.length - 1 && (
-                    <div className="hidden md:block absolute top-10 left-full w-full h-px bg-gradient-to-r from-border to-transparent" />
+                    <div className="hidden md:block absolute top-12 left-full w-full h-px bg-gradient-to-r from-emerald-500/50 via-cyan-500/30 to-transparent" />
                   )}
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl gradient-primary text-white text-2xl font-bold mb-8 shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+                  <div className="text-center p-8 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 group-hover:bg-white/10 group-hover:border-emerald-500/30 transition-all duration-300">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white text-2xl font-bold mb-8 shadow-xl shadow-emerald-500/30 group-hover:scale-110 group-hover:shadow-emerald-500/50 transition-all duration-300">
                       {step.number}
                     </div>
-                    <h3 className="text-xl font-semibold mb-4 tracking-tight">{step.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{step.description}</p>
+                    <h3 className="text-xl font-bold mb-4 tracking-tight text-white">{step.title}</h3>
+                    <p className="text-white/60 leading-relaxed">{step.description}</p>
                   </div>
                 </div>
               ))}
@@ -375,17 +379,19 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Testimonials Section */}
-        <section className="py-24 md:py-32 bg-muted/20">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Testimonials Section - Warm amber accents */}
+        <section className="py-24 md:py-32 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-rose-500/5" />
+          <div className="absolute inset-0 grid-pattern" />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-6">
-                <Star className="h-4 w-4" />
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-semibold mb-8 shimmer">
+                <Star className="h-4 w-4 fill-current" />
                 Testimonials
               </div>
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
                 Loved by
-                <span className="gradient-text"> Contractors</span>
+                <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent"> Contractors</span>
               </h2>
               <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg font-light leading-relaxed">
                 See what business owners like you are saying about LocalBlue
@@ -394,21 +400,21 @@ export default function Landing() {
 
             <div className="grid md:grid-cols-3 gap-6">
               {testimonials.map((testimonial, index) => (
-                <Card key={index} className="hover-elevate border border-border/50 shadow-sm bg-card overflow-visible">
+                <Card key={index} className="card-lift border border-border/50 shadow-lg bg-card/80 backdrop-blur-sm overflow-visible">
                   <CardContent className="p-8">
-                    <div className="flex gap-0.5 mb-5">
+                    <div className="flex gap-1 mb-6">
                       {Array.from({ length: testimonial.rating }).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                        <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400 drop-shadow-sm" />
                       ))}
                     </div>
-                    <p className="text-foreground text-base mb-6 leading-relaxed font-light">"{testimonial.quote}"</p>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-white text-sm font-semibold">
+                    <p className="text-foreground text-lg mb-8 leading-relaxed font-light italic">"{testimonial.quote}"</p>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold shadow-lg shadow-amber-500/20">
                         {testimonial.name.charAt(0)}
                       </div>
                       <div>
-                        <div className="font-medium text-sm">{testimonial.name}</div>
-                        <div className="text-xs text-muted-foreground">{testimonial.role}</div>
+                        <div className="font-semibold">{testimonial.name}</div>
+                        <div className="text-sm text-muted-foreground">{testimonial.role}</div>
                       </div>
                     </div>
                   </CardContent>
@@ -418,19 +424,20 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Pricing Section */}
-        <section id="pricing" className="py-24 md:py-32 scroll-mt-20" data-testid="section-pricing">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Pricing Section - Dark with purple accents */}
+        <section id="pricing" className="py-24 md:py-32 relative scroll-mt-20 section-gradient-dark overflow-hidden" data-testid="section-pricing">
+          <div className="absolute inset-0 mesh-gradient opacity-30" />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-6">
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 text-violet-400 text-sm font-semibold mb-8 shimmer">
                 <Crown className="h-4 w-4" />
                 Pricing
               </div>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight text-white">
                 Simple, Transparent
-                <span className="gradient-text block sm:inline"> Pricing</span>
+                <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent block sm:inline"> Pricing</span>
               </h2>
-              <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg font-light leading-relaxed">
+              <p className="mx-auto mt-6 max-w-2xl text-white/60 text-lg font-light leading-relaxed">
                 Start free and upgrade as your business grows. No hidden fees, no surprises.
               </p>
             </div>
@@ -439,33 +446,33 @@ export default function Landing() {
               {pricingPlans.map((plan, index) => (
                 <Card 
                   key={index} 
-                  className={`relative hover-elevate border shadow-sm bg-card overflow-visible ${plan.popular ? 'border-primary/50 shadow-lg shadow-primary/10' : 'border-border/50'}`}
+                  className={`relative card-lift border bg-white/5 backdrop-blur-sm overflow-visible ${plan.popular ? 'border-violet-500/50 shadow-2xl shadow-violet-500/20 scale-105' : 'border-white/10'}`}
                   data-testid={`card-pricing-${plan.name.toLowerCase()}`}
                 >
                   {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground px-3 py-0.5 text-xs shadow-md">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-gradient-to-r from-violet-500 to-purple-500 text-white px-4 py-1 text-xs shadow-lg shadow-violet-500/30 shimmer">
                         Most Popular
                       </Badge>
                     </div>
                   )}
-                  <CardHeader className="text-center pb-2 pt-8">
-                    <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${plan.gradient} shadow-md`}>
-                      <plan.icon className="h-6 w-6 text-white" />
+                  <CardHeader className="text-center pb-2 pt-10">
+                    <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${plan.gradient} shadow-xl`}>
+                      <plan.icon className="h-7 w-7 text-white" />
                     </div>
-                    <CardTitle className="text-lg font-semibold">{plan.name}</CardTitle>
-                    <CardDescription className="text-sm">{plan.description}</CardDescription>
+                    <CardTitle className="text-xl font-bold text-white">{plan.name}</CardTitle>
+                    <CardDescription className="text-white/50">{plan.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="text-center">
-                    <div className="mb-6">
-                      <span className="text-5xl font-bold tracking-tight">{plan.price}</span>
-                      <span className="text-muted-foreground ml-1 text-sm">{plan.priceDetail}</span>
+                    <div className="mb-8">
+                      <span className="text-5xl font-bold tracking-tight text-white">{plan.price}</span>
+                      <span className="text-white/40 ml-1 text-sm">{plan.priceDetail}</span>
                     </div>
-                    <ul className="space-y-3 text-left mb-6">
+                    <ul className="space-y-4 text-left mb-8">
                       {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2.5">
-                          <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                          <span className="text-sm text-muted-foreground">{feature}</span>
+                        <li key={i} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-violet-400 mt-0.5 shrink-0" />
+                          <span className="text-sm text-white/70">{feature}</span>
                         </li>
                       ))}
                     </ul>
@@ -473,7 +480,7 @@ export default function Landing() {
                   <CardFooter className="pb-8">
                     <Link href="/signup" className="w-full">
                       <Button 
-                        className={`w-full ${plan.popular ? 'gradient-primary text-white shadow-md' : ''}`}
+                        className={`w-full ${plan.popular ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/30 border-0' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
                         variant={plan.popular ? "default" : "outline"}
                         data-testid={`button-pricing-${plan.name.toLowerCase()}`}
                       >
@@ -487,24 +494,25 @@ export default function Landing() {
             </div>
 
             <div className="mt-16 text-center">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-white/40 text-sm">
                 All plans include a 14-day money-back guarantee. No questions asked.
               </p>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
+        {/* CTA Section - Vibrant gradient */}
         <section className="py-24 md:py-32 relative overflow-hidden">
-          {/* Dark immersive background matching hero */}
-          <div className="absolute inset-0 gradient-hero-dark" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(221_80%_30%/0.4),transparent_70%)]" />
+          {/* Vibrant gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-violet-600 to-purple-700" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.1),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(0,0,0,0.2),transparent_50%)]" />
           
           <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 tracking-tight" data-testid="text-cta-title">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 tracking-tight drop-shadow-lg" data-testid="text-cta-title">
               Ready to Build Your Website?
             </h2>
-            <p className="text-white/60 text-lg md:text-xl mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+            <p className="text-white/80 text-lg md:text-xl mb-12 max-w-2xl mx-auto font-light leading-relaxed">
               Join hundreds of contractors who have already launched their professional websites with LocalBlue
             </p>
             <Link href="/signup">
@@ -522,23 +530,23 @@ export default function Landing() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-card border-t py-16" data-testid="footer">
+      {/* Footer - Dark matching sections */}
+      <footer className="bg-slate-950 border-t border-white/5 py-16" data-testid="footer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex flex-col items-center md:items-start gap-4">
-              <Logo size="md" />
-              <p className="text-muted-foreground text-sm max-w-xs text-center md:text-left">
+              <Logo size="md" variant="light" />
+              <p className="text-white/50 text-sm max-w-xs text-center md:text-left">
                 Build professional contractor websites in minutes with AI.
               </p>
             </div>
             <div className="flex flex-col items-center md:items-end gap-4">
               <nav className="flex items-center gap-6 flex-wrap">
-                <a href="#features" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-features">Features</a>
-                <a href="#pricing" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-pricing">Pricing</a>
-                <Link href="/demo" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-demo">Demo</Link>
+                <a href="#features" className="text-sm text-white/50 hover:text-white transition-colors" data-testid="link-footer-features">Features</a>
+                <a href="#pricing" className="text-sm text-white/50 hover:text-white transition-colors" data-testid="link-footer-pricing">Pricing</a>
+                <Link href="/demo" className="text-sm text-white/50 hover:text-white transition-colors" data-testid="link-footer-demo">Demo</Link>
               </nav>
-              <p className="text-muted-foreground text-sm" data-testid="footer-copyright">
+              <p className="text-white/30 text-sm" data-testid="footer-copyright">
                 &copy; {new Date().getFullYear()} LocalBlue. All rights reserved.
               </p>
             </div>
