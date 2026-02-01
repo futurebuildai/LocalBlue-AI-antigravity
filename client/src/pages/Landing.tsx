@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/Logo";
+import { TypewriterText } from "@/components/TypewriterText";
+import { FloatingIcons } from "@/components/FloatingIcons";
 import { 
   MessageSquare, 
   Globe, 
@@ -160,7 +162,7 @@ export default function Landing() {
         <div className="relative max-w-7xl mx-auto flex h-16 items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
           <Logo size="md" linkTo="/" />
           
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-8 flex-wrap">
             <a href="#features" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="link-nav-features">
               Features
             </a>
@@ -175,7 +177,7 @@ export default function Landing() {
             </Link>
           </nav>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Link href="/login" className="hidden sm:block">
               <Button variant="ghost" size="sm" data-testid="link-header-login">
                 Sign In
@@ -192,53 +194,56 @@ export default function Landing() {
       </header>
 
       <main>
-        {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center pt-16">
-          {/* Background */}
-          <div className="absolute inset-0 gradient-hero" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(120,119,198,0.15),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(59,130,246,0.15),transparent_50%)]" />
+        {/* Hero Section - Modern Antigravity-inspired design */}
+        <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
+          {/* Dark immersive background */}
+          <div className="absolute inset-0 gradient-hero-dark" />
           
-          {/* Floating elements */}
-          <div className="absolute top-1/4 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow" />
-          <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }} />
+          {/* Subtle glow orbs */}
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] animate-pulse-slow" />
+          <div className="absolute bottom-1/3 right-1/4 w-[600px] h-[600px] bg-violet-600/15 rounded-full blur-[150px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[180px]" />
           
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:72px_72px]" />
+          {/* Floating icons */}
+          <FloatingIcons />
+          
+          {/* Subtle grid pattern */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
-          <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-20">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-sm mb-8 animate-float">
-              <Sparkles className="h-4 w-4 text-amber-400" />
-              <span>AI-Powered Website Builder for Contractors</span>
+          <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-24">
+            {/* Animated badge */}
+            <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/80 text-sm mb-10 animate-fade-in-up glow-subtle">
+              <Sparkles className="h-4 w-4 text-blue-400" />
+              <span className="font-medium tracking-wide">AI-Powered Website Builder for Contractors</span>
             </div>
 
+            {/* Large bold headline with typewriter effect */}
             <h1 
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-[1.1] tracking-tight"
+              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-[1.05] tracking-tight animate-fade-in-up delay-100"
               data-testid="text-hero-headline"
+              style={{ opacity: 0, animationFillMode: 'forwards' }}
             >
-              Build Your Professional
-              <br />
-              <span className="bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
-                Contractor Website
+              <span className="block">Build Your</span>
+              <span className="block mt-2 bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 bg-clip-text text-transparent glow-text">
+                <TypewriterText text="Contractor Website" speed={60} delay={500} />
               </span>
-              <br />
-              in Minutes
+              <span className="block mt-2 text-white/90">in Minutes</span>
             </h1>
             
             <p 
-              className="mx-auto mt-6 max-w-2xl text-lg sm:text-xl text-white/70 leading-relaxed"
+              className="mx-auto mt-8 max-w-2xl text-lg sm:text-xl text-white/60 leading-relaxed font-light animate-fade-in-up delay-300"
               data-testid="text-hero-subheadline"
+              style={{ opacity: 0, animationFillMode: 'forwards' }}
             >
               Just chat with our AI, and we'll create a stunning website for your business. 
-              Manage everything from your own domain - your customers never see LocalBlue.
+              Your customers only see your brand - never LocalBlue.
             </p>
             
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row flex-wrap">
+            <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row animate-fade-in-up delay-500" style={{ opacity: 0, animationFillMode: 'forwards' }}>
               <Link href="/signup">
                 <Button 
                   size="lg" 
-                  className="bg-white text-slate-900 border-white shadow-xl"
+                  className="bg-white text-slate-900 border-white shadow-2xl shadow-white/20 font-semibold"
                   data-testid="button-hero-cta"
                 >
                   Build Your Site Free
@@ -249,7 +254,7 @@ export default function Landing() {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="bg-white/5 border-white/20 text-white"
+                  className="bg-white/5 border-white/20 text-white backdrop-blur-sm"
                   data-testid="button-hero-demo"
                 >
                   <Play className="mr-2 h-5 w-5" />
@@ -259,44 +264,37 @@ export default function Landing() {
             </div>
 
             {/* Trust badges */}
-            <div className="mt-16 flex flex-wrap items-center justify-center gap-6 text-white/80 text-sm">
-              <div className="flex items-center gap-2" data-testid="badge-no-credit-card">
-                <Shield className="h-5 w-5 text-emerald-400" />
-                <span>No Credit Card Required</span>
+            <div className="mt-20 flex flex-wrap items-center justify-center gap-8 text-white/50 text-sm animate-fade-in-up delay-700" style={{ opacity: 0, animationFillMode: 'forwards' }}>
+              <div className="flex items-center gap-2.5" data-testid="badge-no-credit-card">
+                <Shield className="h-4 w-4 text-emerald-400/80" />
+                <span className="font-medium">No Credit Card Required</span>
               </div>
-              <div className="flex items-center gap-2" data-testid="badge-free-plan">
-                <CheckCircle className="h-5 w-5 text-emerald-400" />
-                <span>Free Forever Plan</span>
+              <div className="flex items-center gap-2.5" data-testid="badge-free-plan">
+                <CheckCircle className="h-4 w-4 text-emerald-400/80" />
+                <span className="font-medium">Free Forever Plan</span>
               </div>
-              <div className="flex items-center gap-2" data-testid="badge-launch-time">
-                <Rocket className="h-5 w-5 text-emerald-400" />
-                <span>Launch in 5 Minutes</span>
+              <div className="flex items-center gap-2.5" data-testid="badge-launch-time">
+                <Rocket className="h-4 w-4 text-emerald-400/80" />
+                <span className="font-medium">Launch in 5 Minutes</span>
               </div>
             </div>
           </div>
 
-          {/* Wave divider */}
-          <div className="absolute bottom-0 left-0 right-0">
-            <svg className="w-full h-24" viewBox="0 0 1440 100" preserveAspectRatio="none">
-              <path 
-                d="M0,100 L0,40 Q360,80 720,40 T1440,40 L1440,100 Z" 
-                className="fill-background"
-              />
-            </svg>
-          </div>
+          {/* Smooth gradient transition to next section */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
         </section>
 
         {/* Stats Section */}
-        <section className="py-16 bg-background relative" data-testid="section-stats">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <section className="py-20 bg-background relative" data-testid="section-stats">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
               {stats.map((stat, index) => (
-                <div key={index} className="text-center" data-testid={`stat-${index}`}>
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
+                <div key={index} className="text-center group" data-testid={`stat-${index}`}>
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/10 to-violet-500/10 mb-5 group-hover:scale-105 transition-transform">
                     <stat.icon className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">{stat.value}</div>
-                  <div className="text-muted-foreground text-sm">{stat.label}</div>
+                  <div className="text-4xl md:text-5xl font-bold gradient-text mb-2 tracking-tight">{stat.value}</div>
+                  <div className="text-muted-foreground text-sm font-medium">{stat.label}</div>
                 </div>
               ))}
             </div>
@@ -304,34 +302,34 @@ export default function Landing() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-20 md:py-32 bg-muted/30 scroll-mt-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+        <section id="features" className="py-24 md:py-32 bg-muted/20 scroll-mt-20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-6">
                 <Zap className="h-4 w-4" />
                 Features
               </div>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4" data-testid="text-features-title">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight" data-testid="text-features-title">
                 Everything You Need to
-                <span className="gradient-text"> Get Online</span>
+                <span className="gradient-text block sm:inline"> Get Online</span>
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-lg">
+              <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg font-light leading-relaxed">
                 No technical skills required. Our AI handles the hard work so you can focus on your business.
               </p>
             </div>
             
-            <div className="grid gap-8 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-3">
               {features.map((feature, index) => (
                 <Card 
                   key={index} 
-                  className="group hover-elevate border-0 shadow-lg bg-card/80 backdrop-blur-sm overflow-visible"
+                  className="group hover-elevate border border-border/50 shadow-sm bg-card overflow-visible"
                   data-testid={`card-feature-${index}`}
                 >
                   <CardContent className="p-8">
-                    <div className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                      <feature.icon className="h-7 w-7 text-white" />
+                    <div className={`mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${feature.gradient} shadow-lg shadow-primary/10 group-hover:scale-105 transition-transform duration-300`}>
+                      <feature.icon className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="mb-3 text-xl font-bold">{feature.title}</h3>
+                    <h3 className="mb-3 text-xl font-semibold tracking-tight">{feature.title}</h3>
                     <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                   </CardContent>
                 </Card>
@@ -341,35 +339,35 @@ export default function Landing() {
         </section>
 
         {/* How It Works Section */}
-        <section id="how-it-works" className="py-20 md:py-32 scroll-mt-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+        <section id="how-it-works" className="py-24 md:py-32 scroll-mt-20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-6">
                 <Rocket className="h-4 w-4" />
                 How It Works
               </div>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
                 Three Simple Steps to
-                <span className="gradient-text"> Launch</span>
+                <span className="gradient-text block sm:inline"> Launch</span>
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-lg">
+              <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg font-light leading-relaxed">
                 From sign-up to live website in under 5 minutes. It's that easy.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+            <div className="grid md:grid-cols-3 gap-8 md:gap-16">
               {steps.map((step, index) => (
-                <div key={index} className="relative">
+                <div key={index} className="relative group">
                   {/* Connector line */}
                   {index < steps.length - 1 && (
-                    <div className="hidden md:block absolute top-12 left-full w-full h-0.5 bg-gradient-to-r from-primary/50 to-transparent -translate-x-4" />
+                    <div className="hidden md:block absolute top-10 left-full w-full h-px bg-gradient-to-r from-border to-transparent" />
                   )}
                   <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl gradient-primary text-white text-3xl font-bold mb-6 shadow-xl shadow-primary/25">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl gradient-primary text-white text-2xl font-bold mb-8 shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
                       {step.number}
                     </div>
-                    <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-                    <p className="text-muted-foreground">{step.description}</p>
+                    <h3 className="text-xl font-semibold mb-4 tracking-tight">{step.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{step.description}</p>
                   </div>
                 </div>
               ))}
@@ -378,39 +376,39 @@ export default function Landing() {
         </section>
 
         {/* Testimonials Section */}
-        <section className="py-20 md:py-32 bg-muted/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+        <section className="py-24 md:py-32 bg-muted/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-6">
                 <Star className="h-4 w-4" />
                 Testimonials
               </div>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
                 Loved by
                 <span className="gradient-text"> Contractors</span>
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-lg">
+              <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg font-light leading-relaxed">
                 See what business owners like you are saying about LocalBlue
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-6">
               {testimonials.map((testimonial, index) => (
-                <Card key={index} className="hover-elevate border-0 shadow-lg bg-card">
+                <Card key={index} className="hover-elevate border border-border/50 shadow-sm bg-card overflow-visible">
                   <CardContent className="p-8">
-                    <div className="flex gap-1 mb-4">
+                    <div className="flex gap-0.5 mb-5">
                       {Array.from({ length: testimonial.rating }).map((_, i) => (
-                        <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />
+                        <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
-                    <p className="text-foreground text-lg mb-6 leading-relaxed">"{testimonial.quote}"</p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white font-bold">
+                    <p className="text-foreground text-base mb-6 leading-relaxed font-light">"{testimonial.quote}"</p>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-white text-sm font-semibold">
                         {testimonial.name.charAt(0)}
                       </div>
                       <div>
-                        <div className="font-semibold">{testimonial.name}</div>
-                        <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                        <div className="font-medium text-sm">{testimonial.name}</div>
+                        <div className="text-xs text-muted-foreground">{testimonial.role}</div>
                       </div>
                     </div>
                   </CardContent>
@@ -421,61 +419,61 @@ export default function Landing() {
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="py-20 md:py-32 scroll-mt-20" data-testid="section-pricing">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+        <section id="pricing" className="py-24 md:py-32 scroll-mt-20" data-testid="section-pricing">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-6">
                 <Crown className="h-4 w-4" />
                 Pricing
               </div>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
                 Simple, Transparent
-                <span className="gradient-text"> Pricing</span>
+                <span className="gradient-text block sm:inline"> Pricing</span>
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-lg">
+              <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg font-light leading-relaxed">
                 Start free and upgrade as your business grows. No hidden fees, no surprises.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {pricingPlans.map((plan, index) => (
                 <Card 
                   key={index} 
-                  className={`relative hover-elevate border-0 shadow-lg bg-card overflow-visible ${plan.popular ? 'ring-2 ring-primary shadow-xl' : ''}`}
+                  className={`relative hover-elevate border shadow-sm bg-card overflow-visible ${plan.popular ? 'border-primary/50 shadow-lg shadow-primary/10' : 'border-border/50'}`}
                   data-testid={`card-pricing-${plan.name.toLowerCase()}`}
                 >
                   {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground px-4 py-1 shadow-lg">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground px-3 py-0.5 text-xs shadow-md">
                         Most Popular
                       </Badge>
                     </div>
                   )}
-                  <CardHeader className="text-center pb-2">
-                    <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${plan.gradient} shadow-lg`}>
-                      <plan.icon className="h-7 w-7 text-white" />
+                  <CardHeader className="text-center pb-2 pt-8">
+                    <div className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${plan.gradient} shadow-md`}>
+                      <plan.icon className="h-6 w-6 text-white" />
                     </div>
-                    <CardTitle className="text-xl">{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
+                    <CardTitle className="text-lg font-semibold">{plan.name}</CardTitle>
+                    <CardDescription className="text-sm">{plan.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="text-center">
                     <div className="mb-6">
-                      <span className="text-4xl font-bold">{plan.price}</span>
-                      <span className="text-muted-foreground ml-1">{plan.priceDetail}</span>
+                      <span className="text-5xl font-bold tracking-tight">{plan.price}</span>
+                      <span className="text-muted-foreground ml-1 text-sm">{plan.priceDetail}</span>
                     </div>
                     <ul className="space-y-3 text-left mb-6">
                       {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                          <span className="text-sm">{feature}</span>
+                        <li key={i} className="flex items-start gap-2.5">
+                          <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                          <span className="text-sm text-muted-foreground">{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </CardContent>
-                  <CardFooter>
+                  <CardFooter className="pb-8">
                     <Link href="/signup" className="w-full">
                       <Button 
-                        className={`w-full ${plan.popular ? 'gradient-primary text-white shadow-lg' : ''}`}
+                        className={`w-full ${plan.popular ? 'gradient-primary text-white shadow-md' : ''}`}
                         variant={plan.popular ? "default" : "outline"}
                         data-testid={`button-pricing-${plan.name.toLowerCase()}`}
                       >
@@ -488,8 +486,8 @@ export default function Landing() {
               ))}
             </div>
 
-            <div className="mt-12 text-center">
-              <p className="text-muted-foreground">
+            <div className="mt-16 text-center">
+              <p className="text-muted-foreground text-sm">
                 All plans include a 14-day money-back guarantee. No questions asked.
               </p>
             </div>
@@ -497,29 +495,29 @@ export default function Landing() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 md:py-32 relative overflow-hidden">
-          {/* Background */}
-          <div className="absolute inset-0 gradient-primary opacity-95" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1),transparent_70%)]" />
+        <section className="py-24 md:py-32 relative overflow-hidden">
+          {/* Dark immersive background matching hero */}
+          <div className="absolute inset-0 gradient-hero-dark" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(221_80%_30%/0.4),transparent_70%)]" />
           
           <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6" data-testid="text-cta-title">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 tracking-tight" data-testid="text-cta-title">
               Ready to Build Your Website?
             </h2>
-            <p className="text-white/80 text-lg md:text-xl mb-10 max-w-2xl mx-auto">
+            <p className="text-white/60 text-lg md:text-xl mb-12 max-w-2xl mx-auto font-light leading-relaxed">
               Join hundreds of contractors who have already launched their professional websites with LocalBlue
             </p>
             <Link href="/signup">
               <Button 
                 size="lg" 
-                className="bg-white text-primary border-white shadow-xl"
+                className="bg-white text-slate-900 border-white shadow-2xl shadow-white/20 font-semibold"
                 data-testid="button-footer-cta"
               >
                 Get Started Now - It's Free
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <p className="mt-6 text-white/60 text-sm">No credit card required</p>
+            <p className="mt-8 text-white/40 text-sm font-medium">No credit card required</p>
           </div>
         </section>
       </main>
@@ -535,7 +533,7 @@ export default function Landing() {
               </p>
             </div>
             <div className="flex flex-col items-center md:items-end gap-4">
-              <nav className="flex items-center gap-6">
+              <nav className="flex items-center gap-6 flex-wrap">
                 <a href="#features" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-features">Features</a>
                 <a href="#pricing" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-pricing">Pricing</a>
                 <Link href="/demo" className="text-sm text-muted-foreground transition-colors" data-testid="link-footer-demo">Demo</Link>
