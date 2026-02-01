@@ -24,6 +24,8 @@ import UsersPage from "@/pages/admin/Users";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import SignUp from "@/pages/SignUp";
+import SignIn from "@/pages/SignIn";
+import SignUpClerk from "@/pages/SignUpClerk";
 import Onboarding from "@/pages/Onboarding";
 import TenantLogin from "@/pages/tenant-admin/Login";
 import TenantDashboard from "@/pages/tenant-admin/Dashboard";
@@ -269,6 +271,8 @@ function MainSiteApp() {
     <Switch>
       <Route path="/landing" component={Landing} />
       <Route path="/signup" component={SignUp} />
+      <Route path="/sign-in" component={SignIn} />
+      <Route path="/sign-up" component={SignUpClerk} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/preview/:subdomain" component={PreviewSite} />
       <Route path="/">
