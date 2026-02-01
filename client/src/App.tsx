@@ -49,9 +49,9 @@ interface TenantAuthResponse {
 }
 
 const navItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Sites", url: "/sites", icon: Building2 },
-  { title: "Users", url: "/users", icon: Users },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Sites", url: "/admin/sites", icon: Building2 },
+  { title: "Users", url: "/admin/users", icon: Users },
 ];
 
 function AppSidebar() {
@@ -96,10 +96,10 @@ function AppSidebar() {
 function PlatformAdminRouter() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/sites/:siteId" component={SiteDetail} />
-      <Route path="/sites" component={Sites} />
-      <Route path="/users" component={UsersPage} />
+      <Route path="/admin" component={Dashboard} />
+      <Route path="/admin/sites/:siteId" component={SiteDetail} />
+      <Route path="/admin/sites" component={Sites} />
+      <Route path="/admin/users" component={UsersPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -301,11 +301,11 @@ function MainSiteApp() {
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/preview/:subdomain" component={PreviewSite} />
       <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
+      <Route path="/admin/:rest*" component={PlatformAdmin} />
+      <Route path="/admin" component={PlatformAdmin} />
       <Route path="/">
         <Landing />
       </Route>
-      <Route path="/sites" component={Sites} />
-      <Route path="/users" component={UsersPage} />
       <Route component={NotFound} />
     </Switch>
   );

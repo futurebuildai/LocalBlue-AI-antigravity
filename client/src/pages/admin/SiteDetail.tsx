@@ -135,7 +135,7 @@ export default function SiteDetail() {
         <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium">Site not found</h3>
         <p className="text-muted-foreground text-sm mb-4">The site you're looking for doesn't exist.</p>
-        <Link href="/sites">
+        <Link href="/admin/sites">
           <Button variant="outline" data-testid="button-back-to-sites">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Sites
@@ -160,7 +160,7 @@ export default function SiteDetail() {
       {/* Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
-          <Link href="/sites">
+          <Link href="/admin/sites">
             <Button variant="ghost" size="icon" data-testid="button-back-to-sites">
               <ArrowLeft className="h-5 w-5" />
             </Button>
