@@ -1222,10 +1222,34 @@ Continue the conversation from here.`;
       
       // Get updated progress to send back
       const updatedProgress = await storage.getOnboardingProgress(site.id);
+      
+      // Get updated site data to reflect any changes from extraction
+      const updatedSite = await storage.getSite(site.id);
+
+      // Merge site defaults with collected data (collected data takes priority)
+      const progressData = (updatedProgress?.collectedData || {}) as Record<string, any>;
+      const mergedData = {
+        // Start with site defaults
+        businessName: updatedSite?.businessName,
+        tradeType: updatedSite?.tradeType,
+        services: updatedSite?.services,
+        tagline: updatedSite?.tagline,
+        ownerStory: updatedSite?.ownerStory,
+        serviceArea: updatedSite?.serviceArea,
+        stylePreference: updatedSite?.stylePreference,
+        selectedPages: updatedSite?.selectedPages,
+        phone: updatedSite?.phone,
+        email: updatedSite?.email,
+        address: updatedSite?.address,
+        // Then override with progress collected data (which has the latest from chat)
+        ...progressData,
+      };
 
       res.write(`data: ${JSON.stringify({ 
         done: true, 
         readyToGenerate,
+        phase: updatedProgress?.currentPhase,
+        collectedData: mergedData,
         progress: updatedProgress 
       })}\n\n`);
       res.end();

@@ -161,14 +161,20 @@ export default function Onboarding() {
 
       const decoder = new TextDecoder();
       let assistantMessage = "";
+      let buffer = "";
       setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+        
+        // Process complete lines from buffer
+        const lines = buffer.split("\n");
+        // Keep last incomplete line in buffer
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
           if (line.startsWith("data: ")) {
@@ -185,22 +191,43 @@ export default function Onboarding() {
                   return newMessages;
                 });
               }
-              if (data.done && data.readyToGenerate) {
-                setReadyToGenerate(true);
-                setCurrentPhase("review");
-                setCompletedPhases(prev => 
-                  prev.includes("photos") ? prev : [...prev, "photos"]
-                );
-              }
-              if (data.phase) {
-                setCurrentPhase(data.phase);
-              }
-              if (data.collectedData) {
-                setCollectedData(prev => ({ ...prev, ...data.collectedData }));
+              if (data.done) {
+                // Process phase update
+                if (data.phase) {
+                  setCurrentPhase(data.phase);
+                }
+                // Process collected data for live preview
+                if (data.collectedData) {
+                  setCollectedData(prev => ({ ...prev, ...data.collectedData }));
+                }
+                // Check if ready to generate
+                if (data.readyToGenerate) {
+                  setReadyToGenerate(true);
+                  setCurrentPhase("review");
+                  setCompletedPhases(prev => 
+                    prev.includes("photos") ? prev : [...prev, "photos"]
+                  );
+                }
               }
             } catch {
+              // Silently ignore parse errors for incomplete chunks
             }
           }
+        }
+      }
+      
+      // Process any remaining data in buffer
+      if (buffer.startsWith("data: ")) {
+        try {
+          const data = JSON.parse(buffer.slice(6));
+          if (data.collectedData) {
+            setCollectedData(prev => ({ ...prev, ...data.collectedData }));
+          }
+          if (data.phase) {
+            setCurrentPhase(data.phase);
+          }
+        } catch {
+          // Ignore final parse error
         }
       }
     } catch (err) {
