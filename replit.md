@@ -239,7 +239,12 @@ Replit Auth is integrated using OpenID Connect for secure user authentication:
 - `SESSION_SECRET` - Secret for session encryption (auto-provided by Replit)
 
 ## Recent Changes
-- 2026-02-01: Production-ready enhancements
+- 2026-02-01: Production-ready seed-stage enhancements
+  - **Email Notifications**: Lead notification emails via Resend integration (server/services/email.ts)
+  - **Enhanced Dashboard**: Tenant admin dashboard with lead stats, monthly metrics, quick actions, and feature toggles
+  - **Pricing Section**: Added 3-tier pricing (Starter/Professional/Enterprise) to landing page
+  - **Spam Protection**: Honeypot field + IP-based rate limiting (5 submissions/minute) for contact forms
+  - **Improved UX**: Better loading spinners with animations, enhanced error states for 404 pages
   - Added SEO meta tags with dynamic title, description, Open Graph, Twitter cards, and JSON-LD structured data
   - Created useSEO hook (client/src/hooks/use-seo.ts) for managing head elements
   - Cleaned up public site header with backdrop blur, clickable logo, text truncation, better responsive breakpoints

@@ -69,6 +69,7 @@ const contactFormSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   phone: z.string().optional(),
   message: z.string().min(10, "Message must be at least 10 characters"),
+  website: z.string().optional(),
 });
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;
@@ -867,12 +868,18 @@ function ContactSection({ site }: { site: Site }) {
       email: "",
       phone: "",
       message: "",
+      website: "",
     },
   });
 
   const submitLead = useMutation({
     mutationFn: async (data: ContactFormValues) => {
-      const response = await apiRequest("POST", "/api/site/leads", data);
+      if (data.website) {
+        console.log('Spam detected');
+        return { success: true };
+      }
+      const { website, ...leadData } = data;
+      const response = await apiRequest("POST", "/api/site/leads", leadData);
       return response.json();
     },
     onSuccess: () => {
@@ -1089,6 +1096,22 @@ function ContactSection({ site }: { site: Site }) {
                               />
                             </FormControl>
                             <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="website"
+                        render={({ field }) => (
+                          <FormItem className="hidden" aria-hidden="true">
+                            <FormLabel>Website</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field}
+                                tabIndex={-1}
+                                autoComplete="off"
+                              />
+                            </FormControl>
                           </FormItem>
                         )}
                       />

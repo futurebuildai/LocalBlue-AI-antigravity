@@ -5,6 +5,7 @@ import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth 
 import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES, type TradeType, type StylePreference } from "@shared/schema";
 import { TRADE_TEMPLATES, STYLE_TEMPLATES, AVAILABLE_PAGES, getTradeTemplate, getStyleTemplate } from "@shared/tradeTemplates";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { sendLeadNotification, sendWelcomeEmail } from "./services/email";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
@@ -384,11 +385,53 @@ export async function registerRoutes(
     }
   });
 
+  // Simple in-memory rate limiter for lead submissions
+  const leadRateLimit = new Map<string, { count: number; resetTime: number }>();
+  const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+  const RATE_LIMIT_MAX = 5; // 5 submissions per minute per IP
+
   // Submit lead/contact form (public route - requires tenant but not auth)
   app.post("/api/site/leads", requireTenant, async (req, res) => {
     try {
+      // Rate limiting
+      const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+      const now = Date.now();
+      const rateData = leadRateLimit.get(clientIp);
+      
+      if (rateData) {
+        if (now < rateData.resetTime) {
+          if (rateData.count >= RATE_LIMIT_MAX) {
+            return res.status(429).json({ error: "Too many requests. Please try again later." });
+          }
+          rateData.count++;
+        } else {
+          leadRateLimit.set(clientIp, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+        }
+      } else {
+        leadRateLimit.set(clientIp, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+      }
+
+      // Cleanup old entries periodically
+      if (leadRateLimit.size > 1000) {
+        const entries = Array.from(leadRateLimit.entries());
+        for (const [ip, data] of entries) {
+          if (now > data.resetTime) {
+            leadRateLimit.delete(ip);
+          }
+        }
+      }
+
+      // Server-side honeypot check - reject if the website field is filled
+      if (req.body.website) {
+        // Silently succeed to not tip off bots
+        return res.status(201).json({ success: true, id: 0 });
+      }
+
       const leadData = {
-        ...req.body,
+        name: req.body.name,
+        email: req.body.email,
+        phone: req.body.phone,
+        message: req.body.message,
         siteId: req.site!.id,
       };
 
@@ -398,6 +441,20 @@ export async function registerRoutes(
       }
 
       const lead = await storage.createLead(result.data);
+      
+      // Send email notification to the contractor (non-blocking)
+      const site = req.site!;
+      if (site.email) {
+        sendLeadNotification({
+          businessName: site.businessName,
+          businessEmail: site.email,
+          leadName: lead.name,
+          leadEmail: lead.email,
+          leadPhone: lead.phone || undefined,
+          leadMessage: lead.message || '',
+        }).catch(err => console.error('Failed to send lead notification:', err));
+      }
+      
       res.status(201).json({ success: true, id: lead.id });
     } catch (error) {
       console.error("Error creating lead:", error);

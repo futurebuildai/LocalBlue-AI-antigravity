@@ -17,7 +17,7 @@ import {
   SidebarHeader,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Building2, Users } from "lucide-react";
+import { LayoutDashboard, Building2, Users, ArrowRight } from "lucide-react";
 import Dashboard from "@/pages/admin/Dashboard";
 import Sites from "@/pages/admin/Sites";
 import UsersPage from "@/pages/admin/Users";
@@ -149,7 +149,13 @@ function TenantAdminApp() {
   if (isLoading || isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground" data-testid="text-loading">Loading...</div>
+        <div className="flex flex-col items-center gap-4" data-testid="loading-tenant-admin">
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-muted-foreground text-sm animate-pulse">Loading admin panel...</p>
+        </div>
       </div>
     );
   }
@@ -243,19 +249,36 @@ function TenantPublicApp() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground" data-testid="text-loading">Loading...</div>
+        <div className="flex flex-col items-center gap-4" data-testid="loading-public-site">
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-muted-foreground text-sm animate-pulse">Loading site...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !site) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Site Not Found</h1>
-          <p className="text-muted-foreground">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-4">
+        <div className="text-center max-w-md" data-testid="error-site-not-found">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+            <Building2 className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold mb-3" data-testid="text-error-title">Site Not Found</h1>
+          <p className="text-muted-foreground mb-6">
             The site you're looking for doesn't exist or hasn't been configured yet.
           </p>
+          <a 
+            href="https://localblue.ai" 
+            className="inline-flex items-center gap-2 text-foreground hover:text-muted-foreground transition-colors"
+            data-testid="link-localblue"
+          >
+            Visit LocalBlue.ai
+            <ArrowRight className="h-4 w-4" />
+          </a>
         </div>
       </div>
     );

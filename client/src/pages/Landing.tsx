@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { 
   MessageSquare, 
   Globe, 
@@ -15,7 +16,10 @@ import {
   Users,
   Clock,
   ChevronRight,
-  Play
+  Play,
+  Check,
+  Crown,
+  Briefcase
 } from "lucide-react";
 
 const features = [
@@ -82,6 +86,67 @@ const testimonials = [
     name: "David Chen",
     role: "Chen HVAC Solutions",
     rating: 5,
+  },
+];
+
+const pricingPlans = [
+  {
+    name: "Starter",
+    description: "Perfect for getting started",
+    price: "Free",
+    priceDetail: "forever",
+    icon: Rocket,
+    features: [
+      "AI-built professional website",
+      "LocalBlue.ai subdomain",
+      "Contact form with email alerts",
+      "Mobile-responsive design",
+      "Basic SEO optimization",
+      "Community support",
+    ],
+    cta: "Get Started Free",
+    popular: false,
+    gradient: "from-slate-500 to-slate-600",
+  },
+  {
+    name: "Professional",
+    description: "For growing businesses",
+    price: "$29",
+    priceDetail: "/month",
+    icon: Briefcase,
+    features: [
+      "Everything in Starter",
+      "Custom domain connection",
+      "AI chatbot for lead capture",
+      "Quote calculator widget",
+      "Appointment scheduling",
+      "Priority email support",
+      "Google Analytics integration",
+      "Remove LocalBlue branding",
+    ],
+    cta: "Start 14-Day Trial",
+    popular: true,
+    gradient: "from-blue-500 to-indigo-600",
+  },
+  {
+    name: "Enterprise",
+    description: "For established contractors",
+    price: "$79",
+    priceDetail: "/month",
+    icon: Crown,
+    features: [
+      "Everything in Professional",
+      "Multiple team members",
+      "Advanced lead management",
+      "Custom integrations",
+      "White-label solution",
+      "Dedicated account manager",
+      "Phone support",
+      "Custom development",
+    ],
+    cta: "Contact Sales",
+    popular: false,
+    gradient: "from-violet-500 to-purple-600",
   },
 ];
 
@@ -331,6 +396,82 @@ export default function Landing() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section className="py-20 md:py-32" data-testid="section-pricing">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                <Crown className="h-4 w-4" />
+                Pricing
+              </div>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+                Simple, Transparent
+                <span className="gradient-text"> Pricing</span>
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-lg">
+                Start free and upgrade as your business grows. No hidden fees, no surprises.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {pricingPlans.map((plan, index) => (
+                <Card 
+                  key={index} 
+                  className={`relative hover-elevate border-0 shadow-lg bg-card overflow-visible ${plan.popular ? 'ring-2 ring-primary shadow-xl' : ''}`}
+                  data-testid={`card-pricing-${plan.name.toLowerCase()}`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground px-4 py-1 shadow-lg">
+                        Most Popular
+                      </Badge>
+                    </div>
+                  )}
+                  <CardHeader className="text-center pb-2">
+                    <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${plan.gradient} shadow-lg`}>
+                      <plan.icon className="h-7 w-7 text-white" />
+                    </div>
+                    <CardTitle className="text-xl">{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <div className="mb-6">
+                      <span className="text-4xl font-bold">{plan.price}</span>
+                      <span className="text-muted-foreground ml-1">{plan.priceDetail}</span>
+                    </div>
+                    <ul className="space-y-3 text-left mb-6">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <Link href="/signup" className="w-full">
+                      <Button 
+                        className={`w-full ${plan.popular ? 'gradient-primary text-white shadow-lg' : ''}`}
+                        variant={plan.popular ? "default" : "outline"}
+                        data-testid={`button-pricing-${plan.name.toLowerCase()}`}
+                      >
+                        {plan.cta}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-muted-foreground">
+                All plans include a 14-day money-back guarantee. No questions asked.
+              </p>
             </div>
           </div>
         </section>
