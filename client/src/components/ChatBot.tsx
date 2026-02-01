@@ -13,6 +13,7 @@ import {
   User
 } from "lucide-react";
 import type { Site } from "@shared/schema";
+import { FormattedMessage } from "@/lib/message-utils";
 
 interface Message {
   role: "user" | "assistant";
@@ -269,7 +270,13 @@ export default function ChatBot({ site, isVisible = true }: ChatBotProps) {
                     {message.role === "assistant" && (
                       <Bot className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
                     )}
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap">
+                      {message.role === "assistant" ? (
+                        <FormattedMessage content={message.content} />
+                      ) : (
+                        message.content
+                      )}
+                    </p>
                     {message.role === "user" && (
                       <User className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     )}

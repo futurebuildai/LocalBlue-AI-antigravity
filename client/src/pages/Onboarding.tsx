@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Send, Loader2, Sparkles, ArrowLeft, Globe, Phone, Mail, MapPin } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { FormattedMessage } from "@/lib/message-utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { PhotoUpload } from "@/components/PhotoUpload";
@@ -471,7 +472,13 @@ export default function Onboarding() {
                             : "bg-muted"
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {message.role === "assistant" ? (
+                            <FormattedMessage content={message.content} />
+                          ) : (
+                            message.content
+                          )}
+                        </p>
                       </div>
                     </div>
                   ))}

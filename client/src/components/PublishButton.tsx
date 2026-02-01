@@ -112,15 +112,32 @@ export default function PublishButton({ site, variant = "default" }: PublishButt
             </AlertDialogContent>
           </AlertDialog>
         ) : (
-          <Button
-            size="lg"
-            onClick={handlePublish}
-            disabled={publishMutation.isPending}
-            data-testid="button-publish"
-          >
-            <Rocket className="h-4 w-4 mr-2" />
-            {publishMutation.isPending ? "Publishing..." : "Publish Site"}
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="lg"
+                disabled={publishMutation.isPending}
+                data-testid="button-publish"
+              >
+                <Rocket className="h-4 w-4 mr-2" />
+                {publishMutation.isPending ? "Publishing..." : "Publish Site"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Ready to go live?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Your site will be visible to everyone on the internet. Make sure you've reviewed all your content and settings before publishing.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Review First</AlertDialogCancel>
+                <AlertDialogAction onClick={handlePublish} data-testid="button-confirm-publish">
+                  Yes, Publish Now
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
     );
@@ -162,14 +179,29 @@ export default function PublishButton({ site, variant = "default" }: PublishButt
           </AlertDialogContent>
         </AlertDialog>
       ) : (
-        <Button
-          onClick={handlePublish}
-          disabled={publishMutation.isPending}
-          data-testid="button-publish-inline"
-        >
-          <Rocket className="h-4 w-4 mr-2" />
-          {publishMutation.isPending ? "Publishing..." : "Publish Site"}
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              disabled={publishMutation.isPending}
+              data-testid="button-publish-inline"
+            >
+              <Rocket className="h-4 w-4 mr-2" />
+              {publishMutation.isPending ? "Publishing..." : "Publish Site"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Ready to go live?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your site will be visible to everyone. Make sure you've reviewed all your content before publishing.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Review First</AlertDialogCancel>
+              <AlertDialogAction onClick={handlePublish}>Yes, Publish Now</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );
