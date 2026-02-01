@@ -5,9 +5,10 @@ interface LogoProps {
   showWordmark?: boolean;
   className?: string;
   linkTo?: string;
+  variant?: "default" | "light";
 }
 
-export function Logo({ size = "md", showWordmark = true, className = "", linkTo }: LogoProps) {
+export function Logo({ size = "md", showWordmark = true, className = "", linkTo, variant = "default" }: LogoProps) {
   const sizes = {
     sm: { icon: 28, text: "text-lg", gap: "gap-2" },
     md: { icon: 32, text: "text-xl", gap: "gap-2.5" },
@@ -15,11 +16,17 @@ export function Logo({ size = "md", showWordmark = true, className = "", linkTo 
   };
 
   const { icon, text, gap } = sizes[size];
+  
+  const isLight = variant === "light";
 
   const logoContent = (
     <div className={`flex items-center ${gap} ${className}`} data-testid="logo">
       <div 
-        className="relative flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25"
+        className={`relative flex items-center justify-center rounded-xl ${
+          isLight 
+            ? "bg-gradient-to-br from-cyan-400 via-blue-500 to-violet-500 shadow-lg shadow-blue-500/30" 
+            : "bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25"
+        }`}
         style={{ width: icon, height: icon }}
       >
         <svg
@@ -55,8 +62,12 @@ export function Logo({ size = "md", showWordmark = true, className = "", linkTo 
       </div>
       {showWordmark && (
         <span className={`font-semibold tracking-tight ${text}`}>
-          <span className="text-foreground">Local</span>
-          <span className="bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">Blue</span>
+          <span className={isLight ? "text-white" : "text-foreground"}>Local</span>
+          <span className={`bg-clip-text text-transparent ${
+            isLight 
+              ? "bg-gradient-to-r from-cyan-300 to-blue-400" 
+              : "bg-gradient-to-r from-blue-500 to-indigo-600"
+          }`}>Blue</span>
         </span>
       )}
     </div>

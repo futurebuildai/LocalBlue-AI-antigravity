@@ -158,33 +158,33 @@ export default function Landing() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header - Apple/Google-level premium design */}
       <header className="fixed top-0 left-0 right-0 z-[9999]">
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-xl border-b border-border/40" />
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl border-b border-white/5" />
         <div className="relative max-w-7xl mx-auto flex h-16 items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
-          <Logo size="md" linkTo="/" />
+          <Logo size="md" linkTo="/" variant="light" />
           
           <nav className="hidden md:flex items-center gap-8 flex-wrap">
-            <a href="#features" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="link-nav-features">
+            <a href="#features" className="text-sm font-medium text-white/70 hover:text-white transition-colors" data-testid="link-nav-features">
               Features
             </a>
-            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="link-nav-how-it-works">
+            <a href="#how-it-works" className="text-sm font-medium text-white/70 hover:text-white transition-colors" data-testid="link-nav-how-it-works">
               How It Works
             </a>
-            <a href="#pricing" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="link-nav-pricing">
+            <a href="#pricing" className="text-sm font-medium text-white/70 hover:text-white transition-colors" data-testid="link-nav-pricing">
               Pricing
             </a>
-            <Link href="/demo" className="text-sm font-medium text-muted-foreground transition-colors" data-testid="link-nav-demo">
+            <Link href="/demo" className="text-sm font-medium text-white/70 hover:text-white transition-colors" data-testid="link-nav-demo">
               Demo
             </Link>
           </nav>
           
           <div className="flex items-center gap-3 flex-wrap">
             <Link href="/login" className="hidden sm:block">
-              <Button variant="ghost" size="sm" data-testid="link-header-login">
+              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10" data-testid="link-header-login">
                 Sign In
               </Button>
             </Link>
             <Link href="/signup">
-              <Button size="sm" className="shadow-lg shadow-primary/20" data-testid="link-header-signup">
+              <Button size="sm" className="bg-white text-slate-900 hover:bg-white/90 shadow-lg shadow-white/10" data-testid="link-header-signup">
                 Get Started
                 <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Button>
