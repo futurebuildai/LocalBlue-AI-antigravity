@@ -209,28 +209,34 @@ The application seeds the database with sample data on startup:
 - Session validates that user belongs to the current tenant (siteId match)
 - SESSION_SECRET required in production (fails immediately if missing)
 
-## Authentication (Clerk)
+## Authentication (Replit Auth)
 
-Clerk authentication is integrated for multi-tenant and multi-organization support:
+Replit Auth is integrated using OpenID Connect for secure user authentication:
 
 ### Frontend
-- `ClerkProvider` wraps the app in `client/src/main.tsx`
-- Uses `VITE_CLERK_PUBLISHABLE_KEY` environment variable
-- Sign-in page: `/sign-in` (uses Clerk's `<SignIn />` component)
-- Sign-up page: `/sign-up` (uses Clerk's `<SignUp />` component)
-- Custom `useAuth` hook at `client/src/hooks/use-auth.ts` wraps Clerk hooks
+- Custom `useAuth` hook at `client/src/hooks/use-auth.ts` for authentication state
+- Auth utilities at `client/src/lib/auth-utils.ts` for error handling
+- No login form needed - uses Replit's OpenID Connect flow
 
 ### Backend
-- Clerk middleware configured in `server/middleware/clerkMiddleware.ts`
-- Applied globally in `server/index.ts`
-- Uses `VITE_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` environment variables
+- Auth module at `server/replit_integrations/auth/`:
+  - `replitAuth.ts` - OIDC authentication setup with passport
+  - `storage.ts` - User database operations (getUser, upsertUser)
+  - `routes.ts` - Auth API endpoint (`/api/auth/user`)
+- Uses PostgreSQL for session storage (via `connect-pg-simple`)
 - `isAuthenticated` middleware for protected routes
-- `getAuth(req)` to get current user ID and org info
-- `requireAuth` middleware for strict authentication enforcement
+
+### Auth Routes
+- `/api/login` - Begin the login flow (redirect to Replit OAuth)
+- `/api/logout` - End user session
+- `/api/auth/user` - Get current authenticated user
+
+### Database Tables
+- `users` - User accounts synced from Replit
+- `sessions` - Session storage for authentication
 
 ### Environment Variables Required
-- `VITE_CLERK_PUBLISHABLE_KEY` - Clerk publishable key (starts with `pk_`)
-- `CLERK_SECRET_KEY` - Clerk secret key (starts with `sk_`)
+- `SESSION_SECRET` - Secret for session encryption (auto-provided by Replit)
 
 ## Recent Changes
 - 2026-01-31: Complete visual redesign with modern, sleek aesthetics

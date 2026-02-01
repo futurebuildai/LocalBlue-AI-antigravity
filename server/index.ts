@@ -1,5 +1,4 @@
 import express, { type Request, Response, NextFunction } from "express";
-import session from "express-session";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -23,31 +22,6 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
-
-const sessionSecret = process.env.SESSION_SECRET;
-if (!sessionSecret) {
-  if (process.env.NODE_ENV === "production") {
-    console.error("CRITICAL SECURITY ERROR: SESSION_SECRET environment variable is not set in production!");
-    console.error("Sessions will be insecure. Please set SESSION_SECRET to a strong random value.");
-    process.exit(1);
-  } else {
-    console.warn("WARNING: SESSION_SECRET not set. Using insecure fallback for development only.");
-  }
-}
-
-app.use(
-  session({
-    secret: sessionSecret || "fallback-secret-for-dev-only",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: "lax",
-    },
-  })
-);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

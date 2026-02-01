@@ -1,7 +1,7 @@
 import { 
-  users, sites, conversations, messages, pages, leads,
+  tenantUsers, sites, conversations, messages, pages, leads,
   onboardingProgress, sitePhotos, testimonials, servicePricing, appointments, chatbotConversations,
-  type User, type InsertUser,
+  type TenantUser, type InsertTenantUser,
   type Site, type InsertSite,
   type Conversation, type Message,
   type Page, type InsertPage,
@@ -17,14 +17,14 @@ import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations
-  getUser(id: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
-  deleteUser(id: string): Promise<boolean>;
-  getUsersBySiteId(siteId: string): Promise<User[]>;
-  getAllUsers(): Promise<User[]>;
+  // Tenant User operations
+  getTenantUser(id: string): Promise<TenantUser | undefined>;
+  getTenantUserByEmail(email: string): Promise<TenantUser | undefined>;
+  createTenantUser(user: InsertTenantUser): Promise<TenantUser>;
+  updateTenantUser(id: string, user: Partial<InsertTenantUser>): Promise<TenantUser | undefined>;
+  deleteTenantUser(id: string): Promise<boolean>;
+  getTenantUsersBySiteId(siteId: string): Promise<TenantUser[]>;
+  getAllTenantUsers(): Promise<TenantUser[]>;
 
   // Site operations
   getSite(id: string): Promise<Site | undefined>;
@@ -87,38 +87,38 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+  // Tenant User operations
+  async getTenantUser(id: string): Promise<TenantUser | undefined> {
+    const [user] = await db.select().from(tenantUsers).where(eq(tenantUsers.id, id));
     return user || undefined;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+  async getTenantUserByEmail(email: string): Promise<TenantUser | undefined> {
+    const [user] = await db.select().from(tenantUsers).where(eq(tenantUsers.email, email));
     return user || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+  async createTenantUser(insertUser: InsertTenantUser): Promise<TenantUser> {
+    const [user] = await db.insert(tenantUsers).values(insertUser).returning();
     return user;
   }
 
-  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
-    const [user] = await db.update(users).set(userData).where(eq(users.id, id)).returning();
+  async updateTenantUser(id: string, userData: Partial<InsertTenantUser>): Promise<TenantUser | undefined> {
+    const [user] = await db.update(tenantUsers).set(userData).where(eq(tenantUsers.id, id)).returning();
     return user || undefined;
   }
 
-  async deleteUser(id: string): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id)).returning();
+  async deleteTenantUser(id: string): Promise<boolean> {
+    const result = await db.delete(tenantUsers).where(eq(tenantUsers.id, id)).returning();
     return result.length > 0;
   }
 
-  async getUsersBySiteId(siteId: string): Promise<User[]> {
-    return db.select().from(users).where(eq(users.siteId, siteId));
+  async getTenantUsersBySiteId(siteId: string): Promise<TenantUser[]> {
+    return db.select().from(tenantUsers).where(eq(tenantUsers.siteId, siteId));
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return db.select().from(users);
+  async getAllTenantUsers(): Promise<TenantUser[]> {
+    return db.select().from(tenantUsers);
   }
 
   // Site operations

@@ -3,6 +3,8 @@ import { pgTable, text, varchar, boolean, jsonb, serial, integer, timestamp } fr
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export * from "./models/auth";
+
 // Trade types for contractors
 export const TRADE_TYPES = [
   "general_contractor",
@@ -41,7 +43,7 @@ export const ONBOARDING_PHASES = [
 ] as const;
 export type OnboardingPhase = typeof ONBOARDING_PHASES[number];
 
-export const users = pgTable("users", {
+export const tenantUsers = pgTable("tenant_users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
@@ -89,18 +91,18 @@ export const sites = pgTable("sites", {
   enableServiceAreaMap: boolean("enable_service_area_map").notNull().default(false),
 });
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const tenantUsersRelations = relations(tenantUsers, ({ one }) => ({
   site: one(sites, {
-    fields: [users.siteId],
+    fields: [tenantUsers.siteId],
     references: [sites.id],
   }),
 }));
 
 export const sitesRelations = relations(sites, ({ many }) => ({
-  users: many(users),
+  tenantUsers: many(tenantUsers),
 }));
 
-export const insertUserSchema = createInsertSchema(users).omit({
+export const insertTenantUserSchema = createInsertSchema(tenantUsers).omit({
   id: true,
 });
 
@@ -108,8 +110,8 @@ export const insertSiteSchema = createInsertSchema(sites).omit({
   id: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type InsertTenantUser = z.infer<typeof insertTenantUserSchema>;
+export type TenantUser = typeof tenantUsers.$inferSelect;
 export type InsertSite = z.infer<typeof insertSiteSchema>;
 export type Site = typeof sites.$inferSelect;
 

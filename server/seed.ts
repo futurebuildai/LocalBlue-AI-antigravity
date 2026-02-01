@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { sites, users } from "@shared/schema";
+import { sites, tenantUsers } from "@shared/schema";
 import bcrypt from "bcrypt";
 
 const SALT_ROUNDS = 10;
@@ -72,8 +72,8 @@ export async function seedDatabase() {
       },
     ];
 
-    const createdUsers = await db.insert(users).values(sampleUsers).returning();
-    console.log(`Created ${createdUsers.length} sample users`);
+    const createdUsers = await db.insert(tenantUsers).values(sampleUsers).returning();
+    console.log(`Created ${createdUsers.length} sample tenant users`);
 
     console.log("Database seeding completed!");
   } catch (error) {

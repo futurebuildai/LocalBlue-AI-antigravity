@@ -2,8 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth } from "./middleware/tenantMiddleware";
-import { insertUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES, type TradeType, type StylePreference } from "@shared/schema";
+import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES, type TradeType, type StylePreference } from "@shared/schema";
 import { TRADE_TEMPLATES, STYLE_TEMPLATES, AVAILABLE_PAGES, getTradeTemplate, getStyleTemplate } from "@shared/tradeTemplates";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
@@ -44,6 +45,10 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Setup Replit Auth before other routes
+  await setupAuth(app);
+  registerAuthRoutes(app);
+
   // Apply tenant middleware globally
   app.use(tenantMiddleware);
 
@@ -183,9 +188,9 @@ export async function registerRoutes(
       let users;
       
       if (siteId) {
-        users = await storage.getUsersBySiteId(siteId);
+        users = await storage.getTenantUsersBySiteId(siteId);
       } else {
-        users = await storage.getAllUsers();
+        users = await storage.getAllTenantUsers();
       }
       
       // Remove passwords from response
@@ -200,7 +205,7 @@ export async function registerRoutes(
   // Get single user
   app.get("/api/admin/users/:id", async (req, res) => {
     try {
-      const user = await storage.getUser(req.params.id);
+      const user = await storage.getTenantUser(req.params.id);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -215,13 +220,13 @@ export async function registerRoutes(
   // Create user
   app.post("/api/admin/users", async (req, res) => {
     try {
-      const result = insertUserSchema.safeParse(req.body);
+      const result = insertTenantUserSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: "Invalid user data", details: result.error.flatten() });
       }
 
       // Check if email is already taken
-      const existingUser = await storage.getUserByEmail(result.data.email);
+      const existingUser = await storage.getTenantUserByEmail(result.data.email);
       if (existingUser) {
         return res.status(409).json({ error: "Email already registered" });
       }
@@ -229,7 +234,7 @@ export async function registerRoutes(
       // Hash password
       const hashedPassword = await bcrypt.hash(result.data.password, SALT_ROUNDS);
 
-      const user = await storage.createUser({
+      const user = await storage.createTenantUser({
         ...result.data,
         password: hashedPassword,
       });
@@ -245,7 +250,7 @@ export async function registerRoutes(
   // Update user
   app.patch("/api/admin/users/:id", async (req, res) => {
     try {
-      const partialSchema = insertUserSchema.partial();
+      const partialSchema = insertTenantUserSchema.partial();
       const result = partialSchema.safeParse(req.body);
       if (!result.success) {
         return res.status(400).json({ error: "Invalid user data", details: result.error.flatten() });
@@ -253,7 +258,7 @@ export async function registerRoutes(
 
       // If email is being changed, check if it's already taken
       if (result.data.email) {
-        const existingUser = await storage.getUserByEmail(result.data.email);
+        const existingUser = await storage.getTenantUserByEmail(result.data.email);
         if (existingUser && existingUser.id !== req.params.id) {
           return res.status(409).json({ error: "Email already registered" });
         }
@@ -265,7 +270,7 @@ export async function registerRoutes(
         updateData.password = await bcrypt.hash(updateData.password, SALT_ROUNDS);
       }
 
-      const user = await storage.updateUser(req.params.id, updateData);
+      const user = await storage.updateTenantUser(req.params.id, updateData);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -281,7 +286,7 @@ export async function registerRoutes(
   // Delete user
   app.delete("/api/admin/users/:id", async (req, res) => {
     try {
-      const deleted = await storage.deleteUser(req.params.id);
+      const deleted = await storage.deleteTenantUser(req.params.id);
       if (!deleted) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -306,7 +311,7 @@ export async function registerRoutes(
       const { email, password, businessName } = result.data;
 
       // Check if email is already taken
-      const existingUser = await storage.getUserByEmail(email);
+      const existingUser = await storage.getTenantUserByEmail(email);
       if (existingUser) {
         return res.status(409).json({ error: "Email already registered" });
       }
@@ -337,7 +342,7 @@ export async function registerRoutes(
 
       // Hash password and create user
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-      const user = await storage.createUser({
+      const user = await storage.createTenantUser({
         email,
         password: hashedPassword,
         siteId: site.id,
@@ -627,7 +632,7 @@ IMPORTANT:
       const { email, password } = result.data;
 
       // Find user by email
-      const user = await storage.getUserByEmail(email);
+      const user = await storage.getTenantUserByEmail(email);
       if (!user) {
         return res.status(401).json({ error: "Invalid email or password" });
       }
@@ -670,7 +675,7 @@ IMPORTANT:
   // Tenant Auth: Get current user
   app.get("/api/tenant/auth/me", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const user = await storage.getUser(req.session.userId!);
+      const user = await storage.getTenantUser(req.session.userId!);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -722,7 +727,7 @@ IMPORTANT:
   // Tenant Users: Get users belonging to this tenant
   app.get("/api/tenant/users", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const users = await storage.getUsersBySiteId(req.site!.id);
+      const users = await storage.getTenantUsersBySiteId(req.site!.id);
       const sanitizedUsers = users.map(({ password, ...user }) => user);
       res.json(sanitizedUsers);
     } catch (error) {
@@ -734,7 +739,7 @@ IMPORTANT:
   // Tenant Users: Create a user for this tenant
   app.post("/api/tenant/users", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const result = insertUserSchema.safeParse({
+      const result = insertTenantUserSchema.safeParse({
         ...req.body,
         siteId: req.site!.id, // Force the user to belong to this tenant
       });
@@ -744,7 +749,7 @@ IMPORTANT:
       }
 
       // Check if email is already taken
-      const existingUser = await storage.getUserByEmail(result.data.email);
+      const existingUser = await storage.getTenantUserByEmail(result.data.email);
       if (existingUser) {
         return res.status(409).json({ error: "Email already registered" });
       }
@@ -752,7 +757,7 @@ IMPORTANT:
       // Hash password
       const hashedPassword = await bcrypt.hash(result.data.password, SALT_ROUNDS);
 
-      const user = await storage.createUser({
+      const user = await storage.createTenantUser({
         ...result.data,
         password: hashedPassword,
       });
@@ -1000,7 +1005,7 @@ Start the conversation now.`;
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      const user = await storage.getUser(req.session.userId);
+      const user = await storage.getTenantUser(req.session.userId);
       const site = await storage.getSite(req.session.siteId);
 
       if (!user || !site) {
