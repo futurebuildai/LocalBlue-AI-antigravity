@@ -99,9 +99,12 @@ export async function registerRoutes(
           // Calculate last activity (most recent lead or onboarding update)
           let lastActivity: Date | null = null;
           
-          // Check most recent lead
-          if (siteLeads.length > 0 && siteLeads[0].createdAt) {
-            lastActivity = new Date(siteLeads[0].createdAt);
+          // Check most recent lead (sort to ensure we get the latest)
+          const sortedLeads = [...siteLeads].sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          if (sortedLeads.length > 0 && sortedLeads[0].createdAt) {
+            lastActivity = new Date(sortedLeads[0].createdAt);
           }
           
           // Check onboarding progress update time
@@ -321,7 +324,7 @@ export async function registerRoutes(
           adminEmail: (req as any).user?.claims?.email || 'platform-admin'
         },
         process.env.SESSION_SECRET || 'localblue-secret',
-        { expiresIn: '5m' }
+        { expiresIn: '2m' }
       );
       
       // Return the impersonation URL

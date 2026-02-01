@@ -237,13 +237,23 @@ export default function Demo() {
               </Card>
             ) : (
               <Card className="bg-slate-800/50 border-slate-700 overflow-hidden">
-                <div className="aspect-video bg-slate-900 relative">
+                <div className="aspect-video bg-slate-900 relative flex items-center justify-center">
                   <img 
                     src={step.screenshot} 
                     alt={step.title}
                     className="w-full h-full object-contain"
                     data-testid={`screenshot-step-${currentStep + 1}`}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
                   />
+                  <div className="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-8">
+                    <step.icon className="h-16 w-16 mb-4 text-slate-500" />
+                    <p className="text-lg font-medium text-center">{step.title}</p>
+                    <p className="text-sm text-slate-500 text-center mt-2">Screenshot coming soon</p>
+                  </div>
                 </div>
                 <CardContent className="p-4 bg-slate-800/80">
                   <p className="text-center text-slate-400 text-sm">

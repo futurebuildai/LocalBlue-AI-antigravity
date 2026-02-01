@@ -201,12 +201,15 @@ export function requirePlatformAdmin(
   const userEmail = (user.claims.email || "").toLowerCase();
   const allowedEmails = getPlatformAdminEmails();
   
-  // If no admin emails configured, allow any authenticated Replit user (for dev convenience)
-  // In production, PLATFORM_ADMIN_EMAILS should always be set
+  // SECURITY: If no admin emails configured, deny access
+  // This prevents accidental exposure of admin routes in production
   if (allowedEmails.length === 0) {
-    console.warn("PLATFORM_ADMIN_EMAILS not configured - allowing any authenticated user");
-    req.platformAdmin = { email: userEmail, id: user.claims.sub };
-    return next();
+    console.error("SECURITY: PLATFORM_ADMIN_EMAILS not configured - denying access to admin routes");
+    res.status(403).json({ 
+      error: "Forbidden",
+      message: "Platform admin access is not configured. Please set PLATFORM_ADMIN_EMAILS environment variable." 
+    });
+    return;
   }
   
   // Check if user's email is in allowed list
