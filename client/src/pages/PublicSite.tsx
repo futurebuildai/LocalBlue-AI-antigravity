@@ -203,60 +203,83 @@ function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean })
 }
 
 function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
-  const tagline = site.tagline || homePage?.content?.heroTagline || 
-    `Professional ${(site.services || []).slice(0, 2).join(" & ")} Services`;
-  const description = site.businessDescription || homePage?.content?.heroDescription || 
-    "Quality services for your home and business. Licensed, insured, and ready to help.";
+  // Use rich content from AI generation
+  const headline = homePage?.content?.heroHeadline || site.tagline || site.businessName;
+  const subheadline = homePage?.content?.heroSubheadline || 
+    `Serving ${site.serviceArea || "Your Local Community"}`;
+  const description = homePage?.content?.heroDescription || site.businessDescription || 
+    `Expert ${site.tradeType?.replace(/_/g, ' ') || 'contractor'} services for your home.`;
+  const ctaPrimary = homePage?.content?.ctaPrimary || "Get Your Free Quote";
+  const ctaSecondary = homePage?.content?.ctaSecondary || "Call Now";
 
   const TradeIcon = getTradeIcon(site.tradeType);
+
+  // Trade-specific hero backgrounds for visual variety
+  const getHeroGradient = () => {
+    const baseColor = site.brandColor;
+    return `linear-gradient(135deg, ${baseColor} 0%, ${baseColor}dd 50%, ${baseColor}aa 100%)`;
+  };
 
   return (
     <section 
       id="hero"
-      className="relative min-h-[90vh] flex items-center justify-center"
+      className="relative min-h-[100vh] flex items-center justify-center overflow-hidden"
       data-testid="section-hero"
     >
+      {/* Dynamic gradient background */}
       <div 
         className="absolute inset-0"
-        style={{ backgroundColor: site.brandColor }}
+        style={{ background: getHeroGradient() }}
       />
-      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
       
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20 pb-12">
+      {/* Sophisticated overlay pattern */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{ 
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
+      
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24 pb-16">
+        {/* Floating badge */}
         <div 
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-sm mb-8"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-sm font-medium mb-10 shadow-lg"
         >
           <TradeIcon className="h-4 w-4" />
-          <span>Your Trusted Local Professionals</span>
+          <span>{site.serviceArea ? `Serving ${site.serviceArea}` : "Trusted Local Experts"}</span>
         </div>
 
+        {/* Main headline - now uses AI-generated content */}
         <h1 
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight"
-          data-testid="text-business-name"
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight"
+          data-testid="text-headline"
         >
-          {site.businessName}
+          {headline}
         </h1>
         
+        {/* Subheadline */}
         <p 
-          className="text-xl sm:text-2xl md:text-3xl text-white/90 mb-4 font-medium"
-          data-testid="text-tagline"
+          className="text-xl sm:text-2xl md:text-3xl text-white/95 mb-6 font-medium tracking-wide"
+          data-testid="text-subheadline"
         >
-          {tagline}
+          {subheadline}
         </p>
         
-        <p className="text-lg text-white/70 mb-10 max-w-2xl mx-auto leading-relaxed">
+        {/* Description - AI-generated compelling copy */}
+        <p className="text-lg md:text-xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed">
           {description}
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-14">
           <Button 
             size="lg" 
-            className="text-lg px-8 py-6 bg-white text-foreground hover:bg-white/90 border-0"
+            className="text-lg px-10 py-7 bg-white text-gray-900 hover:bg-white/95 border-0 shadow-xl font-semibold"
             onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
             data-testid="button-get-quote"
           >
-            Get a Free Quote
+            {ctaPrimary}
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
           {site.phone && (
@@ -264,28 +287,40 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
               <Button 
                 size="lg" 
                 variant="outline"
-                className="text-lg px-8 py-6 bg-transparent border-2 border-white text-white hover:bg-white/10 w-full sm:w-auto"
+                className="text-lg px-10 py-7 bg-white/10 backdrop-blur-sm border-2 border-white/50 text-white hover:bg-white/20 w-full sm:w-auto font-semibold"
                 data-testid="button-call-now"
               >
                 <Phone className="mr-2 h-5 w-5" />
-                Call Now: {site.phone}
+                {ctaSecondary}: {site.phone}
               </Button>
             </a>
           )}
         </div>
 
-        {site.yearsInBusiness && (
-          <div className="inline-flex items-center gap-2 text-white/80 text-lg">
-            <Award className="h-5 w-5" />
-            <span>Proudly serving our community for {site.yearsInBusiness}+ years</span>
+        {/* Trust indicators */}
+        <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 text-white/80">
+          {site.yearsInBusiness && (
+            <div className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              <span className="font-medium">{site.yearsInBusiness}+ Years Experience</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            <span className="font-medium">Licensed & Insured</span>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+            <span className="font-medium">5-Star Rated</span>
+          </div>
+        </div>
       </div>
 
+      {/* Modern wave divider */}
       <div className="absolute bottom-0 left-0 right-0">
-        <svg className="w-full h-16 md:h-24" viewBox="0 0 1440 100" preserveAspectRatio="none">
+        <svg className="w-full h-20 md:h-32" viewBox="0 0 1440 120" preserveAspectRatio="none">
           <path 
-            d="M0,100 L0,50 Q360,0 720,50 T1440,50 L1440,100 Z" 
+            d="M0,120 L0,60 Q360,0 720,60 T1440,60 L1440,120 Z" 
             className="fill-background"
           />
         </svg>
@@ -326,58 +361,76 @@ function TrustBadgesBar({ site }: { site: Site }) {
   );
 }
 
-function ServicesSection({ site }: { site: Site }) {
+function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Page }) {
   const services = site.services || [];
   const TradeIcon = getTradeIcon(site.tradeType);
+  
+  // Get service descriptions from AI-generated page content
+  const serviceDescriptions = servicesPage?.content?.servicesList?.reduce((acc: Record<string, string>, item: { name: string; description: string }) => {
+    acc[item.name] = item.description;
+    return acc;
+  }, {}) || {};
 
   if (services.length === 0) return null;
 
   return (
-    <section id="services" className="py-16 md:py-24 bg-muted/30" data-testid="section-services">
+    <section id="services" className="py-20 md:py-28 bg-muted/30" data-testid="section-services">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 md:mb-16">
+        <div className="text-center mb-14 md:mb-20">
           <div 
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold mb-6"
             style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
           >
             <TradeIcon className="h-4 w-4" />
-            What We Do
+            What We Do Best
           </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">Our Services</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            We offer comprehensive solutions tailored to your needs, delivered with expertise and care.
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">Our Expert Services</h2>
+          <p className="text-muted-foreground text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
+            {site.serviceArea 
+              ? `From ${site.serviceArea}, we bring expertise and dedication to every project. Here's how we can help you.`
+              : "Every project receives our full attention and expertise. Discover the services that set us apart."
+            }
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service, index) => (
-            <Card 
-              key={index} 
-              className="group hover-elevate border-2 border-transparent hover:border-[var(--brand-color)] transition-all duration-300"
-              style={{ "--brand-color": site.brandColor } as React.CSSProperties}
-              data-testid={`card-service-${index}`}
-            >
-              <CardContent className="p-6 md:p-8">
-                <div 
-                  className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
-                  style={{ backgroundColor: `${site.brandColor}15` }}
-                >
-                  <TradeIcon className="h-7 w-7" style={{ color: site.brandColor }} />
-                </div>
-                <h3 className="text-xl font-bold mb-3">{service}</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Professional {service.toLowerCase()} services with quality workmanship and competitive pricing.
-                </p>
-                <button 
-                  onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-                  className="mt-4 inline-flex items-center text-sm font-medium transition-colors"
-                  style={{ color: site.brandColor }}
-                >
-                  Learn More <ChevronRight className="ml-1 h-4 w-4" />
-                </button>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map((service, index) => {
+            // Use AI-generated description or create a more specific fallback
+            const description = serviceDescriptions[service] || 
+              `Our expert team delivers exceptional ${service.toLowerCase()} solutions with attention to detail and lasting results.`;
+            
+            return (
+              <Card 
+                key={index} 
+                className="group hover-elevate border border-border/50 hover:border-[var(--brand-color)] transition-all duration-300 hover:shadow-xl"
+                style={{ "--brand-color": site.brandColor } as React.CSSProperties}
+                data-testid={`card-service-${index}`}
+              >
+                <CardContent className="p-8">
+                  <div 
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
+                    style={{ 
+                      backgroundColor: `${site.brandColor}15`,
+                      boxShadow: `0 4px 14px ${site.brandColor}20`
+                    }}
+                  >
+                    <TradeIcon className="h-8 w-8" style={{ color: site.brandColor }} />
+                  </div>
+                  <h3 className="text-xl font-bold mb-4">{service}</h3>
+                  <p className="text-muted-foreground leading-relaxed mb-6">
+                    {description}
+                  </p>
+                  <button 
+                    onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+                    className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2"
+                    style={{ color: site.brandColor }}
+                  >
+                    Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -385,27 +438,30 @@ function ServicesSection({ site }: { site: Site }) {
 }
 
 function AboutSection({ site, aboutPage }: { site: Site; aboutPage?: Page }) {
-  const description = site.ownerStory || site.businessDescription || aboutPage?.content?.description || 
-    `${site.businessName} is a trusted local contractor providing quality services to residential and commercial customers.`;
+  // Use rich AI-generated content when available
+  const sectionTitle = aboutPage?.content?.sectionTitle || 
+    (site.ownerName ? `Meet ${site.ownerName}` : `The ${site.businessName} Story`);
+  const description = aboutPage?.content?.companyStory || site.ownerStory || site.businessDescription || 
+    `${site.businessName} is dedicated to providing exceptional service to our community.`;
   const uniquePoints = site.uniqueSellingPoints || [];
   const certifications = site.certifications || [];
 
   return (
-    <section id="about" className="py-16 md:py-24" data-testid="section-about">
+    <section id="about" className="py-20 md:py-28" data-testid="section-about">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
           <div>
             <div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold mb-6"
               style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
             >
               <Users className="h-4 w-4" />
-              About Us
+              Our Story
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-              {site.ownerName ? `Meet ${site.ownerName}` : `About ${site.businessName}`}
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-8 leading-tight">
+              {sectionTitle}
             </h2>
-            <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
+            <p className="text-muted-foreground text-lg md:text-xl mb-10 leading-relaxed">
               {description}
             </p>
 
@@ -1054,6 +1110,15 @@ export default function PublicSite({ site, isPreview }: PublicSiteProps) {
     },
   });
 
+  const { data: servicesPage } = useQuery<Page>({
+    queryKey: ["/api/site/pages", "services"],
+    queryFn: async () => {
+      const res = await fetch("/api/site/pages/services");
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
   if (!site.isPublished && !isPreview) {
     return <ComingSoon site={site} />;
   }
@@ -1063,7 +1128,7 @@ export default function PublicSite({ site, isPreview }: PublicSiteProps) {
       <StickyHeader site={site} isScrolled={isScrolled} />
       <HeroSection site={site} homePage={homePage || undefined} />
       <TrustBadgesBar site={site} />
-      <ServicesSection site={site} />
+      <ServicesSection site={site} servicesPage={servicesPage || undefined} />
       <AboutSection site={site} aboutPage={aboutPage || undefined} />
       <TestimonialsSection site={site} />
       <ServiceAreaSection site={site} />

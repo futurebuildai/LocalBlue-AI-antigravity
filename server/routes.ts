@@ -1262,10 +1262,14 @@ Only return valid JSON, nothing else.`;
       };
 
       try {
-        const responseText = extractionResponse.content[0].type === "text" 
+        let responseText = extractionResponse.content[0].type === "text" 
           ? extractionResponse.content[0].text 
           : "";
+        // Strip markdown code blocks if present
+        responseText = responseText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+        console.log("Extraction response:", responseText.substring(0, 500));
         extractedData = JSON.parse(responseText);
+        console.log("Successfully extracted data:", JSON.stringify(extractedData, null, 2));
       } catch (parseError) {
         console.error("Failed to parse extraction response:", parseError);
         extractedData = {
@@ -1301,13 +1305,120 @@ Only return valid JSON, nothing else.`;
       const extractedServices = extractedData.services || [];
       const mergedServices = Array.from(new Set([...extractedServices, ...tradeTemplate.defaultServices]));
 
+      // RICH CONTENT GENERATION - Create compelling marketing copy using AI
+      const contentGenerationPrompt = `You are an elite website copywriter specializing in contractor and home service businesses. Generate compelling, specific, and persuasive website content that will convert visitors into customers.
+
+BUSINESS DETAILS:
+- Business Name: ${site.businessName}
+- Trade: ${tradeType.replace(/_/g, ' ')}
+- Location: ${extractedData.serviceArea || 'Local area'}
+- Services: ${mergedServices.join(', ')}
+- Years in Business: ${extractedData.yearsInBusiness || 'Established'}
+- Owner: ${extractedData.ownerName || 'Owner'}
+- Story: ${extractedData.ownerStory || 'Family-owned business'}
+- Differentiators: ${(extractedData.uniqueSellingPoints || []).join(', ')}
+- Certifications: ${(extractedData.certifications || []).join(', ')}
+
+STYLE: ${stylePreference} (${stylePreference === 'professional' ? 'trustworthy, clean, authoritative' : stylePreference === 'bold' ? 'confident, energetic, modern' : stylePreference === 'warm' ? 'friendly, approachable, family-focused' : 'premium, sophisticated, high-end'})
+
+Generate the following content as JSON:
+
+{
+  "heroHeadline": "A powerful, specific headline (not generic - reference their actual specialty or location)",
+  "heroSubheadline": "Compelling subheadline that highlights their main differentiator or promise",
+  "heroDescription": "2-3 sentences expanding on their value proposition - be specific about what they do and where",
+  "aboutSectionTitle": "Creative title for About section (not just 'About Us')",
+  "aboutContent": "3-4 compelling sentences about the business, weaving in their story, experience, and values. Make it personal and authentic.",
+  "whyChooseUsTitle": "Creative section title",
+  "serviceDescriptions": {
+    ${mergedServices.slice(0, 8).map(s => `"${s}": "A specific, compelling 2-sentence description of this service - mention real benefits and outcomes"`).join(',\n    ')}
+  },
+  "trustStatements": [
+    "Four compelling trust statements/value props that highlight real differentiators",
+    "Each should be specific to this business, not generic",
+    "Reference real credentials, experience, or guarantees",
+    "Make customers feel confident choosing this business"
+  ],
+  "ctaPrimary": "Primary call-to-action button text",
+  "ctaSecondary": "Secondary CTA text",
+  "serviceAreaDescription": "Compelling description of their service area coverage",
+  "testimonialPrompt": "What satisfied customers would say about this business (2 example testimonials with realistic details)"
+}
+
+CRITICAL RULES:
+1. NEVER use generic phrases like "quality work", "professional service", "tailored to your needs"
+2. BE SPECIFIC - mention the actual location, actual services, actual experience
+3. Write like a premium agency would - every word should earn its place
+4. Match the style preference - professional feels authoritative, warm feels friendly, luxury feels exclusive
+5. Reference their specific differentiators and story
+6. Create urgency and build trust simultaneously
+
+Return ONLY valid JSON.`;
+
+      let richContent: {
+        heroHeadline?: string;
+        heroSubheadline?: string;
+        heroDescription?: string;
+        aboutSectionTitle?: string;
+        aboutContent?: string;
+        whyChooseUsTitle?: string;
+        serviceDescriptions?: Record<string, string>;
+        trustStatements?: string[];
+        ctaPrimary?: string;
+        ctaSecondary?: string;
+        serviceAreaDescription?: string;
+        testimonialPrompt?: string;
+      } = {};
+
+      try {
+        const contentResponse = await anthropic.messages.create({
+          model: "claude-opus-4-5",
+          max_tokens: 4096,
+          system: contentGenerationPrompt,
+          messages: [
+            {
+              role: "user",
+              content: `Generate rich, compelling website content for ${site.businessName}.`,
+            },
+          ],
+        });
+
+        let contentText = contentResponse.content[0].type === "text"
+          ? contentResponse.content[0].text
+          : "";
+        // Strip markdown code blocks if present
+        contentText = contentText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+        console.log("Rich content response:", contentText.substring(0, 500));
+        richContent = JSON.parse(contentText);
+        console.log("Successfully generated rich content with headline:", richContent.heroHeadline);
+      } catch (contentError) {
+        console.error("Failed to generate rich content:", contentError);
+        // Fall back to basic content
+        richContent = {
+          heroHeadline: extractedData.tagline || `${site.businessName} - ${tradeTemplate.name}`,
+          heroSubheadline: `Serving ${extractedData.serviceArea || 'Your Local Area'}`,
+          heroDescription: extractedData.businessDescription || tradeTemplate.description,
+          aboutSectionTitle: `The ${site.businessName} Story`,
+          aboutContent: extractedData.ownerStory || `${site.businessName} has been serving the community with dedication and expertise.`,
+          whyChooseUsTitle: "Why Homeowners Choose Us",
+          serviceDescriptions: {},
+          trustStatements: tradeTemplate.trustBadges,
+          ctaPrimary: "Get Your Free Quote",
+          ctaSecondary: "Call Now",
+          serviceAreaDescription: `Proudly serving ${extractedData.serviceArea || 'the local area'}.`,
+        };
+      }
+
+      // Merge rich content with extracted data
+      const finalTagline = richContent.heroHeadline || extractedData.tagline || tradeTemplate.heroTaglines[0];
+      const finalDescription = richContent.heroDescription || extractedData.businessDescription || tradeTemplate.description;
+
       // Merge certifications with trade defaults
       const extractedCertifications = extractedData.certifications || [];
       const mergedCertifications = Array.from(new Set([...extractedCertifications, ...tradeTemplate.defaultCertifications]));
 
-      // Generate a tagline if not provided
-      const tagline = extractedData.tagline || 
-        tradeTemplate.heroTaglines[Math.floor(Math.random() * tradeTemplate.heroTaglines.length)];
+      // Use rich content for tagline
+      const tagline = finalTagline;
 
       // Merge FAQs - use trade defaults and add any custom ones
       const chatbotFaqs = [...tradeTemplate.commonFaqs];
@@ -1321,14 +1432,14 @@ Only return valid JSON, nothing else.`;
       const requiredPages = AVAILABLE_PAGES.filter(p => p.required).map(p => p.id);
       const finalPages = Array.from(new Set([...requiredPages, ...selectedPages]));
 
-      // Update site with all extracted and computed fields
+      // Update site with all extracted and computed fields including rich content
       const updatedSite = await storage.updateSite(site.id, {
         tradeType,
         stylePreference,
         services: mergedServices,
         brandColor: styleTemplate.colors.primary,
         tagline,
-        businessDescription: extractedData.businessDescription || tradeTemplate.description,
+        businessDescription: finalDescription,
         serviceArea: extractedData.serviceArea || "",
         yearsInBusiness: extractedData.yearsInBusiness || undefined,
         ownerName: extractedData.ownerName || undefined,
@@ -1345,35 +1456,35 @@ Only return valid JSON, nothing else.`;
         isPublished: true,
       });
 
-      // Generate page content based on selected pages
+      // Generate page content based on selected pages using rich AI-generated content
       const pageGenerators: Record<string, () => { slug: string; title: string; content: Record<string, any> }> = {
         home: () => ({
           slug: "home",
           title: "Home",
           content: {
-            heroTagline: tagline,
-            heroDescription: extractedData.businessDescription || `Professional ${tradeTemplate.name.toLowerCase()} services you can trust. Serving ${extractedData.serviceArea || "your local area"}.`,
+            heroHeadline: richContent.heroHeadline || tagline,
+            heroSubheadline: richContent.heroSubheadline || `Serving ${extractedData.serviceArea || "Your Local Area"}`,
+            heroDescription: richContent.heroDescription || finalDescription,
             featuredServices: mergedServices.slice(0, 6),
-            trustBadges: tradeTemplate.trustBadges,
-            ctaText: "Get a Free Quote",
+            serviceDescriptions: richContent.serviceDescriptions || {},
+            trustStatements: richContent.trustStatements || tradeTemplate.trustBadges,
+            ctaPrimary: richContent.ctaPrimary || "Get Your Free Quote",
+            ctaSecondary: richContent.ctaSecondary || "Call Now",
             ctaPhone: extractedData.phone || "",
+            whyChooseUsTitle: richContent.whyChooseUsTitle || "Why Choose Us",
           },
         }),
         about: () => ({
           slug: "about",
-          title: "About Us",
+          title: richContent.aboutSectionTitle || "About Us",
           content: {
-            companyStory: extractedData.ownerStory || `${site.businessName} has been proudly serving ${extractedData.serviceArea || "the local community"} with professional ${tradeTemplate.name.toLowerCase()} services.`,
+            sectionTitle: richContent.aboutSectionTitle || `The ${site.businessName} Story`,
+            companyStory: richContent.aboutContent || extractedData.ownerStory || `${site.businessName} has been proudly serving ${extractedData.serviceArea || "the local community"}.`,
             ownerName: extractedData.ownerName || "",
             yearsInBusiness: extractedData.yearsInBusiness || 0,
-            teamDescription: `Our team of certified professionals is committed to delivering quality ${tradeTemplate.name.toLowerCase()} services.`,
-            values: [
-              "Quality Craftsmanship",
-              "Customer Satisfaction",
-              "Honest Pricing",
-              "Reliable Service"
-            ],
+            uniqueSellingPoints: extractedData.uniqueSellingPoints || [],
             certifications: mergedCertifications,
+            serviceAreaDescription: richContent.serviceAreaDescription || "",
           },
         }),
         services: () => ({
@@ -1382,12 +1493,13 @@ Only return valid JSON, nothing else.`;
           content: {
             servicesList: mergedServices.map((service, index) => ({
               name: service,
-              description: `Professional ${service.toLowerCase()} services tailored to your needs.`,
+              description: richContent.serviceDescriptions?.[service] || `Expert ${service.toLowerCase()} solutions designed for lasting results.`,
               icon: tradeTemplate.iconName,
               order: index,
             })),
             serviceArea: extractedData.serviceArea || "",
-            ctaText: "Request a Quote",
+            serviceAreaDescription: richContent.serviceAreaDescription || "",
+            ctaText: richContent.ctaPrimary || "Request a Quote",
           },
         }),
         gallery: () => ({
