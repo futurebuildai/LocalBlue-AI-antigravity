@@ -209,6 +209,29 @@ The application seeds the database with sample data on startup:
 - Session validates that user belongs to the current tenant (siteId match)
 - SESSION_SECRET required in production (fails immediately if missing)
 
+## Authentication (Clerk)
+
+Clerk authentication is integrated for multi-tenant and multi-organization support:
+
+### Frontend
+- `ClerkProvider` wraps the app in `client/src/main.tsx`
+- Uses `VITE_CLERK_PUBLISHABLE_KEY` environment variable
+- Sign-in page: `/sign-in` (uses Clerk's `<SignIn />` component)
+- Sign-up page: `/sign-up` (uses Clerk's `<SignUp />` component)
+- Custom `useAuth` hook at `client/src/hooks/use-auth.ts` wraps Clerk hooks
+
+### Backend
+- Clerk middleware configured in `server/middleware/clerkMiddleware.ts`
+- Applied globally in `server/index.ts`
+- Uses `VITE_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` environment variables
+- `isAuthenticated` middleware for protected routes
+- `getAuth(req)` to get current user ID and org info
+- `requireAuth` middleware for strict authentication enforcement
+
+### Environment Variables Required
+- `VITE_CLERK_PUBLISHABLE_KEY` - Clerk publishable key (starts with `pk_`)
+- `CLERK_SECRET_KEY` - Clerk secret key (starts with `sk_`)
+
 ## Recent Changes
 - 2026-01-31: Complete visual redesign with modern, sleek aesthetics
   - Updated CSS theme with blue gradient accents (221 83% 53%), glass-morphism effects, and smooth animations
