@@ -37,6 +37,7 @@ import TenantAdminLayout from "@/components/TenantAdminLayout";
 import PublicSite from "@/pages/PublicSite";
 import PreviewSite from "@/pages/PreviewSite";
 import Demo from "@/pages/Demo";
+import TenantImpersonate from "@/pages/TenantImpersonate";
 import type { Site, User } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -297,6 +298,7 @@ function MainSiteApp() {
       <Route path="/signup" component={SignUp} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/preview/:subdomain" component={PreviewSite} />
+      <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
       <Route path="/">
         <Landing />
       </Route>

@@ -146,6 +146,19 @@ export default function Sites() {
     },
   });
 
+  const impersonateMutation = useMutation({
+    mutationFn: async (siteId: string) => {
+      const response = await apiRequest("POST", `/api/admin/sites/${siteId}/impersonate`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      window.open(`/tenant/${data.subdomain}/impersonate?token=${data.token}`, "_blank");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to login as customer", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleCreate = (values: SiteFormValues) => {
     const services = values.services ? values.services.split(",").map((s) => s.trim()).filter(Boolean) : [];
     createMutation.mutate({
@@ -180,7 +193,7 @@ export default function Sites() {
   };
 
   const handleLoginAsCustomer = (site: EnhancedSite) => {
-    toast({ title: "Coming soon", description: "Login as customer feature is under development." });
+    impersonateMutation.mutate(site.id);
   };
 
   if (isLoading) {

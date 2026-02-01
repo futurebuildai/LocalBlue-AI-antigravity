@@ -26,6 +26,8 @@ declare module "express-session" {
   interface SessionData {
     userId?: string;
     siteId?: string;
+    isImpersonating?: boolean;
+    impersonatedBy?: string;
   }
 }
 

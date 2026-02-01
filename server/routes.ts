@@ -8,6 +8,7 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { sendLeadNotification, sendWelcomeEmail } from "./services/email";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import jwt from "jsonwebtoken";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({
@@ -210,6 +211,57 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting site:", error);
       res.status(500).json({ error: "Failed to delete site" });
+    }
+  });
+
+  // Platform Admin: Impersonate tenant admin
+  app.post("/api/admin/sites/:siteId/impersonate", async (req, res) => {
+    try {
+      const { siteId } = req.params;
+      const site = await storage.getSite(siteId);
+      
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+      
+      // Get or create a default admin user for this site
+      let tenantUsers = await storage.getTenantUsersBySiteId(siteId);
+      let targetUser = tenantUsers.find(u => u.role === 'admin') || tenantUsers[0];
+      
+      if (!targetUser) {
+        // Create a default admin user if none exists
+        const hashedPassword = await bcrypt.hash('impersonate-only', 10);
+        targetUser = await storage.createTenantUser({
+          siteId,
+          email: `admin@${site.subdomain}.local`,
+          password: hashedPassword,
+          name: 'Site Admin',
+          role: 'admin'
+        });
+      }
+      
+      // Create a short-lived JWT token for impersonation
+      const token = jwt.sign(
+        { 
+          type: 'impersonate',
+          siteId,
+          userId: targetUser.id,
+          adminEmail: (req as any).user?.claims?.email || 'platform-admin'
+        },
+        process.env.SESSION_SECRET || 'localblue-secret',
+        { expiresIn: '5m' }
+      );
+      
+      // Return the impersonation URL
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      res.json({ 
+        impersonateUrl: `${baseUrl}/tenant/${site.subdomain}/impersonate?token=${token}`,
+        subdomain: site.subdomain,
+        token
+      });
+    } catch (error) {
+      console.error("Error creating impersonation token:", error);
+      res.status(500).json({ error: "Failed to create impersonation session" });
     }
   });
 
@@ -742,6 +794,54 @@ IMPORTANT:
   // ============================================
   // Tenant Admin API Routes
   // ============================================
+
+  // Tenant: Handle impersonation login
+  app.get("/api/tenant/impersonate", async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: "Missing token" });
+      }
+      
+      try {
+        const decoded = jwt.verify(token, process.env.SESSION_SECRET || 'localblue-secret') as {
+          type: string;
+          siteId: string;
+          userId: string;
+          adminEmail: string;
+        };
+        
+        if (decoded.type !== 'impersonate') {
+          return res.status(400).json({ error: "Invalid token type" });
+        }
+        
+        // Set up session like a regular login
+        req.session.userId = decoded.userId;
+        req.session.siteId = decoded.siteId;
+        req.session.isImpersonating = true;
+        req.session.impersonatedBy = decoded.adminEmail;
+        
+        // Get the site to redirect to proper tenant admin
+        const site = await storage.getSite(decoded.siteId);
+        if (!site) {
+          return res.status(404).json({ error: "Site not found" });
+        }
+        
+        res.json({ 
+          success: true, 
+          message: "Impersonation session created",
+          siteId: decoded.siteId,
+          subdomain: site.subdomain
+        });
+      } catch (jwtError) {
+        return res.status(401).json({ error: "Invalid or expired token" });
+      }
+    } catch (error) {
+      console.error("Impersonation error:", error);
+      res.status(500).json({ error: "Impersonation failed" });
+    }
+  });
 
   // Tenant Auth: Login
   app.post("/api/tenant/auth/login", requireTenantAdmin, async (req, res) => {
