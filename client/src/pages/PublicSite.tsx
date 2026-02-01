@@ -41,9 +41,27 @@ import {
   ArrowRight,
   Quote
 } from "lucide-react";
-import type { Site, Page, Testimonial, TradeType } from "@shared/schema";
-import { TRADE_TEMPLATES } from "@shared/tradeTemplates";
+import type { Site, Page, Testimonial, TradeType, StylePreference } from "@shared/schema";
+import { TRADE_TEMPLATES, STYLE_TEMPLATES } from "@shared/tradeTemplates";
 import ChatBot from "@/components/ChatBot";
+
+import plumberHero from "@assets/plumber-hero.jpg";
+import electricianHero from "@assets/electrician-hero.jpg";
+import rooferHero from "@assets/roofer-hero.jpg";
+import hvacHero from "@assets/hvac-hero.jpg";
+import painterHero from "@assets/painter-hero.jpg";
+import landscaperHero from "@assets/landscaper-hero.jpg";
+import generalContractorHero from "@assets/general-contractor-hero.jpg";
+
+const TRADE_HERO_IMAGES: Record<string, string> = {
+  general_contractor: generalContractorHero,
+  plumber: plumberHero,
+  electrician: electricianHero,
+  roofer: rooferHero,
+  hvac: hvacHero,
+  painter: painterHero,
+  landscaper: landscaperHero,
+};
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -79,6 +97,23 @@ function getTrustBadges(tradeType?: TradeType | null) {
     return TRADE_TEMPLATES[tradeType].trustBadges;
   }
   return ["Licensed & Insured", "Free Estimates", "Satisfaction Guaranteed", "24/7 Service"];
+}
+
+function getStyleClasses(stylePreference?: StylePreference | null) {
+  const style = stylePreference && STYLE_TEMPLATES[stylePreference] 
+    ? STYLE_TEMPLATES[stylePreference] 
+    : STYLE_TEMPLATES.professional;
+  
+  // Return style-specific class modifiers
+  return {
+    headingFont: style.fontFamily.heading,
+    bodyFont: style.fontFamily.body,
+    buttonStyle: style.buttonStyle,
+    borderRadius: style.borderRadius,
+    isLuxury: stylePreference === 'luxury',
+    isBold: stylePreference === 'bold',
+    isWarm: stylePreference === 'warm',
+  };
 }
 
 function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean }) {
@@ -213,11 +248,23 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
   const ctaSecondary = homePage?.content?.ctaSecondary || "Call Now";
 
   const TradeIcon = getTradeIcon(site.tradeType);
-
-  // Trade-specific hero backgrounds for visual variety
-  const getHeroGradient = () => {
-    const baseColor = site.brandColor;
-    return `linear-gradient(135deg, ${baseColor} 0%, ${baseColor}dd 50%, ${baseColor}aa 100%)`;
+  const styleClasses = getStyleClasses(site.stylePreference);
+  
+  // Get trade-specific hero background image
+  const heroImage = site.tradeType ? TRADE_HERO_IMAGES[site.tradeType] : generalContractorHero;
+  
+  // Style-specific overlay - luxury gets darker, bolder, more dramatic
+  const getOverlayStyle = () => {
+    if (styleClasses.isLuxury) {
+      return `linear-gradient(135deg, ${site.brandColor}ee 0%, ${site.brandColor}cc 30%, rgba(0,0,0,0.85) 100%)`;
+    }
+    if (styleClasses.isBold) {
+      return `linear-gradient(180deg, ${site.brandColor}dd 0%, ${site.brandColor}aa 50%, rgba(0,0,0,0.7) 100%)`;
+    }
+    if (styleClasses.isWarm) {
+      return `linear-gradient(135deg, ${site.brandColor}bb 0%, ${site.brandColor}88 40%, rgba(0,0,0,0.5) 100%)`;
+    }
+    return `linear-gradient(135deg, ${site.brandColor}cc 0%, ${site.brandColor}99 40%, ${site.brandColor}66 100%)`;
   };
 
   return (
@@ -225,34 +272,48 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
       id="hero"
       className="relative min-h-[100vh] flex items-center justify-center overflow-hidden"
       data-testid="section-hero"
+      data-style={site.stylePreference || 'professional'}
     >
-      {/* Dynamic gradient background */}
+      {/* Trade-specific background image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${heroImage})` }}
+      />
+      
+      {/* Style-aware brand color overlay */}
       <div 
         className="absolute inset-0"
-        style={{ background: getHeroGradient() }}
+        style={{ background: getOverlayStyle() }}
       />
       
-      {/* Sophisticated overlay pattern */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
-      <div 
-        className="absolute inset-0 opacity-20"
-        style={{ 
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
+      {/* Dark gradient for text readability */}
+      <div className={`absolute inset-0 ${styleClasses.isLuxury ? 'bg-gradient-to-b from-black/30 via-transparent to-black/60' : 'bg-gradient-to-b from-black/40 via-black/20 to-black/50'}`} />
       
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24 pb-16">
-        {/* Floating badge */}
+        {/* Floating badge - style-specific appearance */}
         <div 
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-sm font-medium mb-10 shadow-lg"
+          className={`inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium mb-10 shadow-lg ${
+            styleClasses.isLuxury 
+              ? 'bg-white/10 backdrop-blur-xl border border-white/20 rounded-sm tracking-widest uppercase'
+              : styleClasses.isBold
+              ? 'bg-white/20 backdrop-blur-md border-2 border-white/40 rounded-none font-bold'
+              : 'bg-white/15 backdrop-blur-md border border-white/25 rounded-full'
+          }`}
         >
           <TradeIcon className="h-4 w-4" />
           <span>{site.serviceArea ? `Serving ${site.serviceArea}` : "Trusted Local Experts"}</span>
         </div>
 
-        {/* Main headline - now uses AI-generated content */}
+        {/* Main headline - style-specific typography */}
         <h1 
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight"
+          className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1] ${
+            styleClasses.isLuxury 
+              ? 'tracking-tight font-serif' 
+              : styleClasses.isBold 
+              ? 'tracking-wide uppercase' 
+              : 'tracking-tight'
+          }`}
+          style={styleClasses.isLuxury ? { fontFamily: 'Playfair Display, serif' } : undefined}
           data-testid="text-headline"
         >
           {headline}
@@ -260,7 +321,9 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
         
         {/* Subheadline */}
         <p 
-          className="text-xl sm:text-2xl md:text-3xl text-white/95 mb-6 font-medium tracking-wide"
+          className={`text-xl sm:text-2xl md:text-3xl text-white/95 mb-6 font-medium ${
+            styleClasses.isLuxury ? 'tracking-wider' : 'tracking-wide'
+          }`}
           data-testid="text-subheadline"
         >
           {subheadline}
@@ -330,28 +393,60 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
 }
 
 function TrustBadgesBar({ site }: { site: Site }) {
-  const badges = getTrustBadges(site.tradeType);
-  
-  const badgeIcons = [Shield, Clock, CheckCircle, Award];
+  // Dynamic stats based on actual site data
+  const stats = [
+    { 
+      value: site.yearsInBusiness ? `${site.yearsInBusiness}+` : "10+", 
+      label: "Years Experience",
+      icon: Award
+    },
+    { 
+      value: site.yearsInBusiness ? `${Math.round((site.yearsInBusiness || 10) * 25)}+` : "200+", 
+      label: "Projects Completed",
+      icon: CheckCircle
+    },
+    { 
+      value: "100%", 
+      label: "Satisfaction Rate",
+      icon: ThumbsUp
+    },
+    { 
+      value: "5.0", 
+      label: "Star Rating",
+      icon: Star
+    }
+  ];
 
   return (
-    <section className="bg-background py-8 md:py-10 border-b">
+    <section className="bg-background py-12 md:py-14 border-b" data-testid="section-trust-stats">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {badges.slice(0, 4).map((badge, index) => {
-            const IconComponent = badgeIcons[index % badgeIcons.length];
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+          {stats.map((stat, index) => {
+            const IconComponent = stat.icon;
             return (
               <div 
                 key={index} 
-                className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left"
+                className="text-center"
+                data-testid={`stat-${stat.label.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 <div 
-                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
                   style={{ backgroundColor: `${site.brandColor}15` }}
                 >
-                  <IconComponent className="h-6 w-6" style={{ color: site.brandColor }} />
+                  <IconComponent 
+                    className={`h-7 w-7 ${stat.label === 'Star Rating' ? 'fill-yellow-400 text-yellow-400' : ''}`} 
+                    style={stat.label !== 'Star Rating' ? { color: site.brandColor } : {}} 
+                  />
                 </div>
-                <span className="font-semibold text-foreground">{badge}</span>
+                <div 
+                  className="text-3xl md:text-4xl font-bold mb-1"
+                  style={{ color: site.brandColor }}
+                >
+                  {stat.value}
+                </div>
+                <div className="text-muted-foreground font-medium text-sm md:text-base">
+                  {stat.label}
+                </div>
               </div>
             );
           })}

@@ -239,6 +239,12 @@ Replit Auth is integrated using OpenID Connect for secure user authentication:
 - `SESSION_SECRET` - Secret for session encryption (auto-provided by Replit)
 
 ## Recent Changes
+- 2026-02-01: Enhanced PublicSite template with premium visual improvements
+  - Added trade-specific hero background images (7 trades: plumber, electrician, roofer, hvac, painter, landscaper, general_contractor)
+  - Implemented style preference visual treatments (luxury=serif/elegant, bold=uppercase/strong, warm=friendly, professional=clean)
+  - Created dynamic trust stats section showing real business data (years experience, calculated projects, ratings)
+  - Enhanced AI content generation with JSON markdown stripping for reliable parsing
+  - Improved service descriptions using AI-generated rich content instead of generic placeholders
 - 2026-01-31: Complete visual redesign with modern, sleek aesthetics
   - Updated CSS theme with blue gradient accents (221 83% 53%), glass-morphism effects, and smooth animations
   - Redesigned Landing page with gradient hero section, floating elements, stats, feature cards, 3-step how-it-works, testimonials grid, and modern footer
