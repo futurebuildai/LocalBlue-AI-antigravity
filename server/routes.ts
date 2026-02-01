@@ -73,6 +73,68 @@ export async function registerRoutes(
     }
   });
 
+  // Get all sites with enhanced data (lead count, onboarding status, last activity)
+  app.get("/api/admin/sites/enhanced", async (req, res) => {
+    try {
+      const allSites = await storage.getAllSites();
+      
+      const enhancedSites = await Promise.all(
+        allSites.map(async (site) => {
+          // Get leads for this site
+          const siteLeads = await storage.getLeadsBySiteId(site.id);
+          const leadCount = siteLeads.length;
+          
+          // Get onboarding progress
+          const progress = await storage.getOnboardingProgress(site.id);
+          let onboardingStatus: string;
+          if (!progress) {
+            onboardingStatus = "not_started";
+          } else if (progress.currentPhase === "complete") {
+            onboardingStatus = "completed";
+          } else {
+            onboardingStatus = progress.currentPhase;
+          }
+          
+          // Calculate last activity (most recent lead or onboarding update)
+          let lastActivity: Date | null = null;
+          
+          // Check most recent lead
+          if (siteLeads.length > 0 && siteLeads[0].createdAt) {
+            lastActivity = new Date(siteLeads[0].createdAt);
+          }
+          
+          // Check onboarding progress update time
+          if (progress?.updatedAt) {
+            const onboardingDate = new Date(progress.updatedAt);
+            if (!lastActivity || onboardingDate > lastActivity) {
+              lastActivity = onboardingDate;
+            }
+          }
+          
+          return {
+            ...site,
+            leadCount,
+            onboardingStatus,
+            lastActivity: lastActivity?.toISOString() || null,
+          };
+        })
+      );
+      
+      // Sort by last activity (most recent first)
+      enhancedSites.sort((a, b) => {
+        if (!a.lastActivity && !b.lastActivity) return 0;
+        if (!a.lastActivity) return 1;
+        if (!b.lastActivity) return -1;
+        return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
+      });
+      
+      res.json(enhancedSites);
+    } catch (error) {
+      console.error("Error fetching enhanced sites:", error);
+      res.status(500).json({ error: "Failed to fetch enhanced sites" });
+    }
+  });
+
   // Get single site
   app.get("/api/admin/sites/:id", async (req, res) => {
     try {

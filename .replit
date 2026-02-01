@@ -44,3 +44,4 @@ integrations = ["javascript_database:1.0.0", "javascript_anthropic_ai_integratio
 [userenv]
 
 [userenv.shared]
+PLATFORM_ADMIN_EMAILS = "shade@futurebuild.ai"
