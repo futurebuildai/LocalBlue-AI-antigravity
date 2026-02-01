@@ -214,6 +214,78 @@ export async function registerRoutes(
     }
   });
 
+  // Get comprehensive site details for admin view
+  app.get("/api/admin/sites/:siteId/details", async (req, res) => {
+    try {
+      const { siteId } = req.params;
+      const site = await storage.getSite(siteId);
+      
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+      
+      // Get all related data with fallbacks for missing methods
+      let leads: any[] = [];
+      let onboardingProgress: any = null;
+      let pages: any[] = [];
+      let users: any[] = [];
+      let photos: any[] = [];
+      let testimonials: any[] = [];
+      
+      try {
+        leads = await storage.getLeadsBySiteId(siteId);
+      } catch (e) {
+        console.error("Error fetching leads:", e);
+      }
+      
+      try {
+        onboardingProgress = await storage.getOnboardingProgress(siteId);
+      } catch (e) {
+        console.error("Error fetching onboarding progress:", e);
+      }
+      
+      try {
+        pages = await storage.getPagesBySiteId(siteId);
+      } catch (e) {
+        console.error("Error fetching pages:", e);
+      }
+      
+      try {
+        users = await storage.getTenantUsersBySiteId(siteId);
+      } catch (e) {
+        console.error("Error fetching users:", e);
+      }
+      
+      try {
+        photos = await storage.getSitePhotos(siteId);
+      } catch (e) {
+        console.error("Error fetching photos:", e);
+      }
+      
+      try {
+        testimonials = await storage.getTestimonials(siteId);
+      } catch (e) {
+        console.error("Error fetching testimonials:", e);
+      }
+      
+      // Sanitize user data - remove passwords
+      const sanitizedUsers = users.map(({ password, ...user }) => user);
+      
+      res.json({
+        site,
+        leads,
+        onboardingProgress,
+        pages,
+        users: sanitizedUsers,
+        photos,
+        testimonials
+      });
+    } catch (error) {
+      console.error("Error fetching site details:", error);
+      res.status(500).json({ error: "Failed to fetch site details" });
+    }
+  });
+
   // Platform Admin: Impersonate tenant admin
   app.post("/api/admin/sites/:siteId/impersonate", async (req, res) => {
     try {

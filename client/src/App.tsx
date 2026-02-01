@@ -21,6 +21,7 @@ import {
 import { LayoutDashboard, Building2, Users, ArrowRight } from "lucide-react";
 import Dashboard from "@/pages/admin/Dashboard";
 import Sites from "@/pages/admin/Sites";
+import SiteDetail from "@/pages/admin/SiteDetail";
 import UsersPage from "@/pages/admin/Users";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
@@ -96,6 +97,7 @@ function PlatformAdminRouter() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/sites/:siteId" component={SiteDetail} />
       <Route path="/sites" component={Sites} />
       <Route path="/users" component={UsersPage} />
       <Route component={NotFound} />
