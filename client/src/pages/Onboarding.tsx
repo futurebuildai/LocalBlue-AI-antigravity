@@ -360,9 +360,7 @@ export default function Onboarding() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#2563EB] text-white font-bold text-sm">
-                LB
-              </div>
+              <img src="/logo.png" alt="LocalBlue" className="h-8 w-8 rounded-md" />
               <div>
                 <h1 className="text-sm font-semibold" data-testid="text-business-name">
                   {session.site.businessName}

@@ -61,9 +61,7 @@ function AppSidebar() {
     <Sidebar className="border-r-0">
       <SidebarHeader className="p-4 pb-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl gradient-primary text-white font-bold text-lg shadow-lg shadow-primary/25">
-            LB
-          </div>
+          <img src="/logo.png" alt="LocalBlue" className="h-11 w-11 rounded-lg" />
           <div>
             <h2 className="text-sm font-bold">LocalBlue</h2>
             <p className="text-xs text-muted-foreground">Platform Admin</p>

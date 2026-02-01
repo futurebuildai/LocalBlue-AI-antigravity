@@ -157,9 +157,7 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-[9999] glass border-b">
         <div className="max-w-7xl mx-auto flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-white font-bold text-lg shadow-lg">
-              LB
-            </div>
+            <img src="/logo.png" alt="LocalBlue" className="h-10 w-10 rounded-lg" />
             <span className="text-xl font-bold tracking-tight">LocalBlue</span>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -511,9 +509,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 flex-wrap">
             <div className="flex items-center gap-3" data-testid="footer-logo">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-white font-bold text-lg">
-                LB
-              </div>
+              <img src="/logo.png" alt="LocalBlue" className="h-10 w-10 rounded-lg" />
               <span className="text-lg font-bold">LocalBlue</span>
             </div>
             <p className="text-muted-foreground text-sm" data-testid="footer-copyright">
