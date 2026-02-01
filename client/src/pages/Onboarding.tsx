@@ -359,8 +359,9 @@ export default function Onboarding() {
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="LocalBlue" className="h-8 w-8 rounded-md" />
+            <div className="flex items-center gap-3">
+              <img src="/logo-wordmark.png" alt="LocalBlue" className="h-7 object-contain" />
+              <div className="h-6 w-px bg-border" />
               <div>
                 <h1 className="text-sm font-semibold" data-testid="text-business-name">
                   {session.site.businessName}

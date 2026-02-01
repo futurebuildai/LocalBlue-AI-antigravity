@@ -156,10 +156,9 @@ export default function Landing() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-[9999] glass border-b">
         <div className="max-w-7xl mx-auto flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="LocalBlue" className="h-10 w-10 rounded-lg" />
-            <span className="text-xl font-bold tracking-tight">LocalBlue</span>
-          </div>
+          <Link href="/" className="flex items-center">
+            <img src="/logo-wordmark.png" alt="LocalBlue" className="h-9 object-contain" />
+          </Link>
           <div className="flex items-center gap-3 flex-wrap">
             <Link href="/signup">
               <Button data-testid="link-header-signup">
@@ -508,9 +507,8 @@ export default function Landing() {
       <footer className="bg-card border-t py-12" data-testid="footer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 flex-wrap">
-            <div className="flex items-center gap-3" data-testid="footer-logo">
-              <img src="/logo.png" alt="LocalBlue" className="h-10 w-10 rounded-lg" />
-              <span className="text-lg font-bold">LocalBlue</span>
+            <div className="flex items-center" data-testid="footer-logo">
+              <img src="/logo-wordmark.png" alt="LocalBlue" className="h-8 object-contain" />
             </div>
             <p className="text-muted-foreground text-sm" data-testid="footer-copyright">
               &copy; {new Date().getFullYear()} LocalBlue. All rights reserved.

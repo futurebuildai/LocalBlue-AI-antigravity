@@ -60,12 +60,9 @@ function AppSidebar() {
   return (
     <Sidebar className="border-r-0">
       <SidebarHeader className="p-4 pb-6">
-        <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="LocalBlue" className="h-11 w-11 rounded-lg" />
-          <div>
-            <h2 className="text-sm font-bold">LocalBlue</h2>
-            <p className="text-xs text-muted-foreground">Platform Admin</p>
-          </div>
+        <div className="flex flex-col gap-1">
+          <img src="/logo-wordmark.png" alt="LocalBlue" className="h-8 object-contain object-left" />
+          <p className="text-xs text-muted-foreground font-medium">Platform Admin</p>
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2">
