@@ -154,7 +154,7 @@ export default function TenantAdminLayout({ site, user, onLogout, children }: Te
             <div className="rounded-xl bg-muted/50 p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center text-white font-medium text-sm">
-                  {user.email.charAt(0).toUpperCase()}
+                  {(user.email || 'A').charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" data-testid="text-sidebar-user-email">
