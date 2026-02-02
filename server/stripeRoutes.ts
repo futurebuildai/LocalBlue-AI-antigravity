@@ -183,6 +183,7 @@ export function registerStripeRoutes(app: Express) {
   app.get('/api/admin/revenue', async (req, res) => {
     try {
       // Get subscription metrics from synced Stripe data
+      // Note: plan column is text containing JSON, need to cast to jsonb
       const subscriptionStats = await db.execute(sql`
         SELECT 
           COUNT(*) FILTER (WHERE status = 'active') as active_subscriptions,
@@ -191,8 +192,8 @@ export function registerStripeRoutes(app: Express) {
           COUNT(*) FILTER (WHERE status = 'canceled') as canceled_subscriptions,
           COALESCE(SUM(CASE WHEN status = 'active' THEN 
             CASE 
-              WHEN plan->>'interval' = 'month' THEN (plan->>'amount')::numeric / 100
-              WHEN plan->>'interval' = 'year' THEN (plan->>'amount')::numeric / 100 / 12
+              WHEN (plan::jsonb)->>'interval' = 'month' THEN ((plan::jsonb)->>'amount')::numeric / 100
+              WHEN (plan::jsonb)->>'interval' = 'year' THEN ((plan::jsonb)->>'amount')::numeric / 100 / 12
               ELSE 0 
             END
           ELSE 0 END), 0) as monthly_recurring_revenue
