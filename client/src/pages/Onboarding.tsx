@@ -343,8 +343,8 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0 z-50">
         <div className="flex flex-col sm:flex-row h-auto sm:h-14 items-start sm:items-center justify-between gap-2 px-2 sm:px-4 py-2 sm:py-0">
           <div className="flex items-center gap-2 min-w-0">
             <Button 
@@ -391,14 +391,16 @@ export default function Onboarding() {
         </div>
       </header>
 
-      <OnboardingProgress
-        currentPhase={currentPhase}
-        completedPhases={completedPhases}
-        onPhaseClick={handlePhaseClick}
-      />
+      <div className="flex-shrink-0">
+        <OnboardingProgress
+          currentPhase={currentPhase}
+          completedPhases={completedPhases}
+          onPhaseClick={handlePhaseClick}
+        />
+      </div>
 
-      <main className="flex-1 flex overflow-hidden">
-        <div className={`flex flex-col ${isMobile ? 'w-full' : 'w-[55%]'} ${!isMobile && 'border-r'}`}>
+      <main className="flex-1 flex overflow-hidden min-h-0">
+        <div className={`flex flex-col min-h-0 ${isMobile ? 'w-full' : 'w-[55%]'} ${!isMobile && 'border-r'}`}>
           {showPhotoUpload && currentPhase === "photos" ? (
             <div className="flex-1 overflow-auto p-2 sm:p-4">
               <div className="max-w-2xl mx-auto px-2 sm:px-0">
@@ -494,7 +496,7 @@ export default function Onboarding() {
                 </div>
               </ScrollArea>
 
-              <div className="border-t p-2 sm:p-4 bg-background">
+              <div className="border-t p-2 sm:p-4 bg-background flex-shrink-0">
                 <div className="flex gap-2 max-w-2xl mx-auto px-2 sm:px-0">
                   <Button
                     variant="outline"
