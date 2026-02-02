@@ -341,27 +341,6 @@ export default function Onboarding() {
               </h1>
             </div>
           </div>
-          {readyToGenerate && (
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              variant="outline"
-              className="bg-white/10 backdrop-blur-sm border-white/30 text-white"
-              data-testid="button-generate-site"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Site
-                </>
-              )}
-            </Button>
-          )}
         </div>
       </header>
 
@@ -489,6 +468,41 @@ export default function Onboarding() {
                           <div className="w-2.5 h-2.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
                           <div className="w-2.5 h-2.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {readyToGenerate && !isStreaming && (
+                  <div className="flex gap-3 flex-wrap" data-testid="generate-action-card">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl rounded-tl-md px-5 py-5">
+                        <p className="text-base text-white/90 mb-4">
+                          Ready to see your website? Let's generate it!
+                        </p>
+                        <Button
+                          onClick={handleGenerate}
+                          disabled={isGenerating}
+                          size="lg"
+                          className="bg-white text-blue-700 font-semibold"
+                          data-testid="button-generate-site"
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Generating Your Website...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              Generate Your Website
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </div>
