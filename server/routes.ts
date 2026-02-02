@@ -557,6 +557,46 @@ export async function registerRoutes(
     }
   });
 
+  // Main site login (for contractors who signed up)
+  app.post("/api/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password are required" });
+      }
+
+      const user = await storage.getTenantUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      // Get the user's site
+      if (!user.siteId) {
+        return res.status(404).json({ error: "No site associated with this account" });
+      }
+      const site = await storage.getSite(user.siteId);
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+
+      // Set session
+      req.session.userId = user.id;
+      req.session.siteId = site.id;
+
+      const { password: _, ...sanitizedUser } = user;
+      res.json({ user: sanitizedUser, site });
+    } catch (error) {
+      console.error("Error during login:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
   // ============================================
   // Tenant-scoped API Routes
   // ============================================

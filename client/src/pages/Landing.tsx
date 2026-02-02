@@ -62,7 +62,7 @@ const features = [
 ];
 
 const stats = [
-  { value: "< 5 min", label: "Average Build Time", icon: Clock },
+  { value: "< 15 min", label: "Average Build Time", icon: Clock },
   { value: "24/7", label: "AI Support", icon: Users },
   { value: "100%", label: "White-Label", icon: Shield },
 ];
@@ -434,7 +434,7 @@ export default function Landing() {
         <section className="py-24 relative section-gradient-dark" data-testid="section-stats">
           <div className="absolute inset-0 mesh-gradient opacity-50" />
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-12 justify-items-center">
               {stats.map((stat, index) => (
                 <AnimatedSection key={index} animation="fade-up" delay={index * 100}>
                   <div className="text-center group" data-testid={`stat-${index}`}>

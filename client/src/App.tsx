@@ -27,6 +27,7 @@ import Revenue from "@/pages/admin/Revenue";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import SignUp from "@/pages/SignUp";
+import Login from "@/pages/Login";
 import Onboarding from "@/pages/Onboarding";
 import TenantLogin from "@/pages/tenant-admin/Login";
 import TenantDashboard from "@/pages/tenant-admin/Dashboard";
@@ -296,6 +297,7 @@ function MainSiteApp() {
       <Route path="/landing" component={Landing} />
       <Route path="/demo" component={Demo} />
       <Route path="/signup" component={SignUp} />
+      <Route path="/login" component={Login} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/preview/:subdomain" component={PreviewSite} />
       <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
