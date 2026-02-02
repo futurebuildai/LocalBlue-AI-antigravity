@@ -39,6 +39,7 @@ import TenantLeads from "@/pages/tenant-admin/Leads";
 import TenantAdminLayout from "@/components/TenantAdminLayout";
 import PublicSite from "@/pages/PublicSite";
 import PreviewSite from "@/pages/PreviewSite";
+import PreviewAdmin from "@/pages/PreviewAdmin";
 import Demo from "@/pages/Demo";
 import TenantImpersonate from "@/pages/TenantImpersonate";
 import type { Site, User } from "@shared/schema";
@@ -301,6 +302,8 @@ function MainSiteApp() {
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/preview/:subdomain/admin/:rest*" component={PreviewAdmin} />
+      <Route path="/preview/:subdomain/admin" component={PreviewAdmin} />
       <Route path="/preview/:subdomain" component={PreviewSite} />
       <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
       <Route path="/admin/:rest*" component={PlatformAdmin} />

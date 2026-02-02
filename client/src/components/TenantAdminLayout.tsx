@@ -28,6 +28,7 @@ interface TenantAdminLayoutProps {
   user: SanitizedUser;
   onLogout: () => void;
   children: React.ReactNode;
+  basePath?: string;
 }
 
 const navItems = [
@@ -38,9 +39,23 @@ const navItems = [
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
-export default function TenantAdminLayout({ site, user, onLogout, children }: TenantAdminLayoutProps) {
+export default function TenantAdminLayout({ site, user, onLogout, children, basePath = "" }: TenantAdminLayoutProps) {
   const [location] = useLocation();
   const { toast } = useToast();
+  
+  const getNavUrl = (url: string) => {
+    if (!basePath) return url;
+    if (url === "/") return basePath;
+    return `${basePath}${url}`;
+  };
+  
+  const isActive = (url: string) => {
+    const fullUrl = getNavUrl(url);
+    if (url === "/") {
+      return location === basePath || location === basePath + "/";
+    }
+    return location.startsWith(fullUrl);
+  };
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -109,10 +124,10 @@ export default function TenantAdminLayout({ site, user, onLogout, children }: Te
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
-                        isActive={location === item.url}
+                        isActive={isActive(item.url)}
                       >
                         <Link 
-                          href={item.url} 
+                          href={getNavUrl(item.url)} 
                           data-testid={`link-tenant-nav-${item.title.toLowerCase()}`}
                         >
                           <item.icon className="h-4 w-4" />
@@ -183,7 +198,7 @@ export default function TenantAdminLayout({ site, user, onLogout, children }: Te
             <SidebarTrigger className="h-10 w-10 min-h-[44px] min-w-[44px]" data-testid="button-tenant-sidebar-toggle" />
             <div className="flex-1 min-w-0">
               <h1 className="text-base sm:text-lg font-semibold truncate" data-testid="text-header-business-name">
-                {navItems.find(item => item.url === location)?.title || 'Dashboard'}
+                {navItems.find(item => isActive(item.url))?.title || 'Dashboard'}
               </h1>
             </div>
           </header>

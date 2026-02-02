@@ -104,6 +104,10 @@ export default function Onboarding() {
       if (session.progress.collectedData) {
         setCollectedData(prev => ({ ...prev, ...session.progress!.collectedData }));
       }
+      // If we're in review phase, enable the generate button
+      if (session.progress.currentPhase === "review") {
+        setReadyToGenerate(true);
+      }
     }
   }, [session]);
 
@@ -418,6 +422,7 @@ export default function Onboarding() {
                       setShowPhotoUpload(false);
                       setCurrentPhase("review");
                       setCompletedPhases(newCompletedPhases);
+                      setReadyToGenerate(true); // Enable the generate button
                       
                       // Sync with backend to prevent SSE from overriding
                       try {
@@ -431,7 +436,7 @@ export default function Onboarding() {
                     }}
                     className="bg-[#2563EB] hover:bg-[#1d4ed8] text-xs sm:text-sm w-full sm:w-auto"
                     size="sm"
-                    data-testid="button-continue-chat"
+                    data-testid="button-continue-review"
                   >
                     Continue to Review
                   </Button>
