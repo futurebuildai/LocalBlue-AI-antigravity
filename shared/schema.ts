@@ -84,6 +84,10 @@ export const sites = pgTable("sites", {
   hasCreditCard: boolean("has_credit_card").notNull().default(false),
   billingPeriod: text("billing_period").$type<"monthly" | "annual">().default("monthly"),
   
+  // Stripe integration fields
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  
   // Enhanced fields for spectacular sites
   tradeType: text("trade_type").$type<TradeType>(),
   stylePreference: text("style_preference").$type<StylePreference>().default("professional"),

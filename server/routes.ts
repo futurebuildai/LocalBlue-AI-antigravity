@@ -6,6 +6,7 @@ import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES
 import { TRADE_TEMPLATES, STYLE_TEMPLATES, AVAILABLE_PAGES, getTradeTemplate, getStyleTemplate } from "@shared/tradeTemplates";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { sendLeadNotification, sendWelcomeEmail } from "./services/email";
+import { registerStripeRoutes } from "./stripeRoutes";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
@@ -50,6 +51,9 @@ export async function registerRoutes(
   // Setup Replit Auth before other routes
   await setupAuth(app);
   registerAuthRoutes(app);
+  
+  // Register Stripe routes for payments and billing
+  registerStripeRoutes(app);
 
   // Apply tenant middleware globally
   app.use(tenantMiddleware);

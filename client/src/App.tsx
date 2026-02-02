@@ -18,11 +18,12 @@ import {
   SidebarHeader,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Building2, Users, ArrowRight } from "lucide-react";
+import { LayoutDashboard, Building2, Users, ArrowRight, DollarSign } from "lucide-react";
 import Dashboard from "@/pages/admin/Dashboard";
 import Sites from "@/pages/admin/Sites";
 import SiteDetail from "@/pages/admin/SiteDetail";
 import UsersPage from "@/pages/admin/Users";
+import Revenue from "@/pages/admin/Revenue";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import SignUp from "@/pages/SignUp";
@@ -52,6 +53,7 @@ const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Sites", url: "/admin/sites", icon: Building2 },
   { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Revenue", url: "/admin/revenue", icon: DollarSign },
 ];
 
 function AppSidebar() {
@@ -95,6 +97,7 @@ function PlatformAdminRouter() {
       <Route path="/admin/sites/:siteId" component={SiteDetail} />
       <Route path="/admin/sites" component={Sites} />
       <Route path="/admin/users" component={UsersPage} />
+      <Route path="/admin/revenue" component={Revenue} />
       <Route component={NotFound} />
     </Switch>
   );
