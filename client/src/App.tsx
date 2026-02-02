@@ -208,7 +208,9 @@ function detectDomainType(): DomainType {
   // Main site: localhost without subdomain, or the main domain
   if (hostname === "localhost" || 
       hostname === "localblue" ||
-      hostname === "www.localblue") {
+      hostname === "www.localblue" ||
+      hostname === "localblue.co" ||
+      hostname === "www.localblue.co") {
     return "main";
   }
   
