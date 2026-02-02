@@ -5,7 +5,7 @@ import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth,
 import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES, type TradeType, type StylePreference } from "@shared/schema";
 import { TRADE_TEMPLATES, STYLE_TEMPLATES, AVAILABLE_PAGES, getTradeTemplate, getStyleTemplate } from "@shared/tradeTemplates";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
-import { sendLeadNotification, sendWelcomeEmail } from "./services/email";
+import { sendLeadNotification, sendWelcomeEmail, sendContactSalesEmail } from "./services/email";
 import { registerStripeRoutes } from "./stripeRoutes";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -2124,6 +2124,34 @@ Return ONLY valid JSON.`;
     } catch (error) {
       console.error("Error fetching appointments:", error);
       res.status(500).json({ error: "Failed to fetch appointments" });
+    }
+  });
+
+  // Contact Sales - public endpoint for Scale plan inquiries
+  app.post("/api/contact-sales", async (req, res) => {
+    try {
+      const { name, email, phone, businessName, message } = req.body;
+      
+      if (!name || !email || !businessName) {
+        return res.status(400).json({ error: "Name, email, and business name are required" });
+      }
+
+      const emailSent = await sendContactSalesEmail({
+        name,
+        email,
+        phone,
+        businessName,
+        message,
+      });
+
+      if (!emailSent) {
+        return res.status(500).json({ error: "Failed to send message. Please try again." });
+      }
+
+      res.status(200).json({ success: true, message: "Your message has been sent successfully" });
+    } catch (error) {
+      console.error("Error processing contact sales request:", error);
+      res.status(500).json({ error: "Failed to process request" });
     }
   });
 

@@ -1,8 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Logo } from "@/components/Logo";
 import { TypewriterText } from "@/components/TypewriterText";
 import { FloatingIcons } from "@/components/FloatingIcons";
@@ -10,6 +15,8 @@ import { AnimatedSection } from "@/components/AnimatedSection";
 import { useScrollSpy } from "@/hooks/use-scroll-spy";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { VideoModal } from "@/components/VideoModal";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   MessageSquare, 
   Globe, 
@@ -29,7 +36,8 @@ import {
   Crown,
   Briefcase,
   Menu,
-  X
+  X,
+  Loader2
 } from "lucide-react";
 
 const features = [
@@ -54,10 +62,9 @@ const features = [
 ];
 
 const stats = [
-  { value: "500+", label: "Contractors Served", icon: Building2 },
   { value: "< 5 min", label: "Average Build Time", icon: Clock },
-  { value: "4.9/5", label: "Customer Rating", icon: Star },
   { value: "24/7", label: "AI Support", icon: Users },
+  { value: "100%", label: "White-Label", icon: Shield },
 ];
 
 const steps = [
@@ -78,24 +85,21 @@ const steps = [
   },
 ];
 
-const testimonials = [
+const foundingPartnerBenefits = [
   {
-    quote: "I had my website up and running in 10 minutes. My clients are impressed!",
-    name: "Mike Johnson",
-    role: "Johnson Plumbing Co.",
-    rating: 5,
+    title: "Lock In Founder Pricing",
+    description: "Your rate stays the same forever - even as we add more features and raise prices.",
+    icon: Shield,
   },
   {
-    quote: "Finally, a website builder that understands contractors. No tech skills needed.",
-    name: "Sarah Martinez",
-    role: "Elite Electrical Services",
-    rating: 5,
+    title: "Shape the Product",
+    description: "Direct line to our team. Your feedback directly influences what we build next.",
+    icon: MessageSquare,
   },
   {
-    quote: "The AI chatbot generates leads while I'm on the job. Game changer!",
-    name: "David Chen",
-    role: "Chen HVAC Solutions",
-    rating: 5,
+    title: "Priority Support",
+    description: "Founding partners get white-glove onboarding and priority support.",
+    icon: Zap,
   },
 ];
 
@@ -150,13 +154,13 @@ const pricingPlans = [
   },
   {
     name: "Scale",
-    description: "Local Dominance",
-    price: "$199",
-    priceDetail: "/month",
-    annualPrice: "$1,990",
-    annualPriceDetail: "/year",
-    monthlyEquivalent: "$165",
-    savings: "$398",
+    description: "Custom Implementation",
+    price: "Custom",
+    priceDetail: "",
+    annualPrice: "",
+    annualPriceDetail: "",
+    monthlyEquivalent: "",
+    savings: "",
     icon: Crown,
     features: [
       "Unlimited leads",
@@ -168,25 +172,56 @@ const pricingPlans = [
       "Dedicated account manager",
       "Phone support",
     ],
-    cta: "Start 30-Day Free Trial",
+    cta: "Contact Sales",
     popular: false,
     gradient: "from-violet-500 to-purple-600",
+    isContactSales: true,
   },
 ];
 
 export default function Landing() {
+  const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
-  const sectionIds = useMemo(() => ['features', 'how-it-works', 'testimonials', 'pricing'], []);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '', businessName: '', message: '' });
+  const [contactSubmitted, setContactSubmitted] = useState(false);
+  const sectionIds = useMemo(() => ['features', 'how-it-works', 'founding-partners', 'pricing'], []);
   const activeSection = useScrollSpy({ sectionIds, offset: 64 });
 
   const navLinks = [
     { id: 'features', label: 'Features' },
     { id: 'how-it-works', label: 'How It Works' },
-    { id: 'testimonials', label: 'Testimonials' },
+    { id: 'founding-partners', label: 'Founding Partners' },
     { id: 'pricing', label: 'Pricing' },
   ];
+
+  const contactMutation = useMutation({
+    mutationFn: async (data: typeof contactForm) => {
+      const response = await apiRequest('POST', '/api/contact-sales', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      setContactSubmitted(true);
+      toast({
+        title: "Message Sent!",
+        description: "We'll be in touch within 24 hours.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    contactMutation.mutate(contactForm);
+  };
 
   const handleMobileNavClick = () => {
     setMobileMenuOpen(false);
@@ -329,12 +364,6 @@ export default function Landing() {
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
           <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-24">
-            {/* Animated badge */}
-            <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/80 text-sm mb-10 animate-fade-in-up glow-subtle">
-              <Sparkles className="h-4 w-4 text-blue-400" />
-              <span className="font-medium tracking-wide">AI-Powered Website Builder for Contractors</span>
-            </div>
-
             {/* Large bold headline with typewriter effect */}
             <h1 
               className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-[1.05] tracking-tight animate-fade-in-up delay-100"
@@ -501,50 +530,59 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Testimonials Section - Warm amber accents */}
-        <section id="testimonials" className="py-24 md:py-32 relative overflow-hidden scroll-mt-20">
+        {/* Founding Partners Section - Warm amber accents */}
+        <section id="founding-partners" className="py-24 md:py-32 relative overflow-hidden scroll-mt-20">
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-rose-500/5" />
           <div className="absolute inset-0 grid-pattern" />
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <AnimatedSection animation="fade-up" className="text-center mb-20">
+            <AnimatedSection animation="fade-up" className="text-center mb-16">
               <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-semibold mb-8 shimmer">
-                <Star className="h-4 w-4 fill-current" />
-                Testimonials
+                <Rocket className="h-4 w-4" />
+                Early Access
               </div>
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-                Loved by
-                <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent"> Contractors</span>
+                Become a
+                <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent"> Founding Partner</span>
               </h2>
-              <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-lg font-light leading-relaxed">
-                See what business owners like you are saying about LocalBlue
+              <p className="mx-auto mt-6 max-w-3xl text-muted-foreground text-lg font-light leading-relaxed">
+                We're building LocalBlue because we believe contractors deserve better than overpriced, 
+                complicated website builders. As a founding partner, you'll help shape the future of 
+                contractor marketing while locking in exclusive benefits.
               </p>
             </AnimatedSection>
 
-            <div className="grid md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, index) => (
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              {foundingPartnerBenefits.map((benefit, index) => (
                 <AnimatedSection key={index} animation="scale-up" delay={index * 150}>
                   <Card className="card-lift border border-border/50 shadow-lg bg-card/80 backdrop-blur-sm overflow-visible h-full">
-                    <CardContent className="p-8">
-                      <div className="flex gap-1 mb-6">
-                        {Array.from({ length: testimonial.rating }).map((_, i) => (
-                          <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400 drop-shadow-sm" />
-                        ))}
+                    <CardContent className="p-8 text-center">
+                      <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-xl shadow-amber-500/20">
+                        <benefit.icon className="h-7 w-7 text-white" />
                       </div>
-                      <p className="text-foreground text-lg mb-8 leading-relaxed font-light italic">"{testimonial.quote}"</p>
-                      <div className="flex items-center gap-4 flex-wrap">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold shadow-lg shadow-amber-500/20">
-                          {testimonial.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-semibold">{testimonial.name}</div>
-                          <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                        </div>
-                      </div>
+                      <h3 className="text-xl font-bold mb-3">{benefit.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{benefit.description}</p>
                     </CardContent>
                   </Card>
                 </AnimatedSection>
               ))}
             </div>
+
+            <AnimatedSection animation="fade-up" delay={450}>
+              <Card className="border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-orange-500/5 backdrop-blur-sm">
+                <CardContent className="p-8 md:p-12 text-center">
+                  <h3 className="text-2xl md:text-3xl font-bold mb-4">Why We're Building LocalBlue</h3>
+                  <p className="max-w-3xl mx-auto text-muted-foreground leading-relaxed mb-6">
+                    Too many contractors are paying $200-500/month for websites that don't work for them — 
+                    or worse, getting locked into contracts with companies that own their domain and content. 
+                    We're changing that. LocalBlue gives you a professional website you actually own, 
+                    at a price that makes sense, with AI that does the heavy lifting.
+                  </p>
+                  <p className="text-lg font-semibold text-amber-600 dark:text-amber-400">
+                    Join us in the early days and help build something great.
+                  </p>
+                </CardContent>
+              </Card>
+            </AnimatedSection>
           </div>
         </section>
 
@@ -657,16 +695,28 @@ export default function Landing() {
                       </ul>
                     </CardContent>
                     <CardFooter className="pb-8">
-                      <Link href="/signup" className="w-full">
+                      {(plan as any).isContactSales ? (
                         <Button 
-                          className={`w-full ${plan.popular ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/30 border-0' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
-                          variant={plan.popular ? "default" : "outline"}
+                          className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20"
+                          variant="outline"
                           data-testid={`button-pricing-${plan.name.toLowerCase()}`}
+                          onClick={() => setContactModalOpen(true)}
                         >
                           {plan.cta}
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
-                      </Link>
+                      ) : (
+                        <Link href="/signup" className="w-full">
+                          <Button 
+                            className={`w-full ${plan.popular ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/30 border-0' : 'bg-white/10 border-white/20 text-white hover:bg-white/20'}`}
+                            variant={plan.popular ? "default" : "outline"}
+                            data-testid={`button-pricing-${plan.name.toLowerCase()}`}
+                          >
+                            {plan.cta}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                      )}
                     </CardFooter>
                   </Card>
                 </AnimatedSection>
@@ -741,6 +791,115 @@ export default function Landing() {
         open={videoModalOpen} 
         onOpenChange={setVideoModalOpen} 
       />
+
+      {/* Contact Sales Modal */}
+      <Dialog open={contactModalOpen} onOpenChange={(open) => {
+        setContactModalOpen(open);
+        if (!open) {
+          setContactSubmitted(false);
+          setContactForm({ name: '', email: '', phone: '', businessName: '', message: '' });
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Contact Sales</DialogTitle>
+            <DialogDescription>
+              Tell us about your business and we'll reach out to discuss custom implementation options.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {contactSubmitted ? (
+            <div className="text-center py-8">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Thank You!</h3>
+              <p className="text-muted-foreground">
+                We've received your message and will be in touch within 24 hours.
+              </p>
+              <Button 
+                className="mt-6"
+                onClick={() => setContactModalOpen(false)}
+                data-testid="button-contact-close"
+              >
+                Close
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleContactSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="contact-name">Your Name</Label>
+                <Input
+                  id="contact-name"
+                  placeholder="John Smith"
+                  value={contactForm.name}
+                  onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                  required
+                  data-testid="input-contact-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-email">Email</Label>
+                <Input
+                  id="contact-email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                  required
+                  data-testid="input-contact-email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-phone">Phone (optional)</Label>
+                <Input
+                  id="contact-phone"
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  value={contactForm.phone}
+                  onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                  data-testid="input-contact-phone"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-business">Business Name</Label>
+                <Input
+                  id="contact-business"
+                  placeholder="Smith Plumbing"
+                  value={contactForm.businessName}
+                  onChange={(e) => setContactForm({ ...contactForm, businessName: e.target.value })}
+                  required
+                  data-testid="input-contact-business"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact-message">How can we help?</Label>
+                <Textarea
+                  id="contact-message"
+                  placeholder="Tell us about your business and what you're looking for..."
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                  rows={3}
+                  data-testid="input-contact-message"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={contactMutation.isPending}
+                data-testid="button-contact-submit"
+              >
+                {contactMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Message"
+                )}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

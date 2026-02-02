@@ -158,6 +158,106 @@ export async function sendLeadNotification(data: LeadNotificationData): Promise<
   }
 }
 
+interface ContactSalesData {
+  name: string;
+  email: string;
+  phone?: string;
+  businessName: string;
+  message?: string;
+}
+
+export async function sendContactSalesEmail(data: ContactSalesData): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getResendClient();
+    
+    const safeName = escapeHtml(data.name);
+    const safeEmail = escapeHtml(data.email);
+    const safePhone = data.phone ? escapeHtml(data.phone) : '';
+    const safeBusinessName = escapeHtml(data.businessName);
+    const safeMessage = data.message ? escapeHtml(data.message) : 'No message provided';
+    
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Scale Plan Inquiry</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">New Scale Plan Inquiry</h1>
+    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0;">Someone wants to learn about custom implementation</p>
+  </div>
+  
+  <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0; border-top: none;">
+    <div style="background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <h2 style="margin: 0 0 20px; color: #1e293b; font-size: 18px; border-bottom: 2px solid #7c3aed; padding-bottom: 10px;">Contact Details</h2>
+      
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; width: 120px; color: #64748b; font-weight: 500;">Name</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 600;">${safeName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 500;">Email</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+            <a href="mailto:${safeEmail}" style="color: #7c3aed; text-decoration: none;">${safeEmail}</a>
+          </td>
+        </tr>
+        ${safePhone ? `
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 500;">Phone</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+            <a href="tel:${safePhone}" style="color: #7c3aed; text-decoration: none;">${safePhone}</a>
+          </td>
+        </tr>
+        ` : ''}
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 500;">Business</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 600;">${safeBusinessName}</td>
+        </tr>
+      </table>
+      
+      <div style="margin-top: 24px;">
+        <h3 style="margin: 0 0 12px; color: #1e293b; font-size: 16px;">Message</h3>
+        <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; border-left: 4px solid #7c3aed;">
+          <p style="margin: 0; color: #475569; white-space: pre-wrap;">${safeMessage}</p>
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 24px; text-align: center;">
+      <a href="mailto:${safeEmail}?subject=Re: LocalBlue Scale Plan Inquiry" 
+         style="display: inline-block; background: #7c3aed; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+        Reply to ${safeName}
+      </a>
+    </div>
+  </div>
+  
+  <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
+    <p style="margin: 0;">LocalBlue Scale Plan Inquiry</p>
+  </div>
+</body>
+</html>
+    `;
+
+    const result = await client.emails.send({
+      from: fromEmail || 'LocalBlue <sales@localblue>',
+      to: 'colton@futurebuild.ai',
+      subject: `Scale Plan Inquiry: ${safeBusinessName} - ${safeName}`,
+      html: emailHtml,
+      replyTo: data.email,
+    });
+
+    console.log('Contact sales email sent:', result);
+    return true;
+  } catch (error) {
+    console.error('Failed to send contact sales email:', error);
+    return false;
+  }
+}
+
 interface WelcomeEmailData {
   businessName: string;
   businessEmail: string;
