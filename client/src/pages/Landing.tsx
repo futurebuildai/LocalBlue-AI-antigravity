@@ -235,12 +235,12 @@ export default function Landing() {
         <div className="relative max-w-7xl mx-auto flex h-16 items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
           <Logo size="md" linkTo="/" variant="light" />
           
-          <nav className="hidden md:flex items-center gap-8 flex-wrap">
+          <nav className="hidden md:flex items-center justify-center gap-8">
             {navLinks.map((link) => (
               <a
                 key={link.id}
                 href={`#${link.id}`}
-                className={`text-sm font-medium transition-all duration-300 relative pb-1 ${
+                className={`text-sm font-medium transition-all duration-300 relative ${
                   activeSection === link.id
                     ? 'text-white after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-blue-400 after:rounded-full'
                     : 'text-white/70 hover:text-white'
@@ -250,9 +250,6 @@ export default function Landing() {
                 {link.label}
               </a>
             ))}
-            <Link href="/demo" className="text-sm font-medium text-white/70 hover:text-white transition-colors" data-testid="link-nav-demo">
-              Demo
-            </Link>
           </nav>
           
           <div className="flex items-center gap-3 flex-wrap">
@@ -308,14 +305,6 @@ export default function Landing() {
                           {link.label}
                         </a>
                       ))}
-                      <Link 
-                        href="/demo" 
-                        onClick={handleMobileNavClick}
-                        className="text-lg font-medium py-3 px-4 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200"
-                        data-testid="link-mobile-nav-demo"
-                      >
-                        Demo
-                      </Link>
                     </div>
                   </nav>
                   
@@ -777,7 +766,6 @@ export default function Landing() {
               <nav className="flex items-center gap-6 flex-wrap">
                 <a href="#features" className="text-sm text-white/50 hover:text-white transition-colors" data-testid="link-footer-features">Features</a>
                 <a href="#pricing" className="text-sm text-white/50 hover:text-white transition-colors" data-testid="link-footer-pricing">Pricing</a>
-                <Link href="/demo" className="text-sm text-white/50 hover:text-white transition-colors" data-testid="link-footer-demo">Demo</Link>
               </nav>
               <p className="text-white/30 text-sm" data-testid="footer-copyright">
                 &copy; {new Date().getFullYear()} LocalBlue. All rights reserved.
