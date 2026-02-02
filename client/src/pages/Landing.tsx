@@ -102,71 +102,73 @@ const testimonials = [
 const pricingPlans = [
   {
     name: "Starter",
-    description: "Perfect for getting started",
-    price: "Free",
-    priceDetail: "forever",
-    annualPrice: "Free",
-    annualPriceDetail: "forever",
-    monthlyEquivalent: null,
-    savings: null,
+    description: "Professional Presence",
+    price: "$49",
+    priceDetail: "/month",
+    annualPrice: "$490",
+    annualPriceDetail: "/year",
+    monthlyEquivalent: "$41",
+    savings: "$98",
     icon: Rocket,
     features: [
+      "Unlimited leads",
       "AI-built professional website",
-      "LocalBlue subdomain",
-      "Contact form with email alerts",
+      "White-label admin (admin.site.com)",
+      "Standard contact forms",
+      "Manual booking management",
+      "1 admin seat",
       "Mobile-responsive design",
-      "Basic SEO optimization",
-      "Community support",
+      "SEO optimization",
     ],
-    cta: "Get Started Free",
+    cta: "Start 30-Day Free Trial",
     popular: false,
     gradient: "from-slate-500 to-slate-600",
   },
   {
-    name: "Professional",
-    description: "For growing businesses",
-    price: "$29",
+    name: "Growth",
+    description: "Lead Automation",
+    price: "$99",
     priceDetail: "/month",
-    annualPrice: "$290",
+    annualPrice: "$990",
     annualPriceDetail: "/year",
-    monthlyEquivalent: "$24",
-    savings: "$58",
+    monthlyEquivalent: "$82",
+    savings: "$198",
     icon: Briefcase,
     features: [
+      "Unlimited leads",
       "Everything in Starter",
-      "Custom domain connection",
-      "AI chatbot for lead capture",
-      "Quote calculator widget",
-      "Appointment scheduling",
+      "AI Sales Chatbot (24/7)",
+      "Calendar sync & scheduling",
+      "3 admin seats",
       "Priority email support",
       "Google Analytics integration",
-      "Remove LocalBlue branding",
+      "Custom domain connection",
     ],
-    cta: "Start 14-Day Trial",
+    cta: "Start 30-Day Free Trial",
     popular: true,
     gradient: "from-blue-500 to-indigo-600",
   },
   {
-    name: "Enterprise",
-    description: "For established contractors",
-    price: "$79",
+    name: "Scale",
+    description: "Local Dominance",
+    price: "$199",
     priceDetail: "/month",
-    annualPrice: "$790",
+    annualPrice: "$1,990",
     annualPriceDetail: "/year",
-    monthlyEquivalent: "$66",
-    savings: "$158",
+    monthlyEquivalent: "$165",
+    savings: "$398",
     icon: Crown,
     features: [
-      "Everything in Professional",
-      "Multiple team members",
-      "Advanced lead management",
-      "Custom integrations",
-      "White-label solution",
+      "Unlimited leads",
+      "Everything in Growth",
+      "Quote calculator widget",
+      "Service-area maps",
+      "Unlimited admin seats",
+      "Priority AI site build",
       "Dedicated account manager",
       "Phone support",
-      "Custom development",
     ],
-    cta: "Contact Sales",
+    cta: "Start 30-Day Free Trial",
     popular: false,
     gradient: "from-violet-500 to-purple-600",
   },
@@ -362,7 +364,7 @@ export default function Landing() {
                   className="bg-white text-slate-900 border-white shadow-2xl shadow-white/20 font-semibold"
                   data-testid="button-hero-cta"
                 >
-                  Build Your Site Free
+                  Start Your Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
@@ -382,11 +384,11 @@ export default function Landing() {
             <div className="mt-20 flex flex-wrap items-center justify-center gap-8 text-white/50 text-sm animate-fade-in-up delay-700" style={{ opacity: 0, animationFillMode: 'forwards' }}>
               <div className="flex items-center gap-2.5" data-testid="badge-no-credit-card">
                 <Shield className="h-4 w-4 text-emerald-400/80" />
-                <span className="font-medium">No Credit Card Required</span>
+                <span className="font-medium">30-Day Free Trial</span>
               </div>
               <div className="flex items-center gap-2.5" data-testid="badge-free-plan">
                 <CheckCircle className="h-4 w-4 text-emerald-400/80" />
-                <span className="font-medium">Free Forever Plan</span>
+                <span className="font-medium">No Credit Card to Start</span>
               </div>
               <div className="flex items-center gap-2.5" data-testid="badge-launch-time">
                 <Rocket className="h-4 w-4 text-emerald-400/80" />
@@ -591,7 +593,7 @@ export default function Landing() {
                 >
                   Annual
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/30">
-                    Save 17%
+                    2 Months Free
                   </span>
                 </button>
               </div>
@@ -673,7 +675,10 @@ export default function Landing() {
 
             <AnimatedSection animation="fade-in" delay={500} className="mt-16 text-center">
               <p className="text-white/40 text-sm">
-                All plans include a 14-day money-back guarantee. No questions asked.
+                30-day "Test Drive" on localblue.co subdomain. No credit card required to start.
+              </p>
+              <p className="text-white/30 text-xs mt-2">
+                Connect your custom domain when you're ready - includes 14 extra days free before billing.
               </p>
             </AnimatedSection>
           </div>
@@ -699,11 +704,11 @@ export default function Landing() {
                 className="bg-white text-slate-900 border-white shadow-2xl shadow-white/20 font-semibold"
                 data-testid="button-footer-cta"
               >
-                Get Started Now - It's Free
+                Start Your 30-Day Free Trial
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <p className="mt-8 text-white/40 text-sm font-medium">No credit card required</p>
+            <p className="mt-8 text-white/40 text-sm font-medium">No credit card required to start</p>
           </AnimatedSection>
         </section>
       </main>

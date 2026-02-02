@@ -3,10 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { 
   Users, Settings, Globe, ExternalLink, Copy, Rocket, CheckCircle, 
   Mail, Phone, MessageSquare, TrendingUp, Calendar, ArrowRight, Clock,
-  Eye, Zap, FileText
+  Eye, Zap, FileText, Crown, Sparkles, CreditCard
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -32,7 +33,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
 
   const publicUrl = site.customDomain 
     ? `https://${site.customDomain}`
-    : `https://${site.subdomain}.localblue`;
+    : `https://${site.subdomain}.localblue.co`;
 
   const copyUrl = () => {
     navigator.clipboard.writeText(publicUrl);
@@ -107,6 +108,121 @@ export default function Dashboard({ site }: TenantDashboardProps) {
           </Link>
         </div>
       </div>
+
+      {/* Trial Status Banner */}
+      {(site.trialPhase === 'test_drive' || site.trialPhase === 'professional_launch') && (
+        <Card className="border-violet-500/30 bg-gradient-to-r from-violet-500/10 to-purple-500/10" data-testid="card-trial-status">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                  {site.trialPhase === 'test_drive' ? (
+                    <Rocket className="h-6 w-6 text-white" />
+                  ) : (
+                    <Sparkles className="h-6 w-6 text-white" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold">
+                      {site.trialPhase === 'test_drive' ? 'Test Drive' : 'Professional Launch'}
+                    </span>
+                    <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30" data-testid="badge-trial-phase">
+                      {site.subscriptionPlan?.charAt(0).toUpperCase()}{site.subscriptionPlan?.slice(1) || 'Growth'} Plan
+                    </Badge>
+                    {!site.hasCreditCard && (
+                      <Badge variant="outline" className="text-amber-400 border-amber-400/30" data-testid="badge-no-card">
+                        No Card
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {site.trialPhase === 'test_drive' ? (
+                      <>Your site is live at <span className="font-medium text-violet-400">{site.subdomain}.localblue.co</span></>
+                    ) : (
+                      <>Your custom domain is active. Card on file - billing starts soon.</>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                {site.trialPhase === 'test_drive' ? (
+                  <>
+                    <Link href="/admin/settings">
+                      <Button className="bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/30" data-testid="button-upgrade-domain">
+                        <Globe className="h-4 w-4 mr-2" />
+                        Connect Custom Domain
+                      </Button>
+                    </Link>
+                    <p className="text-xs text-muted-foreground text-center sm:text-left max-w-[200px]">
+                      Get 14 extra days free when you go live
+                    </p>
+                  </>
+                ) : (
+                  <div className="text-center sm:text-right">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CreditCard className="h-4 w-4 text-green-400" />
+                      <span className="text-green-400 font-medium">Card on file</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Billing starts after 14-day launch period
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            {site.trialPhase === 'test_drive' && (
+              <div className="mt-4 pt-4 border-t border-violet-500/20">
+                <div className="flex items-center justify-between gap-4 text-sm mb-2">
+                  <span className="text-muted-foreground">Trial Progress</span>
+                  <span className="text-violet-400 font-medium">
+                    {site.trialStartDate ? 
+                      `${Math.max(0, 30 - Math.floor((Date.now() - new Date(site.trialStartDate).getTime()) / (1000 * 60 * 60 * 24)))} days remaining` :
+                      '30 days remaining'
+                    }
+                  </span>
+                </div>
+                <Progress 
+                  value={site.trialStartDate ? 
+                    Math.min(100, (Math.floor((Date.now() - new Date(site.trialStartDate).getTime()) / (1000 * 60 * 60 * 24)) / 30) * 100) : 
+                    0
+                  } 
+                  className="h-2 bg-violet-500/20"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Active Subscription Banner */}
+      {site.trialPhase === 'active' && (
+        <Card className="border-green-500/30 bg-green-500/5" data-testid="card-subscription-active">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <Crown className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Active Subscription</span>
+                    <Badge className="bg-green-500" data-testid="badge-subscription-plan">
+                      {site.subscriptionPlan?.charAt(0).toUpperCase()}{site.subscriptionPlan?.slice(1) || 'Growth'} Plan
+                    </Badge>
+                    <Badge variant="outline" data-testid="badge-billing-period">
+                      {site.billingPeriod === 'annual' ? 'Annual' : 'Monthly'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Unlimited leads included
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {!site.isPublished && (
         <Alert className="border-primary/50 bg-primary/5">
@@ -227,7 +343,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {site.customDomain || `${site.subdomain}.localblue`}
+              {site.customDomain || `${site.subdomain}.localblue.co`}
             </p>
           </CardContent>
         </Card>
@@ -375,7 +491,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Subdomain</span>
-              <span className="font-medium">{site.subdomain}.localblue</span>
+              <span className="font-medium">{site.subdomain}.localblue.co</span>
             </div>
             {site.customDomain && (
               <div className="flex justify-between gap-4">

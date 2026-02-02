@@ -26,6 +26,23 @@ export const STYLE_PREFERENCES = [
 ] as const;
 export type StylePreference = typeof STYLE_PREFERENCES[number];
 
+// Subscription plans
+export const SUBSCRIPTION_PLANS = [
+  "starter",
+  "growth",
+  "scale",
+] as const;
+export type SubscriptionPlan = typeof SUBSCRIPTION_PLANS[number];
+
+// Trial phases for graduated trial model
+export const TRIAL_PHASES = [
+  "test_drive",      // 30-day trial on localblue.co subdomain, no credit card
+  "professional_launch", // 14-day trial on custom domain, credit card required
+  "active",          // Paying customer
+  "expired",         // Trial expired without conversion
+] as const;
+export type TrialPhase = typeof TRIAL_PHASES[number];
+
 // Onboarding phases
 export const ONBOARDING_PHASES = [
   "welcome",
@@ -58,6 +75,14 @@ export const sites = pgTable("sites", {
   brandColor: text("brand_color").notNull().default("#3B82F6"),
   services: jsonb("services").$type<string[]>().default([]),
   isPublished: boolean("is_published").notNull().default(false),
+  
+  // Subscription & billing fields
+  subscriptionPlan: text("subscription_plan").$type<SubscriptionPlan>().default("growth"),
+  trialPhase: text("trial_phase").$type<TrialPhase>().default("test_drive"),
+  trialStartDate: timestamp("trial_start_date").default(sql`CURRENT_TIMESTAMP`),
+  trialEndDate: timestamp("trial_end_date"),
+  hasCreditCard: boolean("has_credit_card").notNull().default(false),
+  billingPeriod: text("billing_period").$type<"monthly" | "annual">().default("monthly"),
   
   // Enhanced fields for spectacular sites
   tradeType: text("trade_type").$type<TradeType>(),

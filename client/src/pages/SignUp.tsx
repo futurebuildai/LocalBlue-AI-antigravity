@@ -20,10 +20,10 @@ const signUpSchema = z.object({
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const benefits = [
+  "30-day free trial on localblue.co",
+  "No credit card required to start",
   "AI-powered website in minutes",
-  "Custom domain management",
-  "Built-in lead capture",
-  "24/7 AI chatbot support",
+  "Unlimited lead capture",
 ];
 
 export default function SignUp() {
@@ -80,10 +80,10 @@ export default function SignUp() {
                 <Sparkles className="h-7 w-7 text-white" />
               </div>
               <h1 className="text-3xl font-bold mb-2" data-testid="text-signup-title">
-                Create Your Account
+                Start Your Free Trial
               </h1>
               <p className="text-muted-foreground">
-                Start building your professional contractor website
+                30 days free on yourbusiness.localblue.co - no credit card required
               </p>
             </div>
             
@@ -151,10 +151,10 @@ export default function SignUp() {
                       data-testid="button-signup-submit"
                     >
                       {signUpMutation.isPending ? (
-                        "Creating your account..."
+                        "Starting your trial..."
                       ) : (
                         <>
-                          Create Account
+                          Start 30-Day Free Trial
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </>
                       )}
@@ -164,7 +164,7 @@ export default function SignUp() {
                 
                 <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Shield className="h-4 w-4" />
-                  <span>No credit card required</span>
+                  <span>No credit card required to start</span>
                 </div>
               </CardContent>
             </Card>
@@ -182,10 +182,10 @@ export default function SignUp() {
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
           <div className="max-w-md">
             <h2 className="text-3xl xl:text-4xl font-bold text-white mb-6">
-              Get your professional website in minutes
+              Your "Test Drive" starts now
             </h2>
             <p className="text-white/70 text-lg mb-10">
-              Join hundreds of contractors who trust LocalBlue to power their online presence.
+              Try everything free for 30 days on your localblue.co subdomain. Upgrade to your custom domain when you're ready.
             </p>
             
             <div className="space-y-4">
