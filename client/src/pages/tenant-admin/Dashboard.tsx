@@ -80,20 +80,21 @@ export default function Dashboard({ site }: TenantDashboardProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-tenant-dashboard-title">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" data-testid="text-tenant-dashboard-title">
             Dashboard
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Welcome back to {site.businessName}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
-            size="sm" 
+            size="default"
+            className="min-h-[44px] flex-1 sm:flex-none"
             onClick={() => window.open(publicUrl, "_blank")}
             data-testid="button-view-site-header"
           >
@@ -101,9 +102,9 @@ export default function Dashboard({ site }: TenantDashboardProps) {
             View Site
           </Button>
           <Link href="/admin/settings">
-            <Button variant="outline" size="sm" data-testid="link-settings-header">
+            <Button variant="outline" size="default" className="min-h-[44px]" data-testid="link-settings-header">
               <Settings className="h-4 w-4 mr-2" />
-              Settings
+              <span className="hidden sm:inline">Settings</span>
             </Button>
           </Link>
         </div>
@@ -287,7 +288,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
@@ -362,7 +363,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
             <div>
@@ -478,7 +479,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Site Information</CardTitle>

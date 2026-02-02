@@ -64,22 +64,22 @@ export default function Settings({ site }: SettingsProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-tenant-settings-title">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" data-testid="text-tenant-settings-title">
           Settings
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           Manage your site configuration
         </p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Publishing</CardTitle>
-          <CardDescription>Control when your site goes live</CardDescription>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Publishing</CardTitle>
+          <CardDescription className="text-sm">Control when your site goes live</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
           <PublishButton site={site} variant="card" />
         </CardContent>
       </Card>
@@ -87,13 +87,13 @@ export default function Settings({ site }: SettingsProps) {
       <DomainSetup site={site} />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Brand Settings</CardTitle>
-          <CardDescription>Update your site's appearance and configuration</CardDescription>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Brand Settings</CardTitle>
+          <CardDescription className="text-sm">Update your site's appearance and configuration</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
               <FormField
                 control={form.control}
                 name="businessName"
@@ -101,9 +101,9 @@ export default function Settings({ site }: SettingsProps) {
                   <FormItem>
                     <FormLabel>Business Name</FormLabel>
                     <FormControl>
-                      <Input {...field} data-testid="input-settings-business-name" />
+                      <Input className="min-h-[44px]" {...field} data-testid="input-settings-business-name" />
                     </FormControl>
-                    <FormDescription>
+                    <FormDescription className="text-xs sm:text-sm">
                       This will be displayed in your site's header
                     </FormDescription>
                     <FormMessage />
@@ -119,14 +119,14 @@ export default function Settings({ site }: SettingsProps) {
                     <FormLabel>Brand Color</FormLabel>
                     <FormControl>
                       <div className="flex gap-2">
-                        <Input {...field} data-testid="input-settings-brand-color" />
+                        <Input className="min-h-[44px] flex-1" {...field} data-testid="input-settings-brand-color" />
                         <div 
-                          className="h-9 w-9 rounded-md border flex-shrink-0"
+                          className="h-11 w-11 rounded-md border flex-shrink-0"
                           style={{ backgroundColor: field.value }}
                         />
                       </div>
                     </FormControl>
-                    <FormDescription>
+                    <FormDescription className="text-xs sm:text-sm">
                       Your primary brand color (hex format, e.g., #3B82F6)
                     </FormDescription>
                     <FormMessage />
@@ -142,13 +142,14 @@ export default function Settings({ site }: SettingsProps) {
                     <FormLabel>Services</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="e.g., Consulting, Development, Support" 
+                        placeholder="e.g., Consulting, Development, Support"
+                        className="min-h-[44px]"
                         {...field} 
                         value={field.value || ""}
                         data-testid="input-settings-services" 
                       />
                     </FormControl>
-                    <FormDescription>
+                    <FormDescription className="text-xs sm:text-sm">
                       Comma-separated list of services you offer
                     </FormDescription>
                     <FormMessage />
@@ -156,9 +157,10 @@ export default function Settings({ site }: SettingsProps) {
                 )}
               />
 
-              <div className="pt-4">
+              <div className="pt-2">
                 <Button 
                   type="submit" 
+                  className="min-h-[44px] w-full sm:w-auto"
                   disabled={updateMutation.isPending}
                   data-testid="button-save-settings"
                 >
@@ -172,11 +174,11 @@ export default function Settings({ site }: SettingsProps) {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Current Services</CardTitle>
-          <CardDescription>Services currently configured for your site</CardDescription>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Current Services</CardTitle>
+          <CardDescription className="text-sm">Services currently configured for your site</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
           {Array.isArray(site.services) && site.services.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {(site.services as string[]).map((service, idx) => (

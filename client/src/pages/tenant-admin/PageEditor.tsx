@@ -219,8 +219,8 @@ export default function PageEditor() {
 
   if (!page) {
     return (
-      <div className="space-y-6">
-        <Button asChild variant="ghost" data-testid="button-back-to-pages">
+      <div className="space-y-4 sm:space-y-6">
+        <Button asChild variant="ghost" className="min-h-[44px]" data-testid="button-back-to-pages">
           <Link href="/pages">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Pages
@@ -238,32 +238,32 @@ export default function PageEditor() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="sm" data-testid="button-back-to-pages">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <Button asChild variant="ghost" size="default" className="min-h-[44px] self-start" data-testid="button-back-to-pages">
           <Link href="/pages">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Link>
         </Button>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-page-editor-title">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate" data-testid="text-page-editor-title">
             Edit {page.title}
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             /{page.slug}
           </p>
         </div>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Page Content</CardTitle>
-          <CardDescription>Edit the content for this page</CardDescription>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Page Content</CardTitle>
+          <CardDescription className="text-sm">Edit the content for this page</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
               <FormField
                 control={form.control}
                 name="title"
@@ -271,7 +271,7 @@ export default function PageEditor() {
                   <FormItem>
                     <FormLabel>Page Title</FormLabel>
                     <FormControl>
-                      <Input {...field} data-testid="input-page-title" />
+                      <Input className="min-h-[44px]" {...field} data-testid="input-page-title" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -287,9 +287,9 @@ export default function PageEditor() {
                       <FormItem>
                         <FormLabel>Hero Headline</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Your main headline" data-testid="input-hero-headline" />
+                          <Input className="min-h-[44px]" {...field} placeholder="Your main headline" data-testid="input-hero-headline" />
                         </FormControl>
-                        <FormDescription>The main headline displayed in the hero section</FormDescription>
+                        <FormDescription className="text-xs sm:text-sm">The main headline displayed in the hero section</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -301,7 +301,7 @@ export default function PageEditor() {
                       <FormItem>
                         <FormLabel>Hero Description</FormLabel>
                         <FormControl>
-                          <Textarea {...field} placeholder="A brief description of your business" data-testid="input-hero-description" />
+                          <Textarea className="min-h-[100px]" {...field} placeholder="A brief description of your business" data-testid="input-hero-description" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -314,9 +314,9 @@ export default function PageEditor() {
                       <FormItem>
                         <FormLabel>Services</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Plumbing, Electrical, HVAC" data-testid="input-home-services" />
+                          <Input className="min-h-[44px]" {...field} placeholder="Plumbing, Electrical, HVAC" data-testid="input-home-services" />
                         </FormControl>
-                        <FormDescription>Comma-separated list of services</FormDescription>
+                        <FormDescription className="text-xs sm:text-sm">Comma-separated list of services</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -328,7 +328,7 @@ export default function PageEditor() {
                       <FormItem>
                         <FormLabel>About Text</FormLabel>
                         <FormControl>
-                          <Textarea {...field} placeholder="Brief description about your company" data-testid="input-about-text" />
+                          <Textarea className="min-h-[100px]" {...field} placeholder="Brief description about your company" data-testid="input-about-text" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -346,7 +346,7 @@ export default function PageEditor() {
                       <FormItem>
                         <FormLabel>About Content</FormLabel>
                         <FormControl>
-                          <Textarea {...field} className="min-h-32" placeholder="Tell visitors about your business..." data-testid="input-about-content" />
+                          <Textarea {...field} className="min-h-[150px]" placeholder="Tell visitors about your business..." data-testid="input-about-content" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -359,9 +359,9 @@ export default function PageEditor() {
                       <FormItem>
                         <FormLabel>Service Area</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., Greater Seattle Area" data-testid="input-service-area" />
+                          <Input className="min-h-[44px]" {...field} placeholder="e.g., Greater Seattle Area" data-testid="input-service-area" />
                         </FormControl>
-                        <FormDescription>Where you provide your services</FormDescription>
+                        <FormDescription className="text-xs sm:text-sm">Where you provide your services</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -379,12 +379,12 @@ export default function PageEditor() {
                       <FormControl>
                         <Textarea 
                           {...field} 
-                          className="min-h-48 font-mono text-sm" 
+                          className="min-h-[200px] font-mono text-sm" 
                           placeholder={`Plumbing: Full residential and commercial plumbing services\nElectrical: Licensed electrical work and repairs\nHVAC: Heating, cooling, and ventilation services`}
                           data-testid="input-services-list" 
                         />
                       </FormControl>
-                      <FormDescription>One service per line, format: Name: Description</FormDescription>
+                      <FormDescription className="text-xs sm:text-sm">One service per line, format: Name: Description</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -400,7 +400,7 @@ export default function PageEditor() {
                       <FormItem>
                         <FormLabel>Phone</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" placeholder="(555) 123-4567" data-testid="input-contact-phone" />
+                          <Input className="min-h-[44px]" {...field} type="tel" placeholder="(555) 123-4567" data-testid="input-contact-phone" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -413,7 +413,7 @@ export default function PageEditor() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input {...field} type="email" placeholder="contact@example.com" data-testid="input-contact-email" />
+                          <Input className="min-h-[44px]" {...field} type="email" placeholder="contact@example.com" data-testid="input-contact-email" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -426,7 +426,7 @@ export default function PageEditor() {
                       <FormItem>
                         <FormLabel>Address</FormLabel>
                         <FormControl>
-                          <Textarea {...field} placeholder="123 Main St, City, State 12345" data-testid="input-contact-address" />
+                          <Textarea className="min-h-[80px]" {...field} placeholder="123 Main St, City, State 12345" data-testid="input-contact-address" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -443,17 +443,17 @@ export default function PageEditor() {
                     <FormItem>
                       <FormLabel>Content (JSON)</FormLabel>
                       <FormControl>
-                        <Textarea {...field} className="min-h-48 font-mono text-sm" data-testid="input-json-content" />
+                        <Textarea {...field} className="min-h-[200px] font-mono text-sm" data-testid="input-json-content" />
                       </FormControl>
-                      <FormDescription>Edit the raw JSON content for this page</FormDescription>
+                      <FormDescription className="text-xs sm:text-sm">Edit the raw JSON content for this page</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               )}
 
-              <div className="flex justify-end">
-                <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-page">
+              <div className="flex justify-end pt-2">
+                <Button type="submit" className="min-h-[44px] w-full sm:w-auto" disabled={updateMutation.isPending} data-testid="button-save-page">
                   <Save className="h-4 w-4 mr-2" />
                   {updateMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>

@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Users as UsersIcon, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,22 +57,22 @@ export default function TenantUsers() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-tenant-users-title">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" data-testid="text-tenant-users-title">
             Users
           </h1>
-          <p className="text-muted-foreground">Manage users for your site</p>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage users for your site</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-create-tenant-user">
+            <Button className="min-h-[44px]" data-testid="button-create-tenant-user">
               <Plus className="h-4 w-4 mr-2" />
               Add User
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md mx-auto">
             <DialogHeader>
               <DialogTitle>Add New User</DialogTitle>
               <DialogDescription>Create a new user for your site</DialogDescription>
@@ -84,39 +83,37 @@ export default function TenantUsers() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Site Users</CardTitle>
-          <CardDescription>{users.length} users in your site</CardDescription>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Site Users</CardTitle>
+          <CardDescription className="text-sm">{users.length} users in your site</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
           {users.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id} data-testid={`row-tenant-user-${user.id}`}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium" data-testid={`text-user-email-${user.id}`}>
-                          {user.email}
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-2 sm:space-y-3">
+              {users.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center gap-3 p-3 sm:p-4 rounded-lg border bg-card min-h-[56px]"
+                  data-testid={`row-tenant-user-${user.id}`}
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                    <Mail className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-medium block truncate" data-testid={`text-user-email-${user.id}`}>
+                      {user.email}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Administrator</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <UsersIcon className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium">No users yet</h3>
               <p className="text-muted-foreground text-sm mb-4">Add your first user to get started</p>
-              <Button onClick={() => setIsCreateOpen(true)} data-testid="button-create-first-tenant-user">
+              <Button className="min-h-[44px]" onClick={() => setIsCreateOpen(true)} data-testid="button-create-first-tenant-user">
                 <Plus className="h-4 w-4 mr-2" />
                 Add User
               </Button>
@@ -156,6 +153,7 @@ function UserForm({
                 <Input 
                   type="email" 
                   placeholder="user@example.com" 
+                  className="min-h-[44px]"
                   {...field} 
                   data-testid="input-tenant-user-email" 
                 />
@@ -173,7 +171,8 @@ function UserForm({
               <FormControl>
                 <Input 
                   type="password" 
-                  placeholder="Minimum 6 characters" 
+                  placeholder="Minimum 6 characters"
+                  className="min-h-[44px]"
                   {...field} 
                   data-testid="input-tenant-user-password" 
                 />
@@ -183,7 +182,7 @@ function UserForm({
           )}
         />
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="submit" disabled={isLoading} data-testid="button-submit-tenant-user">
+          <Button type="submit" className="min-h-[44px]" disabled={isLoading} data-testid="button-submit-tenant-user">
             {isLoading ? "Creating..." : "Create User"}
           </Button>
         </div>

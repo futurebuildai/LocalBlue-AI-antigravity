@@ -57,30 +57,30 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(120,119,198,0.15),transparent_50%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(59,130,246,0.15),transparent_50%)]" />
       
-      {/* Floating elements */}
-      <div className="absolute top-1/4 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow" />
-      <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }} />
+      {/* Floating elements - hidden on mobile for performance */}
+      <div className="hidden sm:block absolute top-1/4 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow" />
+      <div className="hidden sm:block absolute bottom-1/4 right-10 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }} />
       
       {/* Grid pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:72px_72px]" />
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-xl shadow-primary/30 mb-6">
-            <Shield className="h-8 w-8 text-white" />
+      <div className="relative z-10 w-full max-w-md px-1">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl gradient-primary shadow-xl shadow-primary/30 mb-4 sm:mb-6">
+            <Shield className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2" data-testid="text-login-title">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2" data-testid="text-login-title">
             Admin Portal
           </h1>
-          <p className="text-white/70">
+          <p className="text-sm sm:text-base text-white/70">
             Sign in to manage your business website
           </p>
         </div>
 
         <Card className="border-0 shadow-2xl backdrop-blur-sm bg-card/95">
-          <CardContent className="p-8">
+          <CardContent className="p-5 sm:p-8">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-5">
                 <FormField
                   control={form.control}
                   name="email"
@@ -91,6 +91,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                         <Input 
                           type="email" 
                           placeholder="you@example.com"
+                          className="min-h-[44px]"
                           {...field} 
                           data-testid="input-login-email" 
                         />
@@ -109,6 +110,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                         <Input 
                           type="password" 
                           placeholder="Enter your password"
+                          className="min-h-[44px]"
                           {...field} 
                           data-testid="input-login-password" 
                         />
@@ -119,7 +121,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 />
                 <Button 
                   type="submit" 
-                  className="w-full gradient-primary shadow-lg shadow-primary/25" 
+                  className="w-full min-h-[48px] gradient-primary shadow-lg shadow-primary/25" 
                   disabled={loginMutation.isPending}
                   data-testid="button-login-submit"
                 >
@@ -137,7 +139,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           </CardContent>
         </Card>
 
-        <p className="text-center text-white/50 text-sm mt-6">
+        <p className="text-center text-white/50 text-xs sm:text-sm mt-5 sm:mt-6">
           Powered by LocalBlue
         </p>
       </div>

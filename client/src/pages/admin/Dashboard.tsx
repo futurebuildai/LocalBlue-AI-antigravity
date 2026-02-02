@@ -37,14 +37,14 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Sites</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-total-sites">{sites.length}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold" data-testid="text-total-sites">{sites.length}</div>
             <p className="text-xs text-muted-foreground">
               {publishedSites} published, {draftSites} drafts
             </p>
@@ -52,12 +52,12 @@ export default function Dashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-total-users">{users.length}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold" data-testid="text-total-users">{users.length}</div>
             <p className="text-xs text-muted-foreground">
               Across all tenants
             </p>
@@ -65,12 +65,12 @@ export default function Dashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Published</CardTitle>
+            <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-published-sites">{publishedSites}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold" data-testid="text-published-sites">{publishedSites}</div>
             <p className="text-xs text-muted-foreground">
               Live sites
             </p>
@@ -78,12 +78,12 @@ export default function Dashboard() {
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Custom Domains</CardTitle>
-            <Palette className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Custom Domains</CardTitle>
+            <Palette className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="text-custom-domains">
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold" data-testid="text-custom-domains">
               {sites.filter((s) => s.customDomain).length}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -104,24 +104,24 @@ export default function Dashboard() {
               {sites.slice(0, 5).map((site) => (
                 <div
                   key={site.id}
-                  className="flex items-center justify-between gap-4"
+                  className="flex items-center justify-between gap-2 sm:gap-4"
                   data-testid={`row-site-${site.id}`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <div
-                      className="h-8 w-8 rounded-md flex items-center justify-center text-white text-sm font-medium"
+                      className="h-8 w-8 rounded-md flex items-center justify-center text-white text-sm font-medium shrink-0"
                       style={{ backgroundColor: site.brandColor }}
                     >
                       {site.businessName.charAt(0)}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{site.businessName}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{site.businessName}</p>
+                      <p className="text-xs text-muted-foreground truncate">
                         {site.subdomain}.yourplatform.com
                       </p>
                     </div>
                   </div>
-                  <Badge variant={site.isPublished ? "default" : "secondary"}>
+                  <Badge variant={site.isPublished ? "default" : "secondary"} className="shrink-0">
                     {site.isPublished ? "Published" : "Draft"}
                   </Badge>
                 </div>
@@ -145,12 +145,12 @@ export default function Dashboard() {
                 return (
                   <div
                     key={user.id}
-                    className="flex items-center justify-between gap-4"
+                    className="flex items-center justify-between gap-2 sm:gap-4"
                     data-testid={`row-user-${user.id}`}
                   >
-                    <div>
-                      <p className="text-sm font-medium">{user.email}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{user.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">
                         {userSite?.businessName || "No site"}
                       </p>
                     </div>

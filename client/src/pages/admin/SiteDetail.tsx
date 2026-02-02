@@ -203,8 +203,8 @@ export default function SiteDetail() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={handleViewSite} data-testid="button-view-site">
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+          <Button variant="outline" size="sm" onClick={handleViewSite} data-testid="button-view-site" className="flex-1 sm:flex-initial min-h-[44px]">
             <ExternalLink className="h-4 w-4 mr-2" />
             View Site
           </Button>
@@ -214,6 +214,7 @@ export default function SiteDetail() {
             onClick={handleLoginAsCustomer}
             disabled={impersonateMutation.isPending}
             data-testid="button-login-as-customer"
+            className="flex-1 sm:flex-initial min-h-[44px]"
           >
             <LogIn className="h-4 w-4 mr-2" />
             Login as Customer
@@ -222,55 +223,57 @@ export default function SiteDetail() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Leads</CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-leads">{leads.length}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold" data-testid="stat-leads">{leads.length}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pages Created</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Pages Created</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-pages">{pages.length}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold" data-testid="stat-pages">{pages.length}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-users">{users.length}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold" data-testid="stat-users">{users.length}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Photos Uploaded</CardTitle>
-            <Image className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">Photos Uploaded</CardTitle>
+            <Image className="h-4 w-4 text-muted-foreground shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" data-testid="stat-photos">{photos.length}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-xl sm:text-2xl font-bold" data-testid="stat-photos">{photos.length}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabbed Interface */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
-          <TabsTrigger value="leads" data-testid="tab-leads">Leads</TabsTrigger>
-          <TabsTrigger value="onboarding" data-testid="tab-onboarding">Onboarding</TabsTrigger>
-          <TabsTrigger value="pages" data-testid="tab-pages">Pages</TabsTrigger>
-          <TabsTrigger value="team" data-testid="tab-team">Team</TabsTrigger>
-          <TabsTrigger value="photos" data-testid="tab-photos">Photos</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-1 px-1">
+          <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-6">
+            <TabsTrigger value="overview" data-testid="tab-overview" className="min-h-[44px] min-w-[80px] sm:min-w-0">Overview</TabsTrigger>
+            <TabsTrigger value="leads" data-testid="tab-leads" className="min-h-[44px] min-w-[60px] sm:min-w-0">Leads</TabsTrigger>
+            <TabsTrigger value="onboarding" data-testid="tab-onboarding" className="min-h-[44px] min-w-[90px] sm:min-w-0">Onboarding</TabsTrigger>
+            <TabsTrigger value="pages" data-testid="tab-pages" className="min-h-[44px] min-w-[60px] sm:min-w-0">Pages</TabsTrigger>
+            <TabsTrigger value="team" data-testid="tab-team" className="min-h-[44px] min-w-[60px] sm:min-w-0">Team</TabsTrigger>
+            <TabsTrigger value="photos" data-testid="tab-photos" className="min-h-[44px] min-w-[60px] sm:min-w-0">Photos</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
@@ -423,28 +426,30 @@ export default function SiteDetail() {
                   <p className="text-muted-foreground">No leads yet</p>
                 </div>
               ) : (
-                <Table data-testid="table-leads">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Message</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {leads.map((lead) => (
-                      <TableRow key={lead.id} data-testid={`row-lead-${lead.id}`}>
-                        <TableCell className="font-medium">{lead.name}</TableCell>
-                        <TableCell>{lead.email}</TableCell>
-                        <TableCell>{lead.phone || "-"}</TableCell>
-                        <TableCell className="max-w-xs truncate">{lead.message || "-"}</TableCell>
-                        <TableCell>{formatDate(lead.createdAt)}</TableCell>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <Table data-testid="table-leads" className="min-w-[600px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[100px]">Name</TableHead>
+                        <TableHead className="min-w-[140px]">Email</TableHead>
+                        <TableHead className="min-w-[100px]">Phone</TableHead>
+                        <TableHead className="min-w-[120px]">Message</TableHead>
+                        <TableHead className="min-w-[120px]">Date</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {leads.map((lead) => (
+                        <TableRow key={lead.id} data-testid={`row-lead-${lead.id}`}>
+                          <TableCell className="font-medium">{lead.name}</TableCell>
+                          <TableCell className="break-all">{lead.email}</TableCell>
+                          <TableCell>{lead.phone || "-"}</TableCell>
+                          <TableCell className="max-w-xs truncate">{lead.message || "-"}</TableCell>
+                          <TableCell className="whitespace-nowrap">{formatDate(lead.createdAt)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -538,26 +543,28 @@ export default function SiteDetail() {
                   <p className="text-muted-foreground">No pages created yet</p>
                 </div>
               ) : (
-                <Table data-testid="table-pages">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Slug</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Updated</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pages.map((page) => (
-                      <TableRow key={page.id} data-testid={`row-page-${page.id}`}>
-                        <TableCell className="font-medium">{page.title}</TableCell>
-                        <TableCell className="text-muted-foreground">/{page.slug}</TableCell>
-                        <TableCell>{formatDate(page.createdAt)}</TableCell>
-                        <TableCell>{formatDate(page.updatedAt)}</TableCell>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <Table data-testid="table-pages" className="min-w-[500px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[120px]">Title</TableHead>
+                        <TableHead className="min-w-[100px]">Slug</TableHead>
+                        <TableHead className="min-w-[130px]">Created</TableHead>
+                        <TableHead className="min-w-[130px]">Updated</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {pages.map((page) => (
+                        <TableRow key={page.id} data-testid={`row-page-${page.id}`}>
+                          <TableCell className="font-medium">{page.title}</TableCell>
+                          <TableCell className="text-muted-foreground">/{page.slug}</TableCell>
+                          <TableCell className="whitespace-nowrap">{formatDate(page.createdAt)}</TableCell>
+                          <TableCell className="whitespace-nowrap">{formatDate(page.updatedAt)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -577,28 +584,30 @@ export default function SiteDetail() {
                   <p className="text-muted-foreground">No team members</p>
                 </div>
               ) : (
-                <Table data-testid="table-team">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
-                        <TableCell className="font-medium">{user.name || "N/A"}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                            {user.role || "member"}
-                          </Badge>
-                        </TableCell>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <Table data-testid="table-team" className="min-w-[400px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[100px]">Name</TableHead>
+                        <TableHead className="min-w-[160px]">Email</TableHead>
+                        <TableHead className="min-w-[80px]">Role</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+                          <TableCell className="font-medium">{user.name || "N/A"}</TableCell>
+                          <TableCell className="break-all">{user.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+                              {user.role || "member"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -618,7 +627,7 @@ export default function SiteDetail() {
                   <p className="text-muted-foreground">No photos uploaded yet</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="grid-photos">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4" data-testid="grid-photos">
                   {photos.map((photo) => (
                     <div key={photo.id} className="relative group">
                       <div className="aspect-square rounded-lg overflow-hidden bg-muted">
@@ -632,7 +641,7 @@ export default function SiteDetail() {
                         />
                       </div>
                       <div className="mt-1">
-                        <Badge variant="outline">{photo.type || "general"}</Badge>
+                        <Badge variant="outline" className="text-xs">{photo.type || "general"}</Badge>
                         {photo.caption && (
                           <p className="text-xs text-muted-foreground mt-1 truncate">{photo.caption}</p>
                         )}

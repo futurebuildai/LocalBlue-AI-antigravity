@@ -179,15 +179,15 @@ export default function TenantAdminLayout({ site, user, onLogout, children }: Te
         </Sidebar>
         
         <div className="flex flex-col flex-1 min-w-0 bg-muted/30">
-          <header className="flex items-center gap-4 px-6 py-4 bg-background border-b">
-            <SidebarTrigger data-testid="button-tenant-sidebar-toggle" />
-            <div className="flex-1">
-              <h1 className="text-lg font-semibold" data-testid="text-header-business-name">
+          <header className="flex items-center gap-2 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4 bg-background border-b">
+            <SidebarTrigger className="h-10 w-10 min-h-[44px] min-w-[44px]" data-testid="button-tenant-sidebar-toggle" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base sm:text-lg font-semibold truncate" data-testid="text-header-business-name">
                 {navItems.find(item => item.url === location)?.title || 'Dashboard'}
               </h1>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto p-3 sm:p-6">
             {children}
           </main>
         </div>

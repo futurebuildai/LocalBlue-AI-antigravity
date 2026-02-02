@@ -207,19 +207,19 @@ export default function Sites() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-sites-title">Sites</h1>
-          <p className="text-muted-foreground">Manage your tenant sites and customer accounts</p>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" data-testid="text-sites-title">Sites</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your tenant sites and customer accounts</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-create-site">
+            <Button data-testid="button-create-site" className="w-full sm:w-auto min-h-[44px]">
               <Plus className="h-4 w-4 mr-2" />
               Create Site
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Site</DialogTitle>
               <DialogDescription>Add a new tenant site to your platform</DialogDescription>
@@ -229,17 +229,18 @@ export default function Sites() {
         </Dialog>
       </div>
 
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex-1 min-w-[200px] max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className="w-full sm:flex-1 sm:max-w-sm">
           <Input
-            placeholder="Search by business name or subdomain..."
+            placeholder="Search sites..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             data-testid="input-search-sites"
+            className="min-h-[44px]"
           />
         </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
+          <SelectTrigger className="w-full sm:w-[180px] min-h-[44px]" data-testid="select-status-filter">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -266,17 +267,17 @@ export default function Sites() {
           <p className="text-muted-foreground">No sites match your search criteria</p>
         </div>
       ) : (
-        <div className="border rounded-lg">
-          <Table data-testid="table-sites">
+        <div className="border rounded-lg overflow-x-auto">
+          <Table data-testid="table-sites" className="min-w-[800px]">
             <TableHeader>
               <TableRow>
-                <TableHead>Business Name</TableHead>
-                <TableHead>Subdomain</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Onboarding</TableHead>
-                <TableHead className="text-right">Leads</TableHead>
-                <TableHead>Last Activity</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="min-w-[180px]">Business Name</TableHead>
+                <TableHead className="min-w-[100px]">Subdomain</TableHead>
+                <TableHead className="min-w-[90px]">Status</TableHead>
+                <TableHead className="min-w-[100px]">Onboarding</TableHead>
+                <TableHead className="text-right min-w-[60px]">Leads</TableHead>
+                <TableHead className="min-w-[100px]">Last Activity</TableHead>
+                <TableHead className="text-right min-w-[150px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -357,7 +358,7 @@ export default function Sites() {
                             <Pencil className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-md">
+                        <DialogContent className="max-w-md w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Edit Site</DialogTitle>
                             <DialogDescription>Update site configuration</DialogDescription>
@@ -396,16 +397,16 @@ export default function Sites() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="w-[calc(100%-2rem)] sm:w-full max-w-md">
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Site</AlertDialogTitle>
                             <AlertDialogDescription>
                               Are you sure you want to delete "{site.businessName}"? This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteMutation.mutate(site.id)}>
+                          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                            <AlertDialogCancel className="min-h-[44px]">Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteMutation.mutate(site.id)} className="min-h-[44px]">
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -535,7 +536,7 @@ function SiteForm({
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-submit-site">
+        <Button type="submit" className="w-full min-h-[44px]" disabled={isLoading} data-testid="button-submit-site">
           {isLoading ? "Saving..." : defaultValues ? "Update Site" : "Create Site"}
         </Button>
       </form>

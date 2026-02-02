@@ -127,19 +127,19 @@ export default function Users() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight" data-testid="text-users-title">Users</h1>
-          <p className="text-muted-foreground">Manage users across all tenants</p>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" data-testid="text-users-title">Users</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage users across all tenants</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-create-user">
+            <Button data-testid="button-create-user" className="w-full sm:w-auto min-h-[44px]">
               <Plus className="h-4 w-4 mr-2" />
               Create User
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
               <DialogDescription>Add a new user to a tenant site</DialogDescription>
@@ -156,92 +156,94 @@ export default function Users() {
         </CardHeader>
         <CardContent>
           {users.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Site</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => {
-                  const userSite = sites.find((s) => s.id === user.siteId);
-                  return (
-                    <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{user.email}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {userSite ? (
+            <div className="overflow-x-auto -mx-6 px-6">
+              <Table className="min-w-[500px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[180px]">Email</TableHead>
+                    <TableHead className="min-w-[140px]">Site</TableHead>
+                    <TableHead className="text-right min-w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => {
+                    const userSite = sites.find((s) => s.id === user.siteId);
+                    return (
+                      <TableRow key={user.id} data-testid={`row-user-${user.id}`}>
+                        <TableCell>
                           <div className="flex items-center gap-2">
-                            <div
-                              className="h-6 w-6 rounded flex items-center justify-center text-white text-xs font-medium"
-                              style={{ backgroundColor: userSite.brandColor }}
-                            >
-                              {userSite.businessName.charAt(0)}
-                            </div>
-                            <span>{userSite.businessName}</span>
+                            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="font-medium break-all">{user.email}</span>
                           </div>
-                        ) : (
-                          <Badge variant="secondary">No site</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Dialog open={editingUser?.id === user.id} onOpenChange={(open) => !open && setEditingUser(null)}>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => setEditingUser(user)} data-testid={`button-edit-user-${user.id}`}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>Edit User</DialogTitle>
-                                <DialogDescription>Update user details</DialogDescription>
-                              </DialogHeader>
-                              <UserUpdateForm
-                                onSubmit={handleUpdate}
-                                isLoading={updateMutation.isPending}
-                                sites={sites}
-                                defaultValues={{
-                                  email: user.email,
-                                  siteId: user.siteId || "",
-                                }}
-                              />
-                            </DialogContent>
-                          </Dialog>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" data-testid={`button-delete-user-${user.id}`}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete User</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{user.email}"? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(user.id)}>
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                        <TableCell>
+                          {userSite ? (
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="h-6 w-6 rounded flex items-center justify-center text-white text-xs font-medium shrink-0"
+                                style={{ backgroundColor: userSite.brandColor }}
+                              >
+                                {userSite.businessName.charAt(0)}
+                              </div>
+                              <span className="truncate">{userSite.businessName}</span>
+                            </div>
+                          ) : (
+                            <Badge variant="secondary">No site</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Dialog open={editingUser?.id === user.id} onOpenChange={(open) => !open && setEditingUser(null)}>
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setEditingUser(user)} data-testid={`button-edit-user-${user.id}`}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-md w-[calc(100%-2rem)] sm:w-full max-h-[90vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Edit User</DialogTitle>
+                                  <DialogDescription>Update user details</DialogDescription>
+                                </DialogHeader>
+                                <UserUpdateForm
+                                  onSubmit={handleUpdate}
+                                  isLoading={updateMutation.isPending}
+                                  sites={sites}
+                                  defaultValues={{
+                                    email: user.email,
+                                    siteId: user.siteId || "",
+                                  }}
+                                />
+                              </DialogContent>
+                            </Dialog>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" data-testid={`button-delete-user-${user.id}`}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="w-[calc(100%-2rem)] sm:w-full max-w-md">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{user.email}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                  <AlertDialogCancel className="min-h-[44px]">Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteMutation.mutate(user.id)} className="min-h-[44px]">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <UsersIcon className="h-12 w-12 text-muted-foreground mb-4" />
@@ -332,7 +334,7 @@ function UserForm({
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-submit-user">
+        <Button type="submit" className="w-full min-h-[44px]" disabled={isLoading} data-testid="button-submit-user">
           {isLoading ? "Creating..." : "Create User"}
         </Button>
       </form>
@@ -415,7 +417,7 @@ function UserUpdateForm({
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-update-user">
+        <Button type="submit" className="w-full min-h-[44px]" disabled={isLoading} data-testid="button-update-user">
           {isLoading ? "Updating..." : "Update User"}
         </Button>
       </form>
