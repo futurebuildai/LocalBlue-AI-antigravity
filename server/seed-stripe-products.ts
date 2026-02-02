@@ -25,7 +25,7 @@ async function createProducts() {
   // Create Starter Plan
   const starterProduct = await stripe.products.create({
     name: 'LocalBlue Starter',
-    description: 'Professional Presence - AI-built website with standard contact forms, manual booking, and 1 admin seat.',
+    description: 'Professional Presence - AI-built website with contact forms, appointment requests, project gallery, and testimonials.',
     metadata: {
       localblue_product: 'true',
       plan: 'starter',
@@ -56,7 +56,7 @@ async function createProducts() {
   // Create Growth Plan
   const growthProduct = await stripe.products.create({
     name: 'LocalBlue Growth',
-    description: 'Lead Automation - Everything in Starter plus AI Sales Chatbot, calendar sync, and 3 admin seats.',
+    description: 'Lead Automation - Everything in Starter plus AI Sales Chatbot that captures leads 24/7 and before/after project galleries.',
     metadata: {
       localblue_product: 'true',
       plan: 'growth',
@@ -87,7 +87,7 @@ async function createProducts() {
   // Create Scale Plan
   const scaleProduct = await stripe.products.create({
     name: 'LocalBlue Scale',
-    description: 'Local Dominance - Everything in Growth plus quote calculator, service-area maps, and unlimited admin seats.',
+    description: 'Local Dominance - Everything in Growth plus instant quote calculator and service pricing display.',
     metadata: {
       localblue_product: 'true',
       plan: 'scale',

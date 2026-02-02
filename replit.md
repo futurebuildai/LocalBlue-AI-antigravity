@@ -56,9 +56,9 @@ Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimo
 
 | Plan | Monthly | Annual | Core Value | Key Features |
 |------|---------|--------|------------|--------------|
-| Starter | $49 | $490 ($41/mo) | Professional Presence | Standard forms, manual booking, 1 admin seat |
-| Growth | $99 | $990 ($82/mo) | Lead Automation | AI Sales Chatbot, calendar sync, 3 admin seats |
-| Scale | $199 | $1,990 ($165/mo) | Local Dominance | Quote calculator, service-area maps, unlimited seats |
+| Starter | $49 | $490 ($41/mo) | Professional Presence | Contact forms, appointment requests, project gallery, SEO |
+| Growth | $99 | $990 ($82/mo) | Lead Automation | AI Sales Chatbot 24/7, before/after galleries, testimonials |
+| Scale | $199 | $1,990 ($165/mo) | Local Dominance | Instant quote calculator, service pricing display, multi-service pages |
 
 **Graduated Trial Model:**
 - **Phase 1: "Test Drive" (30 days)** - Site on `yourbusiness.localblue.co`, no credit card required
