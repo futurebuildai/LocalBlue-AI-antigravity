@@ -64,33 +64,33 @@ export default function SignUp() {
     <div className="min-h-screen flex bg-background">
       {/* Left Panel - Form */}
       <div className="flex-1 flex flex-col">
-        <header className="p-4">
+        <header className="p-3 sm:p-4">
           <Link href="/">
-            <Button variant="ghost" size="sm" data-testid="link-back-landing">
+            <Button variant="ghost" size="sm" className="min-h-10" data-testid="link-back-landing">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Home
             </Button>
           </Link>
         </header>
 
-        <main className="flex-1 flex items-center justify-center p-6">
+        <main className="flex-1 flex items-center justify-center px-4 py-6 sm:p-6">
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
-              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary shadow-lg shadow-primary/25 mb-6">
-                <Sparkles className="h-7 w-7 text-white" />
+              <div className="inline-flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl gradient-primary shadow-lg shadow-primary/25 mb-6">
+                <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
               </div>
-              <h1 className="text-3xl font-bold mb-2" data-testid="text-signup-title">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2" data-testid="text-signup-title">
                 Start Your Free Trial
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 30 days free on yourbusiness.localblue.co - no credit card required
               </p>
             </div>
             
             <Card className="border-0 shadow-xl">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3 sm:space-y-4">
                     <FormField
                       control={form.control}
                       name="businessName"
@@ -146,7 +146,7 @@ export default function SignUp() {
                     />
                     <Button 
                       type="submit" 
-                      className="w-full gradient-primary shadow-lg shadow-primary/25" 
+                      className="w-full min-h-11 gradient-primary shadow-lg shadow-primary/25" 
                       disabled={signUpMutation.isPending}
                       data-testid="button-signup-submit"
                     >
@@ -162,8 +162,8 @@ export default function SignUp() {
                   </form>
                 </Form>
                 
-                <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Shield className="h-4 w-4" />
+                <div className="mt-6 flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <Shield className="h-4 w-4 flex-shrink-0" />
                   <span>No credit card required to start</span>
                 </div>
               </CardContent>
@@ -179,28 +179,28 @@ export default function SignUp() {
         <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:72px_72px]" />
 
-        <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
+        <div className="relative z-10 flex flex-col justify-center px-8 lg:px-12 xl:px-20">
           <div className="max-w-md">
-            <h2 className="text-3xl xl:text-4xl font-bold text-white mb-6">
+            <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-white mb-6">
               Your "Test Drive" starts now
             </h2>
-            <p className="text-white/70 text-lg mb-10">
+            <p className="text-white/70 text-base lg:text-lg mb-10">
               Try everything free for 30 days on your localblue.co subdomain. Upgrade to your custom domain when you're ready.
             </p>
             
             <div className="space-y-4">
               {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <div key={index} className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center mt-0.5">
                     <CheckCircle className="h-4 w-4 text-emerald-400" />
                   </div>
-                  <span className="text-white/90">{benefit}</span>
+                  <span className="text-white/90 text-sm lg:text-base">{benefit}</span>
                 </div>
               ))}
             </div>
 
             <div className="mt-12 pt-8 border-t border-white/10">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="flex -space-x-2">
                   {['M', 'S', 'D'].map((initial, i) => (
                     <div 
@@ -211,7 +211,7 @@ export default function SignUp() {
                     </div>
                   ))}
                 </div>
-                <div className="text-white/80 text-sm">
+                <div className="text-white/80 text-xs sm:text-sm">
                   <span className="font-semibold text-white">500+</span> contractors already trust us
                 </div>
               </div>

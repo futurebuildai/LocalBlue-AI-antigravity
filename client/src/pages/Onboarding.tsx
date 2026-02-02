@@ -349,24 +349,25 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row h-auto sm:h-14 items-start sm:items-center justify-between gap-2 px-2 sm:px-4 py-2 sm:py-0">
+          <div className="flex items-center gap-2 min-w-0">
             <Button 
               variant="ghost" 
-              size="sm" 
+              size="icon"
               onClick={() => setLocation("/signup")}
               data-testid="button-back"
+              className="h-9 w-9"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-3">
-              <img src="/logo-wordmark.png" alt="LocalBlue" className="h-7 object-contain" />
-              <div className="h-6 w-px bg-border" />
-              <div>
-                <h1 className="text-sm font-semibold" data-testid="text-business-name">
+            <div className="flex items-center gap-2 min-w-0">
+              <img src="/logo-wordmark.png" alt="LocalBlue" className="h-5 sm:h-7 object-contain flex-shrink-0" />
+              <div className="h-4 sm:h-6 w-px bg-border flex-shrink-0 hidden sm:block" />
+              <div className="min-w-0">
+                <h1 className="text-xs sm:text-sm font-semibold truncate" data-testid="text-business-name">
                   {session.site.businessName}
                 </h1>
-                <p className="text-xs text-muted-foreground">Website Setup</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Website Setup</p>
               </div>
             </div>
           </div>
@@ -374,18 +375,21 @@ export default function Onboarding() {
             <Button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="bg-[#2563EB] hover:bg-[#1d4ed8]"
+              className="bg-[#2563EB] hover:bg-[#1d4ed8] w-full sm:w-auto text-xs sm:text-sm"
+              size="sm"
               data-testid="button-generate-site"
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
+                  <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                  <span className="hidden xs:inline">Generating...</span>
+                  <span className="inline xs:hidden">Gen...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate My Site
+                  <Sparkles className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden xs:inline">Generate My Site</span>
+                  <span className="inline xs:hidden">Generate</span>
                 </>
               )}
             </Button>
@@ -400,12 +404,12 @@ export default function Onboarding() {
       />
 
       <main className="flex-1 flex overflow-hidden">
-        <div className={`flex flex-col ${isMobile ? 'w-full' : 'w-[60%]'} border-r`}>
+        <div className={`flex flex-col ${isMobile ? 'w-full' : 'w-[60%]'} ${!isMobile && 'border-r'}`}>
           {currentPhase === "style" ? (
-            <div className="flex-1 overflow-auto p-4">
-              <div className="max-w-2xl mx-auto">
-                <h2 className="text-lg font-semibold mb-2" data-testid="text-style-title">Choose Your Style</h2>
-                <p className="text-sm text-muted-foreground mb-4">
+            <div className="flex-1 overflow-auto p-2 sm:p-4">
+              <div className="max-w-2xl mx-auto px-2 sm:px-0">
+                <h2 className="text-base sm:text-lg font-semibold mb-2" data-testid="text-style-title">Choose Your Style</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
                   Select a visual style that best represents your brand and business personality.
                 </p>
                 <StylePicker
@@ -424,10 +428,10 @@ export default function Onboarding() {
               </div>
             </div>
           ) : currentPhase === "pages" ? (
-            <div className="flex-1 overflow-auto p-4">
-              <div className="max-w-2xl mx-auto">
-                <h2 className="text-lg font-semibold mb-2" data-testid="text-pages-title">Select Your Pages</h2>
-                <p className="text-sm text-muted-foreground mb-4">
+            <div className="flex-1 overflow-auto p-2 sm:p-4">
+              <div className="max-w-2xl mx-auto px-2 sm:px-0">
+                <h2 className="text-base sm:text-lg font-semibold mb-2" data-testid="text-pages-title">Select Your Pages</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
                   Choose which pages you want to include on your website. Required pages are pre-selected.
                 </p>
                 <PageSelector
@@ -449,10 +453,10 @@ export default function Onboarding() {
               </div>
             </div>
           ) : showPhotoUpload && currentPhase === "photos" ? (
-            <div className="flex-1 overflow-auto p-4">
-              <div className="max-w-2xl mx-auto">
-                <h2 className="text-lg font-semibold mb-2">Upload Your Photos</h2>
-                <p className="text-sm text-muted-foreground mb-4">
+            <div className="flex-1 overflow-auto p-2 sm:p-4">
+              <div className="max-w-2xl mx-auto px-2 sm:px-0">
+                <h2 className="text-base sm:text-lg font-semibold mb-2">Upload Your Photos</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
                   Add photos to make your website stand out. You can upload your logo, team photos, project photos, and before/after shots.
                 </p>
                 <PhotoUpload
