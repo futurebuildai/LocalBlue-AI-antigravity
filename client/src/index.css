@@ -502,6 +502,38 @@
     background: linear-gradient(90deg, hsl(221 83% 53%), hsl(262 83% 58%));
     border-radius: var(--radius) var(--radius) 0 0;
   }
+
+  /* Scroll-triggered animations */
+  .animate-on-scroll {
+    opacity: 0;
+    transition: opacity 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 600ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .animate-on-scroll.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .animate-on-scroll.animate-fade-up {
+    transform: translateY(30px);
+  }
+
+  .animate-on-scroll.animate-fade-in {
+    transform: none;
+  }
+
+  .animate-on-scroll.animate-slide-left {
+    transform: translateX(40px);
+  }
+
+  .animate-on-scroll.animate-slide-right {
+    transform: translateX(-40px);
+  }
+
+  .animate-on-scroll.animate-scale-up {
+    transform: scale(0.95);
+  }
 }
 
 /**
