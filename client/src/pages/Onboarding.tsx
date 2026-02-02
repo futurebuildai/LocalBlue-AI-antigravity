@@ -6,15 +6,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Loader2, Sparkles, ArrowLeft, Globe, Phone, Mail, MapPin } from "lucide-react";
+import { Send, Loader2, Sparkles, ArrowLeft, Globe, Phone, Mail, MapPin, ImagePlus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FormattedMessage } from "@/lib/message-utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { PhotoUpload } from "@/components/PhotoUpload";
-import { StylePicker } from "@/components/StylePicker";
-import { PageSelector } from "@/components/PageSelector";
-import type { Site, User, OnboardingPhase, PhotoType, StylePreference } from "@shared/schema";
+import type { Site, User, OnboardingPhase, PhotoType } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
 
@@ -192,9 +190,15 @@ export default function Onboarding() {
                 });
               }
               if (data.done) {
-                // Process phase update
+                // Process phase update - but don't overwrite user-controlled phases
                 if (data.phase) {
-                  setCurrentPhase(data.phase);
+                  setCurrentPhase(prevPhase => {
+                    // Don't let SSE overwrite if user is in photos or review
+                    if (prevPhase === "photos" || prevPhase === "review") {
+                      return prevPhase;
+                    }
+                    return data.phase;
+                  });
                 }
                 // Process collected data for live preview
                 if (data.collectedData) {
@@ -204,9 +208,15 @@ export default function Onboarding() {
                 if (data.readyToGenerate) {
                   setReadyToGenerate(true);
                   setCurrentPhase("review");
-                  setCompletedPhases(prev => 
-                    prev.includes("photos") ? prev : [...prev, "photos"]
-                  );
+                  setCompletedPhases(prev => {
+                    const updated = prev.includes("photos") ? prev : [...prev, "photos" as OnboardingPhase];
+                    // Sync to backend
+                    apiRequest("POST", "/api/onboarding/preferences", {
+                      currentPhase: "review",
+                      completedPhases: updated,
+                    }).catch(err => console.error("Error syncing phase:", err));
+                    return updated;
+                  });
                 }
               }
             } catch {
@@ -224,7 +234,13 @@ export default function Onboarding() {
             setCollectedData(prev => ({ ...prev, ...data.collectedData }));
           }
           if (data.phase) {
-            setCurrentPhase(data.phase);
+            // Don't overwrite user-controlled phases
+            setCurrentPhase(prevPhase => {
+              if (prevPhase === "photos" || prevPhase === "review") {
+                return prevPhase;
+              }
+              return data.phase;
+            });
           }
         } catch {
           // Ignore final parse error
@@ -280,30 +296,6 @@ export default function Onboarding() {
       } catch (error) {
         console.error("Error persisting photo:", error);
       }
-    }
-  };
-
-  const handleStyleSelect = async (styleId: StylePreference) => {
-    setCollectedData(prev => ({ ...prev, stylePreference: styleId }));
-    
-    try {
-      await apiRequest("POST", "/api/onboarding/preferences", {
-        stylePreference: styleId,
-      });
-    } catch (error) {
-      console.error("Error saving style preference:", error);
-    }
-  };
-
-  const handlePagesChange = async (pages: string[]) => {
-    setCollectedData(prev => ({ ...prev, selectedPages: pages }));
-    
-    try {
-      await apiRequest("POST", "/api/onboarding/preferences", {
-        selectedPages: pages,
-      });
-    } catch (error) {
-      console.error("Error saving page preferences:", error);
     }
   };
 
@@ -402,57 +394,8 @@ export default function Onboarding() {
       />
 
       <main className="flex-1 flex overflow-hidden">
-        <div className={`flex flex-col ${isMobile ? 'w-full' : 'w-[60%]'} ${!isMobile && 'border-r'}`}>
-          {currentPhase === "style" ? (
-            <div className="flex-1 overflow-auto p-2 sm:p-4">
-              <div className="max-w-2xl mx-auto px-2 sm:px-0">
-                <h2 className="text-base sm:text-lg font-semibold mb-2" data-testid="text-style-title">Choose Your Style</h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-                  Select a visual style that best represents your brand and business personality.
-                </p>
-                <StylePicker
-                  onSelect={handleStyleSelect}
-                  selectedStyle={collectedData.stylePreference as StylePreference | undefined}
-                />
-                <div className="mt-4 flex justify-end">
-                  <Button
-                    onClick={() => setCurrentPhase("pages")}
-                    className="bg-[#2563EB] hover:bg-[#1d4ed8] text-xs sm:text-sm w-full sm:w-auto"
-                    size="sm"
-                    data-testid="button-continue-to-pages"
-                  >
-                    Continue to Pages
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : currentPhase === "pages" ? (
-            <div className="flex-1 overflow-auto p-2 sm:p-4">
-              <div className="max-w-2xl mx-auto px-2 sm:px-0">
-                <h2 className="text-base sm:text-lg font-semibold mb-2" data-testid="text-pages-title">Select Your Pages</h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-                  Choose which pages you want to include on your website. Required pages are pre-selected.
-                </p>
-                <PageSelector
-                  selectedPages={collectedData.selectedPages || ["home", "services", "contact"]}
-                  onSelectionChange={handlePagesChange}
-                />
-                <div className="mt-4 flex justify-end">
-                  <Button
-                    onClick={() => {
-                      setCurrentPhase("photos");
-                      setShowPhotoUpload(true);
-                    }}
-                    className="bg-[#2563EB] hover:bg-[#1d4ed8] text-xs sm:text-sm w-full sm:w-auto"
-                    size="sm"
-                    data-testid="button-continue-to-photos"
-                  >
-                    Continue to Photos
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : showPhotoUpload && currentPhase === "photos" ? (
+        <div className={`flex flex-col ${isMobile ? 'w-full' : 'w-[55%]'} ${!isMobile && 'border-r'}`}>
+          {showPhotoUpload && currentPhase === "photos" ? (
             <div className="flex-1 overflow-auto p-2 sm:p-4">
               <div className="max-w-2xl mx-auto px-2 sm:px-0">
                 <h2 className="text-base sm:text-lg font-semibold mb-2">Upload Your Photos</h2>
@@ -466,12 +409,31 @@ export default function Onboarding() {
                 />
                 <div className="mt-4 flex justify-end">
                   <Button
-                    onClick={() => setShowPhotoUpload(false)}
+                    onClick={async () => {
+                      const newCompletedPhases: OnboardingPhase[] = completedPhases.includes("photos") 
+                        ? completedPhases 
+                        : [...completedPhases, "photos" as OnboardingPhase];
+                      
+                      // Update local state
+                      setShowPhotoUpload(false);
+                      setCurrentPhase("review");
+                      setCompletedPhases(newCompletedPhases);
+                      
+                      // Sync with backend to prevent SSE from overriding
+                      try {
+                        await apiRequest("POST", "/api/onboarding/preferences", {
+                          currentPhase: "review",
+                          completedPhases: newCompletedPhases,
+                        });
+                      } catch (error) {
+                        console.error("Error syncing phase:", error);
+                      }
+                    }}
                     className="bg-[#2563EB] hover:bg-[#1d4ed8] text-xs sm:text-sm w-full sm:w-auto"
                     size="sm"
                     data-testid="button-continue-chat"
                   >
-                    Continue to Chat
+                    Continue to Review
                   </Button>
                 </div>
               </div>
@@ -528,7 +490,21 @@ export default function Onboarding() {
               </ScrollArea>
 
               <div className="border-t p-2 sm:p-4 bg-background">
-                <div className="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto px-2 sm:px-0">
+                <div className="flex gap-2 max-w-2xl mx-auto px-2 sm:px-0">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      setCurrentPhase("photos");
+                      setShowPhotoUpload(true);
+                    }}
+                    disabled={isStreaming}
+                    className="min-h-10 sm:min-h-9 flex-shrink-0"
+                    data-testid="button-add-photos"
+                    title="Upload photos"
+                  >
+                    <ImagePlus className="h-4 w-4" />
+                  </Button>
                   <Input
                     ref={inputRef}
                     value={inputValue}
@@ -542,7 +518,7 @@ export default function Onboarding() {
                   <Button
                     onClick={sendMessage}
                     disabled={!inputValue.trim() || isStreaming}
-                    className="bg-[#2563EB] hover:bg-[#1d4ed8] w-full sm:w-auto min-h-10 sm:min-h-9"
+                    className="bg-[#2563EB] hover:bg-[#1d4ed8] min-h-10 sm:min-h-9 flex-shrink-0"
                     size="sm"
                     data-testid="button-send"
                   >
@@ -550,9 +526,8 @@ export default function Onboarding() {
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <>
-                        <Send className="h-4 w-4 hidden sm:inline mr-1.5" />
+                        <Send className="h-4 w-4 sm:mr-1.5" />
                         <span className="hidden sm:inline">Send</span>
-                        <span className="sm:hidden">Send</span>
                       </>
                     )}
                   </Button>
@@ -566,7 +541,7 @@ export default function Onboarding() {
         </div>
 
         {!isMobile && (
-          <div className="hidden md:flex w-[40%] bg-muted/30 overflow-auto p-3 flex-col" data-testid="preview-panel">
+          <div className="hidden md:flex w-[45%] bg-muted/30 overflow-auto p-3 flex-col" data-testid="preview-panel">
             <div className="sticky top-0 pb-2">
               <div className="flex items-center justify-between mb-3 gap-2">
                 <h3 className="text-xs font-medium flex items-center gap-2 flex-shrink-0">

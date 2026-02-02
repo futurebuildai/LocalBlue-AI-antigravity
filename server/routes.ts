@@ -1997,7 +1997,7 @@ Return ONLY valid JSON.`;
       const isDev = process.env.NODE_ENV === "development";
       const redirectUrl = isDev 
         ? `/preview/${site.subdomain}`
-        : `https://${site.subdomain}.localblue/`;
+        : `https://${site.subdomain}.localblue.co/`;
 
       res.json({
         success: true,
@@ -2081,15 +2081,16 @@ Return ONLY valid JSON.`;
     }
   });
 
-  // Save style and page preferences during onboarding
+  // Save style, page, and phase preferences during onboarding
   app.post("/api/onboarding/preferences", async (req, res) => {
     try {
       if (!req.session.userId || !req.session.siteId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      const { stylePreference, selectedPages } = req.body;
+      const { stylePreference, selectedPages, currentPhase, completedPhases } = req.body;
       const updateData: Record<string, any> = {};
+      const progressUpdate: Record<string, any> = {};
 
       if (stylePreference) {
         const validStyles = ["professional", "bold", "warm", "luxury"];
@@ -2102,21 +2103,40 @@ Return ONLY valid JSON.`;
         updateData.selectedPages = selectedPages;
       }
 
-      if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ error: "No valid preferences provided" });
+      // Handle phase updates for onboarding progress - use all valid OnboardingPhase values
+      const validPhases = [
+        "welcome", "business_basics", "trade_detection", "services", 
+        "story", "differentiators", "service_area", "style", 
+        "pages", "photos", "review", "complete"
+      ];
+      if (currentPhase && validPhases.includes(currentPhase)) {
+        progressUpdate.currentPhase = currentPhase;
       }
 
-      const site = await storage.updateSite(req.session.siteId, updateData);
+      if (completedPhases && Array.isArray(completedPhases)) {
+        const validCompletedPhases = completedPhases.filter(p => validPhases.includes(p));
+        if (validCompletedPhases.length > 0) {
+          progressUpdate.completedPhases = validCompletedPhases;
+        }
+      }
 
-      // Also update onboarding progress
+      // Update site data if there are changes
+      if (Object.keys(updateData).length > 0) {
+        await storage.updateSite(req.session.siteId, updateData);
+      }
+
+      // Update onboarding progress
       const progress = await storage.getOnboardingProgress(req.session.siteId);
       if (progress) {
         const existingData = (progress.collectedData as Record<string, any>) || {};
         await storage.updateOnboardingProgress(req.session.siteId, {
+          ...progressUpdate,
           collectedData: { ...existingData, ...updateData },
         });
       }
 
+      // Return success even if only progress was updated
+      const site = await storage.getSite(req.session.siteId);
       res.json({ success: true, site });
     } catch (error) {
       console.error("Error saving onboarding preferences:", error);
