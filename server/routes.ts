@@ -1040,13 +1040,19 @@ IMPORTANT:
   app.patch("/api/tenant/settings", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
       // Only allow updating certain fields (not subdomain or id)
-      const allowedFields = ["businessName", "brandColor", "services", "isPublished"];
       const updateData: Record<string, any> = {};
       
-      for (const field of allowedFields) {
-        if (req.body[field] !== undefined) {
-          updateData[field] = req.body[field];
-        }
+      if (req.body.businessName !== undefined) {
+        updateData.businessName = req.body.businessName;
+      }
+      if (req.body.brandColor !== undefined) {
+        updateData.brandColor = req.body.brandColor;
+      }
+      if (req.body.services !== undefined) {
+        updateData.services = req.body.services;
+      }
+      if (req.body.isPublished !== undefined) {
+        updateData.isPublished = req.body.isPublished;
       }
 
       if (Object.keys(updateData).length === 0) {
