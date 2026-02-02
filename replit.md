@@ -28,6 +28,14 @@ None
     - **Design**: Modern, sleek aesthetics with blue gradient accents, glass-morphism effects, and smooth animations. Includes a redesigned Landing page, SignUp page, and TenantAdminLayout.
     - **Public Site Template**: Spectacular template with sticky header, hero section, trust badges, services, testimonials, contact form, and AI chatbot integration. Features trade-specific hero images and style preference visual treatments (luxury, bold, warm, professional).
     - **Interactive Components**: ChatBot, QuoteCalculator, AppointmentScheduler, BeforeAfterSlider, ProjectGallery, ServiceAreaMap, StylePicker, PageSelector, PhotoUpload, OnboardingProgress.
+    - **Mobile Optimization**: All pages are fully mobile-responsive (400px+ viewport support). Key patterns:
+        - Touch-friendly controls with 44px minimum tap targets
+        - Mobile navigation via hamburger menus and collapsible sidebars
+        - Responsive grids (2-column on mobile, 3-4 column on desktop)
+        - Tables converted to card layouts on mobile
+        - Full-width buttons and form inputs on mobile
+        - Horizontal scroll for data tables where needed
+        - Sticky mobile CTA bars on public sites
 - **State Management**: TanStack React Query
 - **Routing**: Wouter
 
