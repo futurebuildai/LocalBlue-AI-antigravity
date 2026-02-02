@@ -1233,23 +1233,32 @@ IMPORTANT:
       const currentSite = req.site!;
       const newPublishStatus = !currentSite.isPublished;
 
-      const updatedSite = await storage.updateSite(currentSite.id, { isPublished: newPublishStatus });
-      if (!updatedSite) {
-        return res.status(404).json({ error: "Site not found" });
-      }
-
       let dnsMessages: string[] = [];
+      let dnsSuccess = true;
       
       if (isCloudflareConfigured()) {
         if (newPublishStatus) {
-          const dnsResult = await publishSiteDNS(updatedSite.subdomain);
+          const dnsResult = await publishSiteDNS(currentSite.subdomain);
           dnsMessages = dnsResult.messages;
-          console.log(`DNS setup for ${updatedSite.subdomain}:`, dnsResult);
+          dnsSuccess = dnsResult.success;
+          console.log(`DNS setup for ${currentSite.subdomain}:`, dnsResult);
+          
+          if (!dnsSuccess) {
+            return res.status(500).json({ 
+              error: "Failed to create DNS records. Site was not published.",
+              dnsMessages 
+            });
+          }
         } else {
-          const dnsResult = await unpublishSiteDNS(updatedSite.subdomain);
+          const dnsResult = await unpublishSiteDNS(currentSite.subdomain);
           dnsMessages = dnsResult.messages;
-          console.log(`DNS cleanup for ${updatedSite.subdomain}:`, dnsResult);
+          console.log(`DNS cleanup for ${currentSite.subdomain}:`, dnsResult);
         }
+      }
+
+      const updatedSite = await storage.updateSite(currentSite.id, { isPublished: newPublishStatus });
+      if (!updatedSite) {
+        return res.status(404).json({ error: "Site not found" });
       }
 
       const { id, subdomain, businessName, brandColor, services, isPublished, customDomain } = updatedSite;

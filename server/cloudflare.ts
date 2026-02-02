@@ -1,7 +1,7 @@
 interface CloudflareConfig {
   apiToken: string;
   zoneId: string;
-  targetIP: string;
+  cnameTarget: string;
 }
 
 interface DNSRecord {
@@ -20,11 +20,12 @@ interface CloudflareResponse<T> {
 }
 
 const CLOUDFLARE_API_BASE = "https://api.cloudflare.com/client/v4";
+const BASE_DOMAIN = "localblue.co";
 
 function getConfig(): CloudflareConfig {
   const apiToken = process.env.CLOUDFLARE_API_TOKEN;
   const zoneId = process.env.CLOUDFLARE_ZONE_ID;
-  const targetIP = process.env.SERVER_IP || process.env.REPLIT_DEV_DOMAIN?.split(".")[0] || "";
+  const cnameTarget = process.env.CLOUDFLARE_CNAME_TARGET || BASE_DOMAIN;
 
   if (!apiToken) {
     throw new Error("CLOUDFLARE_API_TOKEN is not configured");
@@ -33,7 +34,7 @@ function getConfig(): CloudflareConfig {
     throw new Error("CLOUDFLARE_ZONE_ID is not configured");
   }
 
-  return { apiToken, zoneId, targetIP };
+  return { apiToken, zoneId, cnameTarget };
 }
 
 async function cloudflareRequest<T>(
@@ -65,9 +66,9 @@ async function cloudflareRequest<T>(
 export async function createSubdomainRecord(subdomain: string): Promise<{ success: boolean; recordId?: string; message: string }> {
   try {
     const config = getConfig();
-    const fullDomain = `${subdomain}.localblue.co`;
+    const fullDomain = `${subdomain}.${BASE_DOMAIN}`;
     
-    const existingRecord = await findDNSRecord(subdomain);
+    const existingRecord = await findDNSRecord(fullDomain);
     if (existingRecord) {
       console.log(`DNS record already exists for ${fullDomain}`);
       return { success: true, recordId: existingRecord.id, message: "DNS record already exists" };
@@ -75,8 +76,8 @@ export async function createSubdomainRecord(subdomain: string): Promise<{ succes
 
     const response = await cloudflareRequest<DNSRecord>("POST", `/zones/${config.zoneId}/dns_records`, {
       type: "CNAME",
-      name: subdomain,
-      content: config.targetIP || "localblue.co",
+      name: fullDomain,
+      content: config.cnameTarget,
       proxied: true,
       ttl: 1,
     });
@@ -92,10 +93,9 @@ export async function createSubdomainRecord(subdomain: string): Promise<{ succes
 export async function createAdminSubdomainRecord(subdomain: string): Promise<{ success: boolean; recordId?: string; message: string }> {
   try {
     const config = getConfig();
-    const adminSubdomain = `admin.${subdomain}`;
-    const fullDomain = `${adminSubdomain}.localblue.co`;
+    const fullDomain = `admin.${subdomain}.${BASE_DOMAIN}`;
     
-    const existingRecord = await findDNSRecord(adminSubdomain);
+    const existingRecord = await findDNSRecord(fullDomain);
     if (existingRecord) {
       console.log(`DNS record already exists for ${fullDomain}`);
       return { success: true, recordId: existingRecord.id, message: "DNS record already exists" };
@@ -103,8 +103,8 @@ export async function createAdminSubdomainRecord(subdomain: string): Promise<{ s
 
     const response = await cloudflareRequest<DNSRecord>("POST", `/zones/${config.zoneId}/dns_records`, {
       type: "CNAME",
-      name: adminSubdomain,
-      content: config.targetIP || "localblue.co",
+      name: fullDomain,
+      content: config.cnameTarget,
       proxied: true,
       ttl: 1,
     });
@@ -117,10 +117,9 @@ export async function createAdminSubdomainRecord(subdomain: string): Promise<{ s
   }
 }
 
-async function findDNSRecord(subdomain: string): Promise<DNSRecord | null> {
+async function findDNSRecord(fullDomain: string): Promise<DNSRecord | null> {
   try {
     const config = getConfig();
-    const fullDomain = `${subdomain}.localblue.co`;
     
     const response = await cloudflareRequest<DNSRecord[]>(
       "GET",
@@ -137,16 +136,17 @@ async function findDNSRecord(subdomain: string): Promise<DNSRecord | null> {
 export async function deleteSubdomainRecord(subdomain: string): Promise<{ success: boolean; message: string }> {
   try {
     const config = getConfig();
+    const fullDomain = `${subdomain}.${BASE_DOMAIN}`;
     
-    const record = await findDNSRecord(subdomain);
+    const record = await findDNSRecord(fullDomain);
     if (!record) {
       return { success: true, message: "No DNS record found to delete" };
     }
 
     await cloudflareRequest<{ id: string }>("DELETE", `/zones/${config.zoneId}/dns_records/${record.id}`);
     
-    console.log(`Deleted DNS record for ${subdomain}.localblue.co`);
-    return { success: true, message: `DNS record deleted for ${subdomain}.localblue.co` };
+    console.log(`Deleted DNS record for ${fullDomain}`);
+    return { success: true, message: `DNS record deleted for ${fullDomain}` };
   } catch (error) {
     console.error("Failed to delete DNS record:", error);
     return { success: false, message: error instanceof Error ? error.message : "Unknown error" };
@@ -156,17 +156,17 @@ export async function deleteSubdomainRecord(subdomain: string): Promise<{ succes
 export async function deleteAdminSubdomainRecord(subdomain: string): Promise<{ success: boolean; message: string }> {
   try {
     const config = getConfig();
-    const adminSubdomain = `admin.${subdomain}`;
+    const fullDomain = `admin.${subdomain}.${BASE_DOMAIN}`;
     
-    const record = await findDNSRecord(adminSubdomain);
+    const record = await findDNSRecord(fullDomain);
     if (!record) {
       return { success: true, message: "No admin DNS record found to delete" };
     }
 
     await cloudflareRequest<{ id: string }>("DELETE", `/zones/${config.zoneId}/dns_records/${record.id}`);
     
-    console.log(`Deleted DNS record for ${adminSubdomain}.localblue.co`);
-    return { success: true, message: `DNS record deleted for ${adminSubdomain}.localblue.co` };
+    console.log(`Deleted DNS record for ${fullDomain}`);
+    return { success: true, message: `DNS record deleted for ${fullDomain}` };
   } catch (error) {
     console.error("Failed to delete admin DNS record:", error);
     return { success: false, message: error instanceof Error ? error.message : "Unknown error" };
