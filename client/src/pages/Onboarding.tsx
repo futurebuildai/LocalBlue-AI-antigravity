@@ -381,15 +381,13 @@ export default function Onboarding() {
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                  <span className="hidden xs:inline">Generating...</span>
-                  <span className="inline xs:hidden">Gen...</span>
+                  <Loader2 className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                  <span className="text-xs sm:text-sm">Generating...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                  <span className="hidden xs:inline">Generate My Site</span>
-                  <span className="inline xs:hidden">Generate</span>
+                  <span className="text-xs sm:text-sm">Generate Site</span>
                 </>
               )}
             </Button>
@@ -419,10 +417,11 @@ export default function Onboarding() {
                 <div className="mt-4 flex justify-end">
                   <Button
                     onClick={() => setCurrentPhase("pages")}
-                    className="bg-[#2563EB] hover:bg-[#1d4ed8]"
+                    className="bg-[#2563EB] hover:bg-[#1d4ed8] text-xs sm:text-sm w-full sm:w-auto"
+                    size="sm"
                     data-testid="button-continue-to-pages"
                   >
-                    Continue to Page Selection
+                    Continue to Pages
                   </Button>
                 </div>
               </div>
@@ -444,7 +443,8 @@ export default function Onboarding() {
                       setCurrentPhase("photos");
                       setShowPhotoUpload(true);
                     }}
-                    className="bg-[#2563EB] hover:bg-[#1d4ed8]"
+                    className="bg-[#2563EB] hover:bg-[#1d4ed8] text-xs sm:text-sm w-full sm:w-auto"
+                    size="sm"
                     data-testid="button-continue-to-photos"
                   >
                     Continue to Photos
@@ -467,7 +467,8 @@ export default function Onboarding() {
                 <div className="mt-4 flex justify-end">
                   <Button
                     onClick={() => setShowPhotoUpload(false)}
-                    className="bg-[#2563EB] hover:bg-[#1d4ed8]"
+                    className="bg-[#2563EB] hover:bg-[#1d4ed8] text-xs sm:text-sm w-full sm:w-auto"
+                    size="sm"
                     data-testid="button-continue-chat"
                   >
                     Continue to Chat
@@ -477,12 +478,12 @@ export default function Onboarding() {
             </div>
           ) : (
             <>
-              <ScrollArea ref={scrollAreaRef} className="flex-1 p-4" data-testid="chat-messages-container">
-                <div className="space-y-4 pb-4 max-w-2xl mx-auto">
+              <ScrollArea ref={scrollAreaRef} className="flex-1 p-2 sm:p-4" data-testid="chat-messages-container">
+                <div className="space-y-3 sm:space-y-4 pb-4 max-w-2xl mx-auto px-2 sm:px-0">
                   {displayMessages.length === 0 && (
                     <div className="flex justify-start">
-                      <div className="max-w-[85%] rounded-lg bg-muted p-4" data-testid="message-welcome">
-                        <p className="text-sm">
+                      <div className="max-w-xs sm:max-w-sm rounded-lg bg-muted p-3 sm:p-4" data-testid="message-welcome">
+                        <p className="text-xs sm:text-sm">
                           Hi there! I'm excited to help you set up your professional website for{" "}
                           <strong>{session.site.businessName}</strong>. Let's start with the basics - what services does your business offer?
                         </p>
@@ -496,13 +497,13 @@ export default function Onboarding() {
                       data-testid={`message-${message.role}-${index}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-lg p-4 ${
+                        className={`max-w-xs sm:max-w-sm rounded-lg p-3 sm:p-4 ${
                           message.role === "user"
                             ? "bg-[#2563EB] text-white"
                             : "bg-muted"
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">
+                        <p className="text-xs sm:text-sm whitespace-pre-wrap break-words">
                           {message.role === "assistant" ? (
                             <FormattedMessage content={message.content} />
                           ) : (
@@ -514,11 +515,11 @@ export default function Onboarding() {
                   ))}
                   {isStreaming && messages[messages.length - 1]?.content === "" && (
                     <div className="flex justify-start">
-                      <div className="max-w-[85%] rounded-lg bg-muted p-4" data-testid="typing-indicator">
+                      <div className="max-w-xs sm:max-w-sm rounded-lg bg-muted p-3 sm:p-4" data-testid="typing-indicator">
                         <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                         </div>
                       </div>
                     </div>
@@ -526,8 +527,8 @@ export default function Onboarding() {
                 </div>
               </ScrollArea>
 
-              <div className="border-t p-4">
-                <div className="flex gap-2 max-w-2xl mx-auto">
+              <div className="border-t p-2 sm:p-4 bg-background">
+                <div className="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto px-2 sm:px-0">
                   <Input
                     ref={inputRef}
                     value={inputValue}
@@ -535,23 +536,28 @@ export default function Onboarding() {
                     onKeyDown={handleKeyPress}
                     placeholder="Type your message..."
                     disabled={isStreaming}
-                    className="flex-1"
+                    className="flex-1 min-h-10 sm:min-h-9"
                     data-testid="input-message"
                   />
                   <Button
                     onClick={sendMessage}
                     disabled={!inputValue.trim() || isStreaming}
-                    className="bg-[#2563EB] hover:bg-[#1d4ed8]"
+                    className="bg-[#2563EB] hover:bg-[#1d4ed8] w-full sm:w-auto min-h-10 sm:min-h-9"
+                    size="sm"
                     data-testid="button-send"
                   >
                     {isStreaming ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Send className="h-4 w-4" />
+                      <>
+                        <Send className="h-4 w-4 hidden sm:inline mr-1.5" />
+                        <span className="hidden sm:inline">Send</span>
+                        <span className="sm:hidden">Send</span>
+                      </>
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground text-center mt-2">
+                <p className="text-[10px] sm:text-xs text-muted-foreground text-center mt-2 px-2">
                   Tell us about your business and we'll create your website
                 </p>
               </div>
@@ -560,99 +566,99 @@ export default function Onboarding() {
         </div>
 
         {!isMobile && (
-          <div className="w-[40%] bg-muted/30 overflow-auto p-4" data-testid="preview-panel">
-            <div className="sticky top-0">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-[#2563EB]" />
-                  Live Preview
+          <div className="hidden md:flex w-[40%] bg-muted/30 overflow-auto p-3 flex-col" data-testid="preview-panel">
+            <div className="sticky top-0 pb-2">
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <h3 className="text-xs font-medium flex items-center gap-2 flex-shrink-0">
+                  <Globe className="w-3 h-3 text-[#2563EB]" />
+                  <span className="hidden lg:inline">Live Preview</span>
+                  <span className="lg:hidden">Preview</span>
                 </h3>
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                  Updates as you chat
+                <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded whitespace-nowrap">
+                  Live
                 </span>
               </div>
 
-              <div className="bg-background rounded-lg border shadow-sm overflow-hidden">
-                <div className="h-2 bg-gradient-to-r from-[#2563EB] to-[#1d4ed8]" />
+              <div className="bg-background rounded-lg border shadow-sm overflow-hidden flex-1">
+                <div className="h-1.5 bg-gradient-to-r from-[#2563EB] to-[#1d4ed8]" />
 
-                <div className="p-4 border-b">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-md bg-[#2563EB] flex items-center justify-center text-white font-bold text-xs">
+                <div className="p-2 border-b">
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="w-6 h-6 rounded-md bg-[#2563EB] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
                         {siteData.businessName?.charAt(0) || "B"}
                       </div>
-                      <span className="font-semibold text-sm">{siteData.businessName || "Your Business"}</span>
+                      <span className="font-semibold text-[10px] truncate">{siteData.businessName || "Your Business"}</span>
                     </div>
-                    <div className="flex gap-2">
-                      <Skeleton className="h-6 w-12" />
-                      <Skeleton className="h-6 w-12" />
-                      <Skeleton className="h-6 w-16" />
+                    <div className="flex gap-1">
+                      <Skeleton className="h-5 w-10" />
+                      <Skeleton className="h-5 w-10" />
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#2563EB]/10 to-[#2563EB]/5 p-6 text-center">
-                  <h1 className="text-lg font-bold mb-1">{siteData.businessName || "Your Business"}</h1>
+                <div className="bg-gradient-to-br from-[#2563EB]/10 to-[#2563EB]/5 p-3 text-center">
+                  <h1 className="text-xs font-bold mb-0.5">{siteData.businessName || "Your Business"}</h1>
                   {siteData.tagline ? (
-                    <p className="text-xs text-muted-foreground mb-3">{siteData.tagline}</p>
+                    <p className="text-[9px] text-muted-foreground mb-2">{siteData.tagline}</p>
                   ) : (
-                    <Skeleton className="h-3 w-48 mx-auto mb-3" />
+                    <Skeleton className="h-2 w-32 mx-auto mb-2" />
                   )}
-                  <Button size="sm" className="bg-[#2563EB] hover:bg-[#1d4ed8] text-xs h-7">
-                    Get a Free Quote
+                  <Button size="sm" className="bg-[#2563EB] hover:bg-[#1d4ed8] text-[9px] h-6" onClick={(e) => e.preventDefault()}>
+                    Get Quote
                   </Button>
                 </div>
 
-                <div className="p-4">
-                  <h3 className="text-xs font-semibold mb-2">Our Services</h3>
+                <div className="p-2">
+                  <h3 className="text-[9px] font-semibold mb-1">Services</h3>
                   {siteData.services && siteData.services.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1">
                       {siteData.services.slice(0, 4).map((service, i) => (
-                        <div key={i} className="bg-muted rounded-md p-2 text-xs">
+                        <div key={i} className="bg-muted rounded-md p-1 text-[8px] line-clamp-2">
                           {service}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      <Skeleton className="h-8 rounded-md" />
-                      <Skeleton className="h-8 rounded-md" />
-                      <Skeleton className="h-8 rounded-md" />
-                      <Skeleton className="h-8 rounded-md" />
+                    <div className="grid grid-cols-2 gap-1">
+                      <Skeleton className="h-6 rounded-md" />
+                      <Skeleton className="h-6 rounded-md" />
+                      <Skeleton className="h-6 rounded-md" />
+                      <Skeleton className="h-6 rounded-md" />
                     </div>
                   )}
                 </div>
 
-                <div className="p-4 bg-muted/50">
-                  <h3 className="text-xs font-semibold mb-2">Contact</h3>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Phone className="w-3 h-3" />
-                      <span>Phone number</span>
+                <div className="p-2 bg-muted/50">
+                  <h3 className="text-[9px] font-semibold mb-1">Contact</h3>
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1 text-[8px] text-muted-foreground">
+                      <Phone className="w-2.5 h-2.5 flex-shrink-0" />
+                      <span className="truncate">Phone</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Mail className="w-3 h-3" />
-                      <span>Email address</span>
+                    <div className="flex items-center gap-1 text-[8px] text-muted-foreground">
+                      <Mail className="w-2.5 h-2.5 flex-shrink-0" />
+                      <span className="truncate">Email</span>
                     </div>
                     {siteData.serviceArea && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <MapPin className="w-3 h-3" />
-                        <span>{siteData.serviceArea}</span>
+                      <div className="flex items-center gap-1 text-[8px] text-muted-foreground">
+                        <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+                        <span className="truncate">{siteData.serviceArea}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="p-2 border-t bg-muted/30 text-center">
-                  <p className="text-[10px] text-muted-foreground">
+                <div className="p-1.5 border-t bg-muted/30 text-center">
+                  <p className="text-[7px] text-muted-foreground">
                     Powered by LocalBlue
                   </p>
                 </div>
               </div>
 
               {photos.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-xs font-medium mb-2">Uploaded Photos ({photos.length})</h4>
+                <div className="mt-2">
+                  <h4 className="text-[9px] font-medium mb-1">Photos ({photos.length})</h4>
                   <div className="grid grid-cols-4 gap-1">
                     {photos.slice(0, 8).map((photo) => (
                       <div key={photo.id} className="aspect-square rounded-md overflow-hidden bg-muted">
