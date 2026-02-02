@@ -562,7 +562,7 @@ export default function Landing() {
                 <span className="bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent block sm:inline"> Pricing</span>
               </h2>
               <p className="mx-auto mt-6 max-w-2xl text-white/60 text-lg font-light leading-relaxed">
-                Start free and upgrade as your business grows. No hidden fees, no surprises.
+                All plans include <span className="text-emerald-400 font-medium">unlimited leads</span>. Start with a 30-day free trial — no credit card required.
               </p>
             </AnimatedSection>
 

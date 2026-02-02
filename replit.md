@@ -43,18 +43,27 @@ None
 Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimonial`, `ServicePricing`, `Appointment`, `ChatbotConversation`, `Page`, and `Lead`. These models capture comprehensive information for contractors' businesses, website content, and customer interactions.
 
 ### Pricing & Subscription Model
+
 **Pricing Tiers (All include Unlimited Leads):**
-| Plan | Monthly | Annual | Value Proposition |
-|------|---------|--------|-------------------|
-| Starter | $49 | $490 ($41/mo) | Professional Presence - Standard forms, manual booking, 1 admin seat |
-| Growth | $99 | $990 ($82/mo) | Lead Automation - AI Sales Chatbot, calendar sync, 3 admin seats |
-| Scale | $199 | $1,990 ($165/mo) | Local Dominance - Quote calculator, service-area maps, unlimited seats |
+
+| Plan | Monthly | Annual | Core Value | Key Features |
+|------|---------|--------|------------|--------------|
+| Starter | $49 | $490 ($41/mo) | Professional Presence | Standard forms, manual booking, 1 admin seat |
+| Growth | $99 | $990 ($82/mo) | Lead Automation | AI Sales Chatbot, calendar sync, 3 admin seats |
+| Scale | $199 | $1,990 ($165/mo) | Local Dominance | Quote calculator, service-area maps, unlimited seats |
 
 **Graduated Trial Model:**
 - **Phase 1: "Test Drive" (30 days)** - Site on `yourbusiness.localblue.co`, no credit card required
 - **Phase 2: "Professional Launch" (14 days)** - Custom domain connection, credit card required, 14 days free before billing
 
+**Annual Discount Strategy:**
+- "2 Months Free" model (10 months pricing)
+- Launch as "Founding Partner Plan" with price locked for life
+
 **Schema Fields:** `subscriptionPlan`, `trialPhase`, `trialStartDate`, `trialEndDate`, `hasCreditCard`, `billingPeriod`
+
+### Documentation
+- **Product Memo:** See `docs/PRODUCT_MEMO.md` for comprehensive vision, pricing strategy, and business case
 
 ## External Dependencies
 - **PostgreSQL**: Primary database for all application data.

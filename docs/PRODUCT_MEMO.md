@@ -202,21 +202,68 @@ Become the default website and digital presence platform for the trades industry
 
 ## Business Model & Pricing Strategy
 
-### Current Pricing Structure
+### Current Pricing Structure (Unlimited Leads Model)
 
-| Tier | Price | Primary Value | Target Segment |
-|------|-------|---------------|----------------|
-| **Starter** | Free | Get feet wet, prove value | Skeptical contractors, new businesses |
-| **Professional** | $29/mo | Full lead gen suite | Established 1-5 person shops |
-| **Enterprise** | $79/mo | Scale & team features | Growing 5-20 person companies |
+Every plan includes **Unlimited Leads** — no caps, no per-lead fees. Differentiation is based on lead-capture sophistication and brand authority.
+
+| Tier | Monthly | Annual | Core Value | Key Differentiator |
+|------|---------|--------|------------|-------------------|
+| **Starter** | $49 | $490 ($41/mo) | Professional Presence | Standard forms, manual booking, 1 seat |
+| **Growth** | $99 | $990 ($82/mo) | Lead Automation | AI Sales Chatbot, calendar sync, 3 seats |
+| **Scale** | $199 | $1,990 ($165/mo) | Local Dominance | Quote calculator, service-area maps, unlimited seats |
+
+### Feature Matrix by Tier
+
+| Feature | Starter | Growth | Scale |
+|---------|---------|--------|-------|
+| Unlimited Leads | ✅ | ✅ | ✅ |
+| AI-Built Website | ✅ | ✅ | Priority Build |
+| White-Label Admin | ✅ | ✅ | ✅ |
+| Capture Tools | Standard Forms | + AI Chatbot | + Quote Calculator |
+| Booking | Manual | Calendar Sync | + Service-Area Maps |
+| Admin Seats | 1 | 3 | Unlimited |
+| Support | Email | Priority Email | Phone + Dedicated CSM |
+| Custom Domain | ✅ | ✅ | ✅ |
+
+### The Graduated Trial Model
+
+This two-phase trial removes friction and builds trust before asking for payment:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 1: "TEST DRIVE" (30 Days)                                │
+│  ─────────────────────────────────────────────────────────────  │
+│  Domain: yourbusiness.localblue.co                              │
+│  Requirement: No Credit Card                                    │
+│  Goal: Let them see AI-generated site, play with admin panel    │
+│  Psychology: Zero risk entry point, feel the white-label admin  │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  PHASE 2: "PROFESSIONAL LAUNCH" (14 Days Free)                  │
+│  ─────────────────────────────────────────────────────────────  │
+│  Domain: www.yourbusiness.com (Custom Domain)                   │
+│  Requirement: Credit Card Required to publish                   │
+│  Logic: Custom domain = serious commitment, SSL/DNS resources   │
+│  Safety Net: 14 days free on custom domain before first charge  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Why This Works:**
+1. **No lead caps** — Contractors hate feeling "taxed on success"
+2. **Two-phase trust building** — See value before any commitment
+3. **Natural upgrade trigger** — Custom domain is the conversion moment
+4. **Quality filter** — Credit card requirement filters for serious users
 
 ### Pricing Philosophy
 
-**Freemium to Prove Value:**
-The Free tier exists because contractors are skeptical. They need to see their site live before they'll pay. The upgrade trigger is when they want to:
-1. Connect a custom domain (removes LocalBlue subdomain)
-2. Add the AI chatbot (24/7 lead capture)
-3. Remove LocalBlue branding
+**Unlimited Leads = Unlimited Value:**
+By removing lead caps, we eliminate the most common objection contractors have with SaaS platforms. They pay a flat fee and capture as many leads as their site can generate.
+
+**Upgrade triggers:**
+1. Phase 1 → Phase 2: Want custom domain (professional brand)
+2. Starter → Growth: Want AI chatbot for 24/7 lead capture
+3. Growth → Scale: Need quote calculator, multiple locations, or team seats
 
 **Monthly Billing Default:**
 Contractors prefer monthly because:
@@ -224,47 +271,66 @@ Contractors prefer monthly because:
 - Lower commitment threshold
 - Can pause during slow seasons
 
-**Annual Discount (17% off):**
-Offered to improve LTV and reduce churn, but not pushed aggressively.
+**Annual Discount Strategy (2 Months Free):**
+- Annual = 10 months pricing ($490 vs $588 monthly)
+- Launch as "Founding Partner Plan" with price locked for life
+- Protects early adopters from future price increases as we add CRM, payments, etc.
 
 ### Pricing Competitive Analysis
 
 | Competitor | Price | What You Get |
 |------------|-------|--------------|
-| Squarespace | $16-49/mo | DIY builder, generic templates |
-| Wix | $16-45/mo | DIY builder, some AI features |
-| GoDaddy | $10-25/mo | Basic builder, poor quality |
-| Agency | $3-10K upfront + $100-500/mo | Custom but slow, ongoing costs |
-| **LocalBlue Pro** | **$29/mo** | **AI-built, lead gen, white-label** |
+| Squarespace | $16-49/mo | DIY builder, generic templates, no leads focus |
+| Wix | $16-45/mo | DIY builder, some AI features, complex |
+| GoDaddy | $10-25/mo | Basic builder, poor quality, spam-like |
+| Agency | $3-10K upfront + $100-500/mo | Custom but slow (4-8 weeks), ongoing costs |
+| ServiceTitan | $300+/mo | Overkill for small shops, complex |
+| **LocalBlue Starter** | **$49/mo** | **AI-built, unlimited leads, white-label** |
+| **LocalBlue Growth** | **$99/mo** | **+ AI Chatbot, calendar sync, 3 seats** |
+| **LocalBlue Scale** | **$199/mo** | **+ Quote calc, service maps, unlimited seats** |
 
-**Our Position:** Premium over DIY builders, massive value vs. agencies.
+**Our Position:** Premium pricing justified by unlimited leads and AI automation. Still 5-10x cheaper than agencies with instant delivery.
 
 ### Revenue Model Projections
 
-**Assumptions:**
-- 1,000 signups/month by Month 12
-- 15% free-to-paid conversion
-- 85% choose Professional tier
-- 15% choose Enterprise tier
+**Assumptions (Updated Model):**
+- 1,000 trial signups/month by Month 12
+- 40% complete Phase 1 (30-day subdomain trial)
+- 50% of those convert to Phase 2 (custom domain, CC required)
+- Distribution: 60% Starter, 30% Growth, 10% Scale
 - 5% monthly churn
 
 **Month 12 Projections:**
 ```
-Paying Customers: ~1,200
+Monthly Trial Signups: 1,000
+Phase 1 Completions: 400
+Phase 2 Conversions (Paying): 200/month
+Cumulative Paying Customers: ~1,600
+
 MRR Breakdown:
-  - Professional (1,020 @ $29): $29,580
-  - Enterprise (180 @ $79): $14,220
+  - Starter (960 @ $49): $47,040
+  - Growth (480 @ $99): $47,520
+  - Scale (160 @ $199): $31,840
   
-Total MRR: $43,800
-ARR Run Rate: $525,600
+Total MRR: $126,400
+ARR Run Rate: $1.52M
 ```
 
 **Month 24 Projections (with growth):**
 ```
-Paying Customers: ~4,500
-MRR: $165,000
-ARR Run Rate: $1.98M
+Monthly Trial Signups: 3,000
+Paying Customers: ~5,500
+
+MRR Breakdown:
+  - Starter (3,300 @ $49): $161,700
+  - Growth (1,650 @ $99): $163,350
+  - Scale (550 @ $199): $109,450
+  
+Total MRR: $434,500
+ARR Run Rate: $5.2M
 ```
+
+**Blended ARPU:** $79/month (weighted average across tiers)
 
 ---
 
@@ -273,19 +339,21 @@ ARR Run Rate: $1.98M
 ### Tier Structure
 
 1. **Is three tiers optimal?**
-   - Could we simplify to Free + Pro only?
-   - Is there a "Teams" tier between Pro and Enterprise?
-   - Should Enterprise be usage-based or seat-based?
+   - Current model: Starter ($49) → Growth ($99) → Scale ($199)
+   - Clear value ladder with distinct differentiators
+   - Consider: Is there demand for a "Lite" tier below $49?
 
-2. **Feature allocation:**
-   - What's the right "aha moment" in Free tier?
-   - Which features drive upgrades most effectively?
-   - Is AI chatbot the killer upgrade trigger?
+2. **Feature allocation (current model):**
+   - Starter: Standard forms, manual booking — "professional presence"
+   - Growth: AI Chatbot + calendar sync — "automation" trigger
+   - Scale: Quote calculator + maps — "local dominance" for serious operators
+   - Key upgrade trigger: AI Chatbot (Growth tier)
 
-3. **Pricing anchors:**
-   - Is $29 too low? (Undervalues product)
-   - Is $29 too high? (Barrier for small contractors)
-   - Should we A/B test $19 vs $29 vs $39?
+3. **Pricing validation:**
+   - $49 Starter anchors as "real business tool" (not cheap/free)
+   - $99 Growth = coffee/day positioning ($3.30/day)
+   - $199 Scale = still 10x cheaper than agency retainer
+   - Consider A/B testing $39/$79/$159 vs current
 
 ### Monetization Levers
 
@@ -496,40 +564,56 @@ This captures both acquisition (customers) and value delivery (leads).
 | Appointment booking | ✅ | 💰 | 💰 | ✅ |
 | Local SEO | ✅ | Partial | Partial | ✅ |
 | Time to launch | 5 min | 4-8 hours | 2-6 hours | 4-8 weeks |
-| Monthly cost | $0-79 | $16-49 | $16-45 | $100-500 |
+| Monthly cost | $49-199 | $16-49 | $16-45 | $100-500 |
+| Unlimited leads | ✅ | ❌ (caps) | ❌ (caps) | ✅ |
 
-### C. Unit Economics Model
+### C. Unit Economics Model (Updated)
 
 ```
-Average Revenue Per User (ARPU):    $35/month (blended)
+Average Revenue Per User (ARPU):    $79/month (blended)
 Customer Acquisition Cost (CAC):    $150 (target)
-Gross Margin:                       80%
-LTV (24-month, 5% churn):          $600
-LTV:CAC Ratio:                      4:1
+Gross Margin:                       75% (AI costs factored)
+LTV (24-month, 5% churn):          $1,343
+LTV:CAC Ratio:                      8.9:1
 
-Payback Period:                     4.3 months
+Payback Period:                     1.9 months
 ```
 
-### D. Pricing Sensitivity Analysis
+### D. Graduated Trial Conversion Funnel
 
-| Price Point | Est. Conversion | Est. MRR/1K Signups |
-|-------------|-----------------|---------------------|
-| $19/mo | 20% | $3,800 |
-| $29/mo | 15% | $4,350 |
-| $39/mo | 11% | $4,290 |
-| $49/mo | 8% | $3,920 |
+| Stage | Rate | Notes |
+|-------|------|-------|
+| Signup → Site Published | 70% | AI does the work |
+| Phase 1 Completion (30 days) | 40% | Engaged users |
+| Phase 1 → Phase 2 (CC required) | 50% | Serious contractors |
+| Overall Trial → Paid | 20% | Higher than freemium model |
 
-**Observation:** $29 appears optimal. Higher prices don't compensate for conversion drop.
+### E. 3-Week Launch Countdown
+
+**Week 1: Beta Waitlist**
+- Launch landing page: "Join waitlist for 30 days free"
+- Build email list for Day 1 blast
+- Social proof gathering
+
+**Week 2: Content Injection**
+- Record 60-second AI Chatbot demo video
+- Share in contractor Facebook groups + LinkedIn
+- Build anticipation with behind-the-scenes content
+
+**Week 3: Onboarding Polish**
+- Ensure subdomain → custom domain transition is one-click
+- Test full trial flow end-to-end
+- Prepare trial expiry email sequences
 
 ---
 
 ## Next Steps for Workshop
 
-1. **Review pricing tiers** — Are three tiers right? Feature allocation?
-2. **Discuss annual pricing** — Push harder? Different discount?
-3. **Explore add-ons** — What can be usage-based vs. included?
-4. **Define success metrics** — What do we measure in first 90 days?
-5. **Assign owners** — Who drives each workstream?
+1. **Validate pricing tiers** — Is $49/$99/$199 the right ladder?
+2. **Annual strategy** — Push "Founding Partner Plan" at launch?
+3. **Trial conversion tactics** — What triggers Phase 1 → Phase 2?
+4. **Launch checklist** — Who owns each Week 1-3 deliverable?
+5. **Success metrics** — What do we measure in first 90 days?
 
 ---
 
