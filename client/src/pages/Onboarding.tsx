@@ -3,11 +3,11 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Loader2, Sparkles, ArrowLeft, ImagePlus, Bot, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { FormattedMessage } from "@/lib/message-utils";
-import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import type { Site, User as UserType, OnboardingPhase, PhotoType } from "@shared/schema";
 
@@ -58,7 +58,7 @@ export default function Onboarding() {
   const [readyToGenerate, setReadyToGenerate] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [currentPhase, setCurrentPhase] = useState<OnboardingPhase>("welcome");
   const [completedPhases, setCompletedPhases] = useState<OnboardingPhase[]>([]);
@@ -136,10 +136,6 @@ export default function Onboarding() {
     setInputValue("");
     setMessages(prev => [...prev, { role: "user", content: userMessage }]);
     setIsStreaming(true);
-
-    if (inputRef.current) {
-      inputRef.current.style.height = "auto";
-    }
 
     try {
       const response = await fetch("/api/onboarding/chat", {
@@ -250,18 +246,6 @@ export default function Onboarding() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputValue(e.target.value);
-    e.target.style.height = "auto";
-    e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-  };
 
   const handleGenerate = () => {
     setIsGenerating(true);
@@ -334,36 +318,35 @@ export default function Onboarding() {
   }));
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-b from-background to-muted/20 overflow-hidden">
-      <header className="border-b bg-background/80 backdrop-blur-md flex-shrink-0 z-50">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4 h-16 px-4">
-          <div className="flex items-center gap-3">
+    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-800 dark:via-blue-900 dark:to-indigo-950">
+      {/* Minimal Header */}
+      <header className="flex-shrink-0 z-50">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4 h-14 px-4">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => setLocation("/signup")}
               data-testid="button-back"
-              className="rounded-full"
+              className="rounded-full text-white/80"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-primary-foreground font-bold text-sm shadow-sm">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold text-sm">
                 {session.site.businessName?.charAt(0) || "B"}
               </div>
-              <div>
-                <h1 className="text-sm font-semibold leading-tight" data-testid="text-business-name">
-                  {session.site.businessName}
-                </h1>
-                <p className="text-xs text-muted-foreground">Website Setup</p>
-              </div>
+              <h1 className="text-base font-semibold text-white" data-testid="text-business-name">
+                {session.site.businessName}
+              </h1>
             </div>
           </div>
           {readyToGenerate && (
             <Button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="shadow-md"
+              variant="outline"
+              className="bg-white/10 backdrop-blur-sm border-white/30 text-white"
               data-testid="button-generate-site"
             >
               {isGenerating ? (
@@ -382,80 +365,75 @@ export default function Onboarding() {
         </div>
       </header>
 
-      <div className="flex-shrink-0 border-b bg-background/50">
-        <div className="max-w-4xl mx-auto">
-          <OnboardingProgress
-            currentPhase={currentPhase}
-            completedPhases={completedPhases}
-            onPhaseClick={handlePhaseClick}
-          />
-        </div>
-      </div>
-
       <main className="flex-1 flex flex-col overflow-hidden min-h-0">
         {showPhotoUpload && currentPhase === "photos" ? (
           <div className="flex-1 overflow-auto">
             <div className="max-w-2xl mx-auto p-6">
-              <div className="text-center mb-6">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <ImagePlus className="h-7 w-7 text-primary" />
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-4">
+                    <ImagePlus className="h-8 w-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-2">Upload Your Photos</h2>
+                  <p className="text-white/70 text-lg">
+                    Add photos to make your website stand out
+                  </p>
                 </div>
-                <h2 className="text-xl font-semibold mb-2">Upload Your Photos</h2>
-                <p className="text-muted-foreground">
-                  Add photos to make your website stand out. You can upload your logo, team photos, project photos, and before/after shots.
-                </p>
-              </div>
-              <PhotoUpload
-                photos={photos}
-                onPhotosChange={handlePhotosChange}
-                disabled={isStreaming}
-              />
-              <div className="mt-6 flex justify-center">
-                <Button
-                  onClick={async () => {
-                    const newCompletedPhases: OnboardingPhase[] = completedPhases.includes("photos") 
-                      ? completedPhases 
-                      : [...completedPhases, "photos" as OnboardingPhase];
-                    
-                    setShowPhotoUpload(false);
-                    setCurrentPhase("review");
-                    setCompletedPhases(newCompletedPhases);
-                    setReadyToGenerate(true);
-                    
-                    try {
-                      await apiRequest("POST", "/api/onboarding/preferences", {
-                        currentPhase: "review",
-                        completedPhases: newCompletedPhases,
-                      });
-                    } catch (error) {
-                      console.error("Error syncing phase:", error);
-                    }
-                  }}
-                  size="lg"
-                  className="shadow-md px-8"
-                  data-testid="button-continue-review"
-                >
-                  Continue to Review
-                </Button>
+                <div className="bg-white/10 rounded-xl p-4">
+                  <PhotoUpload
+                    photos={photos}
+                    onPhotosChange={handlePhotosChange}
+                    disabled={isStreaming}
+                  />
+                </div>
+                <div className="mt-6 flex justify-center">
+                  <Button
+                    onClick={async () => {
+                      const newCompletedPhases: OnboardingPhase[] = completedPhases.includes("photos") 
+                        ? completedPhases 
+                        : [...completedPhases, "photos" as OnboardingPhase];
+                      
+                      setShowPhotoUpload(false);
+                      setCurrentPhase("review");
+                      setCompletedPhases(newCompletedPhases);
+                      setReadyToGenerate(true);
+                      
+                      try {
+                        await apiRequest("POST", "/api/onboarding/preferences", {
+                          currentPhase: "review",
+                          completedPhases: newCompletedPhases,
+                        });
+                      } catch (error) {
+                        console.error("Error syncing phase:", error);
+                      }
+                    }}
+                    size="lg"
+                    variant="outline"
+                    className="px-8 bg-white/10 backdrop-blur-sm border-white/30 text-white"
+                    data-testid="button-continue-review"
+                  >
+                    Continue to Review
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         ) : (
           <>
             <ScrollArea ref={scrollAreaRef} className="flex-1" data-testid="chat-messages-container">
-              <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
+              <div className="max-w-2xl mx-auto py-8 px-4 space-y-5">
                 {displayMessages.length === 0 && (
-                  <div className="flex gap-4" data-testid="message-welcome">
+                  <div className="flex gap-3 flex-wrap" data-testid="message-welcome">
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm">
-                        <Bot className="h-5 w-5 text-primary-foreground" />
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <Bot className="h-5 w-5 text-white" />
                       </div>
                     </div>
-                    <div className="flex-1 pt-1">
-                      <div className="bg-card border rounded-2xl rounded-tl-md p-4 shadow-sm">
-                        <p className="text-sm leading-relaxed">
+                    <div className="flex-1">
+                      <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl rounded-tl-md px-5 py-4">
+                        <p className="text-base leading-relaxed text-white">
                           Hi there! I'm excited to help you set up your professional website for{" "}
-                          <strong>{session.site.businessName}</strong>. Let's start with the basics - what services does your business offer?
+                          <strong className="font-semibold">{session.site.businessName}</strong>. Let's start with the basics - what services does your business offer?
                         </p>
                       </div>
                     </div>
@@ -464,29 +442,29 @@ export default function Onboarding() {
                 {displayMessages.map((message, index) => (
                   <div
                     key={index}
-                    className={`flex gap-4 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+                    className={`flex gap-3 flex-wrap ${message.role === "user" ? "flex-row-reverse" : ""}`}
                     data-testid={`message-${message.role}-${index}`}
                   >
                     <div className="flex-shrink-0">
                       {message.role === "assistant" ? (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm">
-                          <Bot className="h-5 w-5 text-primary-foreground" />
+                        <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                          <Bot className="h-5 w-5 text-white" />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center border shadow-sm">
-                          <User className="h-5 w-5 text-muted-foreground" />
+                        <div className="w-10 h-10 rounded-xl bg-white/30 backdrop-blur-sm flex items-center justify-center">
+                          <User className="h-5 w-5 text-white" />
                         </div>
                       )}
                     </div>
-                    <div className={`flex-1 pt-1 ${message.role === "user" ? "flex justify-end" : ""}`}>
+                    <div className={`flex-1 ${message.role === "user" ? "flex justify-end flex-wrap" : ""}`}>
                       <div
-                        className={`max-w-[85%] p-4 shadow-sm ${
+                        className={`max-w-[85%] px-5 py-4 ${
                           message.role === "user"
-                            ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-md"
-                            : "bg-card border rounded-2xl rounded-tl-md"
+                            ? "bg-white text-gray-900 rounded-2xl rounded-tr-md shadow-lg"
+                            : "bg-white/15 backdrop-blur-md border border-white/20 text-white rounded-2xl rounded-tl-md"
                         }`}
                       >
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                        <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
                           {message.role === "assistant" ? (
                             <FormattedMessage content={message.content} />
                           ) : (
@@ -498,18 +476,18 @@ export default function Onboarding() {
                   </div>
                 ))}
                 {isStreaming && messages[messages.length - 1]?.content === "" && (
-                  <div className="flex gap-4" data-testid="typing-indicator">
+                  <div className="flex gap-3 flex-wrap" data-testid="typing-indicator">
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-sm">
-                        <Bot className="h-5 w-5 text-primary-foreground" />
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <Bot className="h-5 w-5 text-white" />
                       </div>
                     </div>
-                    <div className="flex-1 pt-1">
-                      <div className="bg-card border rounded-2xl rounded-tl-md p-4 shadow-sm inline-block">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <div className="flex-1">
+                      <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl rounded-tl-md px-5 py-4 inline-block">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="w-2.5 h-2.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <div className="w-2.5 h-2.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <div className="w-2.5 h-2.5 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                         </div>
                       </div>
                     </div>
@@ -518,40 +496,46 @@ export default function Onboarding() {
               </div>
             </ScrollArea>
 
-            <div className="border-t bg-background/80 backdrop-blur-md flex-shrink-0">
-              <div className="max-w-3xl mx-auto p-4">
-                <div className="flex gap-3 items-end">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      setCurrentPhase("photos");
-                      setShowPhotoUpload(true);
-                    }}
-                    disabled={isStreaming}
-                    className="rounded-xl flex-shrink-0"
-                    data-testid="button-add-photos"
-                    title="Upload photos"
-                  >
-                    <ImagePlus className="h-5 w-5" />
-                  </Button>
-                  <div className="flex-1 relative">
-                    <textarea
+            <div className="flex-shrink-0 px-4 pb-6 pt-2">
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setCurrentPhase("photos");
+                        setShowPhotoUpload(true);
+                      }}
+                      disabled={isStreaming}
+                      className="rounded-xl flex-shrink-0 text-white/70"
+                      data-testid="button-add-photos"
+                      title="Upload photos"
+                    >
+                      <ImagePlus className="h-5 w-5" />
+                    </Button>
+                    <Input
                       ref={inputRef}
+                      type="text"
                       value={inputValue}
-                      onChange={handleInputChange}
-                      onKeyDown={handleKeyPress}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
                       placeholder="Tell us about your business..."
                       disabled={isStreaming}
-                      rows={1}
-                      className="w-full resize-none rounded-xl border bg-background px-4 py-3 pr-12 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] max-h-[120px]"
+                      className="flex-1 bg-transparent border-0 text-white placeholder:text-white/50 focus-visible:ring-0 focus-visible:ring-offset-0"
                       data-testid="input-message"
                     />
                     <Button
                       onClick={sendMessage}
                       disabled={!inputValue.trim() || isStreaming}
                       size="icon"
-                      className="absolute right-1.5 bottom-1.5 rounded-lg"
+                      variant="outline"
+                      className="rounded-xl flex-shrink-0 bg-white/20 border-white/30 text-white"
                       data-testid="button-send"
                     >
                       {isStreaming ? (
@@ -562,7 +546,7 @@ export default function Onboarding() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground text-center mt-3">
+                <p className="text-sm text-white/50 text-center mt-3">
                   Share details about your services, location, and what makes your business unique
                 </p>
               </div>
