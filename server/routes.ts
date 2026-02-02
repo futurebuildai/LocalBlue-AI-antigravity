@@ -2026,11 +2026,9 @@ Return ONLY valid JSON.`;
         }
       }
 
-      // Generate redirect URL - use preview route in development
-      const isDev = process.env.NODE_ENV === "development";
-      const redirectUrl = isDev 
-        ? `/preview/${site.subdomain}`
-        : `https://${site.subdomain}.localblue.co/`;
+      // Generate redirect URL - always use preview route after onboarding
+      // This allows users to review their site before it goes live
+      const redirectUrl = `/preview/${site.subdomain}`;
 
       res.json({
         success: true,
