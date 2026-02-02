@@ -327,7 +327,7 @@ export default function Sites() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
-                      <Link href={`/sites/${site.id}`}>
+                      <Link href={`/admin/sites/${site.id}`}>
                         <Button
                           variant="ghost"
                           size="icon"

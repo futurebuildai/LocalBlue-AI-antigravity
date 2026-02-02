@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useParams, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -78,8 +78,8 @@ function formatOnboardingPhase(phase: string): string {
 }
 
 export default function SiteDetail() {
-  const [, params] = useRoute("/sites/:siteId");
-  const siteId = params?.siteId;
+  const params = useParams<{ id: string }>();
+  const siteId = params.id;
   const { toast } = useToast();
 
   const { data, isLoading, error } = useQuery<SiteDetailsResponse>({

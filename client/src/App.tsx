@@ -92,20 +92,7 @@ function AppSidebar() {
   );
 }
 
-function PlatformAdminRouter() {
-  return (
-    <Switch>
-      <Route path="/admin" component={Dashboard} />
-      <Route path="/admin/sites/:siteId" component={SiteDetail} />
-      <Route path="/admin/sites" component={Sites} />
-      <Route path="/admin/users" component={UsersPage} />
-      <Route path="/admin/revenue" component={Revenue} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
-function PlatformAdmin() {
+function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
   const style = {
     "--sidebar-width": "17rem",
     "--sidebar-width-icon": "3.5rem",
@@ -121,7 +108,7 @@ function PlatformAdmin() {
             <h1 className="text-lg font-semibold">Platform Admin</h1>
           </header>
           <main className="flex-1 overflow-auto p-6">
-            <PlatformAdminRouter />
+            {children}
           </main>
         </div>
       </div>
@@ -306,8 +293,21 @@ function MainSiteApp() {
       <Route path="/preview/:subdomain/admin" component={PreviewAdmin} />
       <Route path="/preview/:subdomain" component={PreviewSite} />
       <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
-      <Route path="/admin/:rest*" component={PlatformAdmin} />
-      <Route path="/admin" component={PlatformAdmin} />
+      <Route path="/admin/sites/:id">
+        {() => <PlatformAdminLayout><SiteDetail /></PlatformAdminLayout>}
+      </Route>
+      <Route path="/admin/sites">
+        {() => <PlatformAdminLayout><Sites /></PlatformAdminLayout>}
+      </Route>
+      <Route path="/admin/users">
+        {() => <PlatformAdminLayout><UsersPage /></PlatformAdminLayout>}
+      </Route>
+      <Route path="/admin/revenue">
+        {() => <PlatformAdminLayout><Revenue /></PlatformAdminLayout>}
+      </Route>
+      <Route path="/admin">
+        {() => <PlatformAdminLayout><Dashboard /></PlatformAdminLayout>}
+      </Route>
       <Route path="/">
         <Landing />
       </Route>
