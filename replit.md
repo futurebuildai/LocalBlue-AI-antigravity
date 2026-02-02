@@ -73,9 +73,37 @@ Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimo
 ### Documentation
 - **Product Memo:** See `docs/PRODUCT_MEMO.md` for comprehensive vision, pricing strategy, and business case
 
+### Stripe Payment Integration
+
+**Architecture:**
+- Uses `stripe-replit-sync` for automatic data synchronization between Stripe and PostgreSQL
+- Stripe data is synced to `stripe.*` schema tables (products, prices, subscriptions, customers, payment_intents)
+- Webhook registered before `express.json()` middleware for raw body access
+
+**Key Files:**
+- `server/stripeClient.ts`: Stripe sync client initialization
+- `server/webhookHandlers.ts`: Webhook event processing
+- `server/stripeRoutes.ts`: API routes for checkout, portal, subscription status, and revenue dashboard
+- `server/seed-stripe-products.ts`: Product seeding script (run with `npx tsx server/seed-stripe-products.ts`)
+
+**API Endpoints:**
+- `GET /api/stripe/publishable-key`: Returns Stripe publishable key
+- `GET /api/stripe/products`: Returns LocalBlue subscription products from synced data
+- `POST /api/stripe/checkout`: Creates checkout session for a site
+- `POST /api/stripe/portal`: Creates customer billing portal session
+- `GET /api/stripe/subscription/:siteId`: Returns subscription status for a site
+- `GET /api/admin/revenue`: Platform Admin revenue dashboard data
+
+**Revenue Dashboard:**
+- Located at `/admin/revenue` in Platform Admin
+- Displays MRR, active subscriptions, customer count, conversion rate
+- Shows revenue chart (last 6 months) and recent payments
+- Subscription breakdown by plan and trial phase
+
 ## External Dependencies
 - **PostgreSQL**: Primary database for all application data.
 - **Drizzle ORM**: Used for database interactions.
 - **Claude Opus 4.5**: AI model used for the interactive onboarding process and content generation.
 - **Resend**: Integrated for sending lead notification emails.
 - **Replit Auth**: Utilized for secure user authentication via OpenID Connect.
+- **Stripe**: Payment processing and subscription management via Replit connector with automatic data sync.
