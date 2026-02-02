@@ -11,6 +11,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import Anthropic from "@anthropic-ai/sdk";
+import { publishSiteDNS, unpublishSiteDNS, isCloudflareConfigured } from "./cloudflare";
 
 const anthropic = new Anthropic({
   apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
@@ -1237,10 +1238,27 @@ IMPORTANT:
         return res.status(404).json({ error: "Site not found" });
       }
 
+      let dnsMessages: string[] = [];
+      
+      if (isCloudflareConfigured()) {
+        if (newPublishStatus) {
+          const dnsResult = await publishSiteDNS(updatedSite.subdomain);
+          dnsMessages = dnsResult.messages;
+          console.log(`DNS setup for ${updatedSite.subdomain}:`, dnsResult);
+        } else {
+          const dnsResult = await unpublishSiteDNS(updatedSite.subdomain);
+          dnsMessages = dnsResult.messages;
+          console.log(`DNS cleanup for ${updatedSite.subdomain}:`, dnsResult);
+        }
+      }
+
       const { id, subdomain, businessName, brandColor, services, isPublished, customDomain } = updatedSite;
       res.json({ 
         id, subdomain, businessName, brandColor, services, isPublished, customDomain,
-        message: isPublished ? "Site published successfully!" : "Site unpublished successfully!"
+        message: isPublished ? "Site published successfully!" : "Site unpublished successfully!",
+        dnsMessages,
+        liveUrl: isPublished ? `https://${subdomain}.localblue.co` : null,
+        adminUrl: isPublished ? `https://admin.${subdomain}.localblue.co` : null,
       });
     } catch (error) {
       console.error("Error toggling publish status:", error);
