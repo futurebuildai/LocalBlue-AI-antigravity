@@ -388,10 +388,10 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
 
         {/* Trust indicators - Mobile optimized */}
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 md:gap-10 text-white/80 text-sm sm:text-base">
-          {site.yearsInBusiness && (
+          {(site.totalYearsExperience || site.yearsInBusiness) && (
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Award className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="font-medium">{site.yearsInBusiness}+ Years</span>
+              <span className="font-medium">{site.totalYearsExperience || site.yearsInBusiness}+ Years</span>
             </div>
           )}
           <div className="flex items-center gap-1.5 sm:gap-2">
@@ -422,12 +422,12 @@ function TrustBadgesBar({ site }: { site: Site }) {
   // Dynamic stats based on actual site data
   const stats = [
     { 
-      value: site.yearsInBusiness ? `${site.yearsInBusiness}+` : "10+", 
+      value: (site.totalYearsExperience || site.yearsInBusiness) ? `${site.totalYearsExperience || site.yearsInBusiness}+` : "10+", 
       label: "Years Experience",
       icon: Award
     },
     { 
-      value: site.yearsInBusiness ? `${Math.round((site.yearsInBusiness || 10) * 25)}+` : "200+", 
+      value: (site.totalYearsExperience || site.yearsInBusiness) ? `${Math.round(((site.totalYearsExperience || site.yearsInBusiness) || 10) * 25)}+` : "200+", 
       label: "Projects Completed",
       icon: CheckCircle
     },
@@ -516,8 +516,15 @@ function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Pa
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {services.map((service, index) => {
-            const description = serviceDescriptions[service] || 
-              `Our expert team delivers exceptional ${service.toLowerCase()} solutions with attention to detail and lasting results.`;
+            const fallbackDescriptions = [
+              `Professional ${service.toLowerCase()} services tailored to your specific needs and budget.`,
+              `Reliable ${service.toLowerCase()} solutions backed by years of hands-on expertise.`,
+              `Comprehensive ${service.toLowerCase()} services from consultation through project completion.`,
+              `Trusted ${service.toLowerCase()} work with a focus on quality materials and craftsmanship.`,
+              `Skilled ${service.toLowerCase()} services designed to exceed your expectations.`,
+              `Dependable ${service.toLowerCase()} solutions with transparent pricing and timely delivery.`,
+            ];
+            const description = serviceDescriptions[service] || fallbackDescriptions[index % fallbackDescriptions.length];
             
             return (
               <Card 
@@ -586,13 +593,13 @@ function AboutSection({ site, aboutPage }: { site: Site; aboutPage?: Page }) {
               {description}
             </p>
 
-            {site.yearsInBusiness && (
+            {(site.totalYearsExperience || site.yearsInBusiness) && (
               <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8 p-3 sm:p-4 rounded-xl bg-muted/50">
                 <div 
                   className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: site.brandColor }}
                 >
-                  <span className="text-lg sm:text-2xl font-bold text-white">{site.yearsInBusiness}+</span>
+                  <span className="text-lg sm:text-2xl font-bold text-white">{site.totalYearsExperience || site.yearsInBusiness}+</span>
                 </div>
                 <div>
                   <p className="font-semibold text-base sm:text-lg">Years of Experience</p>
@@ -1186,9 +1193,9 @@ function Footer({ site }: { site: Site }) {
             <p className="text-background/70 text-sm sm:text-base mb-3 sm:mb-4 leading-relaxed">
               Your trusted local contractor for all your home service needs. Quality workmanship guaranteed.
             </p>
-            {site.yearsInBusiness && (
+            {(site.totalYearsExperience || site.yearsInBusiness) && (
               <p className="text-xs sm:text-sm text-background/50">
-                Proudly serving for {site.yearsInBusiness}+ years
+                Proudly serving for {site.totalYearsExperience || site.yearsInBusiness}+ years
               </p>
             )}
           </div>

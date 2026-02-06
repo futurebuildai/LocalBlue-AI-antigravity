@@ -98,6 +98,7 @@ export const sites = pgTable("sites", {
   businessDescription: text("business_description"),
   serviceArea: text("service_area"),
   yearsInBusiness: integer("years_in_business"),
+  totalYearsExperience: integer("total_years_experience"),
   ownerName: text("owner_name"),
   ownerStory: text("owner_story"),
   uniqueSellingPoints: jsonb("unique_selling_points").$type<string[]>().default([]),

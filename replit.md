@@ -50,6 +50,10 @@ None
 ### Data Models
 Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimonial`, `ServicePricing`, `Appointment`, `ChatbotConversation`, `Page`, and `Lead`. These models capture comprehensive information for contractors' businesses, website content, and customer interactions.
 
+### Recent Changes (Feb 2026)
+- **Total Years Experience**: Added `totalYearsExperience` field to `sites` table. This captures total professional experience including apprenticeship and prior work, not just years the business has been operating. The AI extraction prompt asks for this explicitly. The public site displays `totalYearsExperience` (falling back to `yearsInBusiness` if not set). The value is guaranteed to be >= `yearsInBusiness`.
+- **Service Descriptions**: Improved AI content generation prompt to produce unique, varied descriptions for each service card instead of repetitive templated text. Fallback descriptions now use an array of 6 varied templates instead of one repeated pattern.
+
 ### Pricing & Subscription Model
 
 **Pricing Tiers (All include Unlimited Leads):**
