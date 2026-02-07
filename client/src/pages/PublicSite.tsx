@@ -274,60 +274,63 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
   // Get trade-specific hero background image
   const heroImage = site.tradeType ? TRADE_HERO_IMAGES[site.tradeType] : generalContractorHero;
   
-  // Style-specific overlay - luxury gets darker, bolder, more dramatic
   const getOverlayStyle = () => {
     if (styleClasses.isLuxury) {
-      return `linear-gradient(135deg, ${site.brandColor}ee 0%, ${site.brandColor}cc 30%, rgba(0,0,0,0.85) 100%)`;
+      return `linear-gradient(160deg, ${site.brandColor}88 0%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.85) 100%)`;
     }
     if (styleClasses.isBold) {
-      return `linear-gradient(180deg, ${site.brandColor}dd 0%, ${site.brandColor}aa 50%, rgba(0,0,0,0.7) 100%)`;
+      return `linear-gradient(180deg, ${site.brandColor}77 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.75) 100%)`;
     }
     if (styleClasses.isWarm) {
-      return `linear-gradient(135deg, ${site.brandColor}bb 0%, ${site.brandColor}88 40%, rgba(0,0,0,0.5) 100%)`;
+      return `linear-gradient(160deg, ${site.brandColor}66 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.65) 100%)`;
     }
-    return `linear-gradient(135deg, ${site.brandColor}cc 0%, ${site.brandColor}99 40%, ${site.brandColor}66 100%)`;
+    return `linear-gradient(160deg, ${site.brandColor}66 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.7) 100%)`;
   };
+
+  const yearsExp = site.totalYearsExperience || site.yearsInBusiness;
 
   return (
     <section 
       id="hero"
-      className="relative min-h-[100svh] flex items-center justify-center overflow-hidden"
+      className="relative min-h-[85svh] flex items-center justify-center overflow-hidden"
       data-testid="section-hero"
       data-style={site.stylePreference || 'professional'}
     >
-      {/* Trade-specific background image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
         style={{ backgroundImage: `url(${heroImage})` }}
       />
       
-      {/* Style-aware brand color overlay */}
       <div 
         className="absolute inset-0"
         style={{ background: getOverlayStyle() }}
       />
       
-      {/* Dark gradient for text readability */}
-      <div className={`absolute inset-0 ${styleClasses.isLuxury ? 'bg-gradient-to-b from-black/30 via-transparent to-black/60' : 'bg-gradient-to-b from-black/40 via-black/20 to-black/50'}`} />
+      <div className={`absolute inset-0 ${styleClasses.isLuxury ? 'bg-gradient-to-b from-black/20 via-transparent to-black/40' : 'bg-gradient-to-b from-black/30 via-black/10 to-black/35'}`} />
       
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20 sm:pt-24 pb-12 sm:pb-16">
-        {/* Floating badge - style-specific appearance */}
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20 sm:pt-28 pb-16 sm:pb-20">
         <div 
-          className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 text-white text-xs sm:text-sm font-medium mb-6 sm:mb-10 shadow-lg ${
+          className={`inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-6 py-2 sm:py-2.5 text-white text-xs sm:text-sm font-medium mb-6 sm:mb-8 ${
             styleClasses.isLuxury 
               ? 'bg-white/10 backdrop-blur-xl border border-white/20 rounded-sm tracking-widest uppercase'
               : styleClasses.isBold
-              ? 'bg-white/20 backdrop-blur-md border-2 border-white/40 rounded-none font-bold'
-              : 'bg-white/15 backdrop-blur-md border border-white/25 rounded-full'
+              ? 'bg-white/15 backdrop-blur-md border-2 border-white/30 rounded-none font-bold'
+              : 'bg-white/10 backdrop-blur-md border border-white/20 rounded-full'
           }`}
+          data-testid="badge-hero-credentials"
         >
-          <TradeIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          <span>{site.serviceArea ? `Serving ${site.serviceArea}` : "Trusted Local Experts"}</span>
+          <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span>
+            {yearsExp 
+              ? `${yearsExp}+ Years Experience`
+              : "Licensed & Insured"
+            }
+            {yearsExp ? ' \u00B7 Licensed & Insured' : ' \u00B7 Trusted Local Experts'}
+          </span>
         </div>
 
-        {/* Main headline - style-specific typography */}
         <h1 
-          className={`text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-[1.15] ${
+          className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-5 leading-[1.1] max-w-4xl mx-auto ${
             styleClasses.isLuxury 
               ? 'tracking-tight font-serif' 
               : styleClasses.isBold 
@@ -340,30 +343,19 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
           {headline}
         </h1>
         
-        {/* Subheadline */}
         <p 
-          className={`text-lg sm:text-xl md:text-2xl lg:text-3xl text-white/95 mb-4 sm:mb-6 font-medium ${
-            styleClasses.isLuxury ? 'tracking-wider' : 'tracking-wide'
+          className={`text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed ${
+            styleClasses.isLuxury ? 'tracking-wide' : ''
           }`}
           data-testid="text-subheadline"
         >
-          {subheadline}
-        </p>
-        
-        {/* Description - AI-generated compelling copy */}
-        <p className="text-base sm:text-lg md:text-xl text-white/80 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed hidden sm:block">
-          {description}
-        </p>
-        {/* Shorter description for mobile */}
-        <p className="text-base text-white/80 mb-8 max-w-sm mx-auto leading-relaxed sm:hidden">
-          {description.length > 100 ? description.slice(0, 100).trim() + '...' : description}
+          {description.length > 160 ? description.slice(0, 160).trim() + '...' : description}
         </p>
 
-        {/* CTA Buttons - Mobile optimized */}
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center mb-10 sm:mb-14 px-2 sm:px-0">
           <Button 
             size="lg" 
-            className="text-base sm:text-lg px-6 sm:px-10 py-5 sm:py-7 min-h-[52px] bg-white text-gray-900 hover:bg-white/95 border-0 shadow-xl font-semibold w-full sm:w-auto"
+            className="text-base sm:text-lg px-8 sm:px-10 min-h-[52px] sm:min-h-[56px] bg-white text-gray-900 border-0 shadow-xl font-semibold w-full sm:w-auto"
             onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
             data-testid="button-get-quote"
           >
@@ -375,7 +367,7 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
               <Button 
                 size="lg" 
                 variant="outline"
-                className="text-base sm:text-lg px-6 sm:px-10 py-5 sm:py-7 min-h-[52px] bg-white/10 backdrop-blur-sm border-2 border-white/50 text-white hover:bg-white/20 w-full font-semibold"
+                className="text-base sm:text-lg px-8 sm:px-10 min-h-[52px] sm:min-h-[56px] bg-transparent backdrop-blur-sm border border-white/40 text-white w-full font-medium"
                 data-testid="button-call-now"
               >
                 <Phone className="mr-2 h-5 w-5" />
@@ -386,30 +378,28 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
           )}
         </div>
 
-        {/* Trust indicators - Mobile optimized */}
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 md:gap-10 text-white/80 text-sm sm:text-base">
-          {(site.totalYearsExperience || site.yearsInBusiness) && (
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <Award className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="font-medium">{site.totalYearsExperience || site.yearsInBusiness}+ Years</span>
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 md:gap-6">
+          {yearsExp && (
+            <div className="flex items-center gap-2 sm:gap-2.5 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 sm:px-5 sm:py-2.5" data-testid="badge-trust-years">
+              <Award className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
+              <span className="font-semibold text-white text-sm sm:text-base">{yearsExp}+ Years</span>
             </div>
           )}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="font-medium">Licensed & Insured</span>
+          <div className="flex items-center gap-2 sm:gap-2.5 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 sm:px-5 sm:py-2.5" data-testid="badge-trust-licensed">
+            <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            <span className="font-semibold text-white text-sm sm:text-base">Licensed & Insured</span>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 sm:px-5 sm:py-2.5" data-testid="badge-trust-rating">
             <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400" />
-            <span className="font-medium">5-Star Rated</span>
+            <span className="font-semibold text-white text-sm sm:text-base">5-Star Rated</span>
           </div>
         </div>
       </div>
 
-      {/* Modern wave divider */}
       <div className="absolute bottom-0 left-0 right-0">
-        <svg className="w-full h-12 sm:h-20 md:h-32" viewBox="0 0 1440 120" preserveAspectRatio="none">
+        <svg className="w-full h-8 sm:h-14 md:h-20" viewBox="0 0 1440 80" preserveAspectRatio="none">
           <path 
-            d="M0,120 L0,60 Q360,0 720,60 T1440,60 L1440,120 Z" 
+            d="M0,80 L0,40 C360,0 720,70 1080,30 S1440,50 1440,40 L1440,80 Z" 
             className="fill-background"
           />
         </svg>
