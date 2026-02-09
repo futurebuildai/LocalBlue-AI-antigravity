@@ -60,6 +60,33 @@ async function upsertUser(claims: any) {
   });
 }
 
+function isTenantDomain(hostname: string): boolean {
+  if (hostname.startsWith("admin.")) {
+    return true;
+  }
+
+  if (
+    hostname === "localhost" ||
+    hostname === "localblue" ||
+    hostname === "localblue.co" ||
+    hostname === "www.localblue" ||
+    hostname === "www.localblue.co"
+  ) {
+    return false;
+  }
+
+  if (hostname.endsWith(".replit.dev") || hostname.endsWith(".repl.co") || hostname.endsWith(".picard.replit.dev")) {
+    const parts = hostname.split(".");
+    const firstPart = parts[0];
+    if (parts.length <= 3 || firstPart.includes("-00-") || /^[a-f0-9-]{20,}$/.test(firstPart)) {
+      return false;
+    }
+    return true;
+  }
+
+  return true;
+}
+
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
@@ -103,6 +130,9 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    if (isTenantDomain(req.hostname)) {
+      return res.status(404).json({ error: "Not available on this domain" });
+    }
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
@@ -111,6 +141,9 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/callback", (req, res, next) => {
+    if (isTenantDomain(req.hostname)) {
+      return res.status(404).json({ error: "Not available on this domain" });
+    }
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
       successReturnToOrRedirect: "/",
@@ -119,6 +152,9 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/logout", (req, res) => {
+    if (isTenantDomain(req.hostname)) {
+      return res.status(404).json({ error: "Not available on this domain" });
+    }
     req.logout(() => {
       res.redirect(
         client.buildEndSessionUrl(config, {

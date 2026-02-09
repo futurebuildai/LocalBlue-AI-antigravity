@@ -18,7 +18,10 @@ import {
   SidebarHeader,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Building2, Users, ArrowRight, DollarSign } from "lucide-react";
+import { LayoutDashboard, Building2, Users, ArrowRight, DollarSign, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Dashboard from "@/pages/admin/Dashboard";
 import Sites from "@/pages/admin/Sites";
 import SiteDetail from "@/pages/admin/SiteDetail";
@@ -92,7 +95,79 @@ function AppSidebar() {
   );
 }
 
+function PlatformAdminGuard({ children }: { children: React.ReactNode }) {
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+  
+  const { data: adminCheck, isLoading: adminLoading, error: adminError } = useQuery({
+    queryKey: ["/api/admin/sites"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/sites", { credentials: "include" });
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(`${res.status}`);
+      }
+      if (!res.ok) throw new Error(`${res.status}`);
+      return true;
+    },
+    enabled: isAuthenticated,
+    retry: false,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  if (authLoading || (isAuthenticated && adminLoading)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4" data-testid="loading-platform-admin">
+          <div className="relative h-12 w-12">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-muted-foreground text-sm animate-pulse">Loading admin panel...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold mb-3" data-testid="text-admin-auth-required">Platform Admin Access Required</h1>
+          <p className="text-muted-foreground mb-6">
+            You must be signed in to access the platform admin panel.
+          </p>
+          <a href="/api/login">
+            <Button data-testid="button-admin-login">
+              Sign In
+            </Button>
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (adminError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold mb-3" data-testid="text-admin-access-denied">Access Denied</h1>
+          <p className="text-muted-foreground mb-6">
+            Your account does not have platform admin privileges.
+          </p>
+          <a href="/">
+            <Button variant="outline" data-testid="button-go-home">
+              Go to Home
+            </Button>
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const style = {
     "--sidebar-width": "17rem",
     "--sidebar-width-icon": "3.5rem",
@@ -105,7 +180,21 @@ function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col flex-1 min-w-0 bg-muted/30">
           <header className="flex items-center gap-4 bg-background border-b px-6 py-4">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <h1 className="text-lg font-semibold">Platform Admin</h1>
+            <h1 className="text-lg font-semibold flex-1">Platform Admin</h1>
+            {user && (
+              <div className="flex items-center gap-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || "Admin"} />
+                  <AvatarFallback>{(user.firstName?.[0] || "A").toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium" data-testid="text-admin-username">
+                  {user.firstName} {user.lastName}
+                </span>
+                <a href="/api/logout" data-testid="button-admin-logout" className="text-muted-foreground hover:text-foreground transition-colors">
+                  <LogOut className="h-4 w-4" />
+                </a>
+              </div>
+            )}
           </header>
           <main className="flex-1 overflow-auto p-6">
             {children}
@@ -294,19 +383,19 @@ function MainSiteApp() {
       <Route path="/preview/:subdomain" component={PreviewSite} />
       <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
       <Route path="/admin/sites/:id">
-        {() => <PlatformAdminLayout><SiteDetail /></PlatformAdminLayout>}
+        {() => <PlatformAdminGuard><PlatformAdminLayout><SiteDetail /></PlatformAdminLayout></PlatformAdminGuard>}
       </Route>
       <Route path="/admin/sites">
-        {() => <PlatformAdminLayout><Sites /></PlatformAdminLayout>}
+        {() => <PlatformAdminGuard><PlatformAdminLayout><Sites /></PlatformAdminLayout></PlatformAdminGuard>}
       </Route>
       <Route path="/admin/users">
-        {() => <PlatformAdminLayout><UsersPage /></PlatformAdminLayout>}
+        {() => <PlatformAdminGuard><PlatformAdminLayout><UsersPage /></PlatformAdminLayout></PlatformAdminGuard>}
       </Route>
       <Route path="/admin/revenue">
-        {() => <PlatformAdminLayout><Revenue /></PlatformAdminLayout>}
+        {() => <PlatformAdminGuard><PlatformAdminLayout><Revenue /></PlatformAdminLayout></PlatformAdminGuard>}
       </Route>
       <Route path="/admin">
-        {() => <PlatformAdminLayout><Dashboard /></PlatformAdminLayout>}
+        {() => <PlatformAdminGuard><PlatformAdminLayout><Dashboard /></PlatformAdminLayout></PlatformAdminGuard>}
       </Route>
       <Route path="/">
         <Landing />

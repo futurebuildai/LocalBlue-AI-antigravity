@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "@/components/Logo";
 import { TypewriterText } from "@/components/TypewriterText";
 import { FloatingIcons } from "@/components/FloatingIcons";
@@ -16,6 +17,7 @@ import { useScrollSpy } from "@/hooks/use-scroll-spy";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { VideoModal } from "@/components/VideoModal";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { 
   MessageSquare, 
@@ -37,7 +39,9 @@ import {
   Briefcase,
   Menu,
   X,
-  Loader2
+  Loader2,
+  LogOut,
+  LayoutDashboard
 } from "lucide-react";
 
 const features = [
@@ -181,6 +185,7 @@ const pricingPlans = [
 
 export default function Landing() {
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
@@ -253,17 +258,45 @@ export default function Landing() {
           </nav>
           
           <div className="flex items-center gap-3 flex-wrap">
-            <Link href="/login" className="hidden sm:block">
-              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10" data-testid="link-header-login">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/signup" className="hidden md:block">
-              <Button size="sm" className="bg-white text-slate-900 hover:bg-white/90 shadow-lg shadow-white/10" data-testid="link-header-signup">
-                Get Started
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-              </Button>
-            </Link>
+            {isAuthenticated && user ? (
+              <>
+                <div className="hidden sm:flex items-center gap-2" data-testid="text-header-username">
+                  <Avatar className="h-7 w-7">
+                    {user.profileImageUrl && <AvatarImage src={user.profileImageUrl} alt={user.firstName || ''} />}
+                    <AvatarFallback className="text-xs bg-white/20 text-white">
+                      {(user.firstName?.[0] || '')}{(user.lastName?.[0] || '')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-white/70">{user.firstName}</span>
+                </div>
+                <Link href="/admin" className="hidden sm:block">
+                  <Button variant="ghost" size="sm" className="text-white/70" data-testid="link-header-dashboard">
+                    <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <a href="/api/logout" className="hidden sm:block">
+                  <Button variant="ghost" size="sm" className="text-white/70" data-testid="button-header-logout">
+                    <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                    Log Out
+                  </Button>
+                </a>
+              </>
+            ) : (
+              <>
+                <a href="/api/login" className="hidden sm:block">
+                  <Button variant="ghost" size="sm" className="text-white/70" data-testid="link-header-login">
+                    Sign In
+                  </Button>
+                </a>
+                <Link href="/signup" className="hidden md:block">
+                  <Button size="sm" className="bg-white text-slate-900 shadow-lg shadow-white/10" data-testid="link-header-signup">
+                    Get Started
+                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </>
+            )}
             
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -309,24 +342,59 @@ export default function Landing() {
                   </nav>
                   
                   <div className="p-6 border-t border-white/10 space-y-3">
-                    <Link href="/login" onClick={handleMobileNavClick} className="block">
-                      <Button 
-                        variant="outline" 
-                        className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white"
-                        data-testid="link-mobile-login"
-                      >
-                        Sign In
-                      </Button>
-                    </Link>
-                    <Link href="/signup" onClick={handleMobileNavClick} className="block">
-                      <Button 
-                        className="w-full bg-white text-slate-900 hover:bg-white/90 shadow-lg shadow-white/10"
-                        data-testid="link-mobile-signup"
-                      >
-                        Get Started
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
+                    {isAuthenticated && user ? (
+                      <>
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <Avatar className="h-8 w-8">
+                            {user.profileImageUrl && <AvatarImage src={user.profileImageUrl} alt={user.firstName || ''} />}
+                            <AvatarFallback className="text-xs bg-white/20 text-white">
+                              {(user.firstName?.[0] || '')}{(user.lastName?.[0] || '')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium text-white">{user.firstName} {user.lastName}</span>
+                        </div>
+                        <Link href="/admin" onClick={handleMobileNavClick} className="block">
+                          <Button 
+                            className="w-full bg-white text-slate-900 shadow-lg shadow-white/10"
+                            data-testid="link-mobile-dashboard"
+                          >
+                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                            Go to Dashboard
+                          </Button>
+                        </Link>
+                        <a href="/api/logout" onClick={handleMobileNavClick} className="block">
+                          <Button 
+                            variant="outline" 
+                            className="w-full bg-white/5 border-white/20 text-white"
+                            data-testid="button-mobile-logout"
+                          >
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Log Out
+                          </Button>
+                        </a>
+                      </>
+                    ) : (
+                      <>
+                        <a href="/api/login" onClick={handleMobileNavClick} className="block">
+                          <Button 
+                            variant="outline" 
+                            className="w-full bg-white/5 border-white/20 text-white"
+                            data-testid="link-mobile-login"
+                          >
+                            Sign In
+                          </Button>
+                        </a>
+                        <Link href="/signup" onClick={handleMobileNavClick} className="block">
+                          <Button 
+                            className="w-full bg-white text-slate-900 shadow-lg shadow-white/10"
+                            data-testid="link-mobile-signup"
+                          >
+                            Get Started
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
               </SheetContent>

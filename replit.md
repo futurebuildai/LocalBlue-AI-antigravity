@@ -17,7 +17,11 @@ None
 ### Backend
 - **Framework**: Express.js
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: bcrypt for password hashing, express-session for tenant admin sessions. Replit Auth integrated via OpenID Connect for user authentication, storing user data in PostgreSQL.
+- **Authentication (Multi-Tenant)**:
+    - **Platform Admin (main site)**: Replit Auth via OpenID Connect. Users log in at `/api/login`, authenticated via OIDC, user data stored in `users` table. Platform admin access restricted by `PLATFORM_ADMIN_EMAILS` env var. OIDC routes (`/api/login`, `/api/callback`, `/api/logout`) are domain-restricted — only available on the main domain, blocked on tenant domains via `isTenantDomain()` check.
+    - **Tenant Admin**: Email/password auth via bcrypt + express-session. Tenant admins log in at `/api/tenant/auth/login` on their `admin.{subdomain}` domain. Session stores `userId` + `siteId`.
+    - **Session Store**: PostgreSQL-backed via `connect-pg-simple` (`sessions` table). Both auth systems share the session store but use different session fields to avoid conflicts. Cookie domain defaults to current host, naturally isolating sessions between main and tenant domains.
+    - **Frontend Guards**: `PlatformAdminGuard` checks both Replit Auth authentication AND admin API authorization before rendering admin UI. `TenantAdminApp` uses its own auth check via `/api/tenant/auth/me`.
 - **Multi-Tenant Middleware**: Hostname-based detection (`admin.{subdomain}` or `admin.{customDomain}`) to route requests to the correct tenant context.
 
 ### Frontend
