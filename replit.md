@@ -53,6 +53,11 @@ Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimo
 ### Recent Changes (Feb 2026)
 - **Total Years Experience**: Added `totalYearsExperience` field to `sites` table. This captures total professional experience including apprenticeship and prior work, not just years the business has been operating. The AI extraction prompt asks for this explicitly. The public site displays `totalYearsExperience` (falling back to `yearsInBusiness` if not set). The value is guaranteed to be >= `yearsInBusiness`.
 - **Service Descriptions**: Improved AI content generation prompt to produce unique, varied descriptions for each service card instead of repetitive templated text. Fallback descriptions now use an array of 6 varied templates instead of one repeated pattern.
+- **Photo Integration**: Uploaded logos display in site header, gallery section added with categorized photos (Projects, Before & After, Team). `/api/site/photos` endpoint serves public photos. `ProjectGallery` component renders photos grouped by category.
+- **Onboarding AI Improvements**: Added explicit photo upload acknowledgment in prompts, phase-waiting rules to prevent skipping user responses (especially during photos/style/generate phases).
+- **Stats Verification**: Removed fabricated metrics (project counts calculated from years, hardcoded satisfaction/rating). TrustBadgesBar now only shows: Years Experience (if available), Licensed/Insured badge, Service Area, Free Estimates.
+- **Trade Type Consistency**: Added `tradeLabel` field to preserve user's specific trade description (e.g., "Finish Carpenter" vs generic "General Contractor"). Extraction and content generation prompts use consistent terminology.
+- **Hero Section Cleanup**: Removed duplicate trust badges from hero bottom (years experience, star rating) since they appear in header badge and TrustBadgesBar section below.
 
 ### Pricing & Subscription Model
 

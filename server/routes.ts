@@ -699,6 +699,20 @@ export async function registerRoutes(
     }
   });
 
+  // Get public site photos (public route - requires tenant but not auth)
+  app.get("/api/site/photos", requireTenant, async (req, res) => {
+    try {
+      if (!req.site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+      const photos = await storage.getSitePhotos(req.site.id);
+      res.json(photos);
+    } catch (error) {
+      console.error("Error fetching site photos:", error);
+      res.status(500).json({ error: "Failed to fetch photos" });
+    }
+  });
+
   // Get public testimonials (public route - requires tenant but not auth)
   app.get("/api/site/testimonials", requireTenant, async (req, res) => {
     try {
@@ -1323,18 +1337,19 @@ You must progress through these phases one at a time, asking only ONE question p
 - Ask for their business email (if different from sign-up)
 - Ask for their business address (for local SEO)
 
-### Phase 8: PHOTOS (1 message)
-- Encourage them to upload photos if they have any
-- Explain we'll use professional stock imagery matched to their trade if they don't have photos
-- Tell them they can always add photos later
+### Phase 8: PHOTOS (2-3 messages)
+- First message: Encourage them to upload photos. Explain photo categories: Logo/branding, Team photos, Project photos, Before & After shots. Tell them these will appear directly on their website in a gallery organized by category.
+- WAIT for their response. If they upload photos, acknowledge what you received specifically (e.g., "Great, I can see you've uploaded some project photos and a logo - those will look fantastic on your site!"). If they say they don't have photos, reassure them that you'll use professional stock imagery matched to their trade and they can always add photos later.
+- Do NOT move to the next phase until you've acknowledged their photo uploads or their decision to skip photos.
 
-### Phase 9: STYLE (1-2 messages)
-- Present 4 style options:
-  * Professional & Clean - Modern, trustworthy, clean lines
-  * Bold & Modern - Strong, confident, striking contrasts
-  * Warm & Friendly - Approachable, welcoming, great for family businesses
-  * Luxury & Elegant - Sophisticated, premium positioning
+### Phase 9: STYLE (2-3 messages)
+- Present 4 style options in natural language:
+  * Professional and Clean - Modern, trustworthy, clean lines
+  * Bold and Modern - Strong, confident, striking contrasts
+  * Warm and Friendly - Approachable, welcoming, great for family businesses
+  * Luxury and Elegant - Sophisticated, premium positioning
 - Ask which best represents their brand
+- WAIT for their explicit answer before moving on. Acknowledge their choice.
 
 ### Phase 10: PAGES (1-2 messages)
 - Present page options they can include:
@@ -1343,11 +1358,17 @@ You must progress through these phases one at a time, asking only ONE question p
   * Get a Quote (calculator), Schedule Service (booking)
   * Financing Options, Blog
 - Ask which pages they want
+- WAIT for their answer before proceeding.
 
-### Phase 11: REVIEW (1 message)
-- Give a brief, conversational summary (2-3 sentences) of what makes their business special
-- Ask if you have everything right and if they're ready to build their site
-- When they confirm, include "READY_TO_GENERATE" in your response
+### Phase 11: REVIEW (1-2 messages)
+- Give a brief, conversational summary of what you've gathered. Specifically confirm these key facts:
+  * Their exact trade/specialty (use their own words, not a generic label)
+  * Years in business and total experience
+  * Number of projects completed (ONLY if they explicitly mentioned a number)
+  * Key services
+  * Service area
+- Ask if everything is accurate. If they correct anything, update before proceeding.
+- Only when they explicitly confirm, include "READY_TO_GENERATE" in your response
 
 ## CRITICAL GUIDELINES
 
@@ -1359,7 +1380,11 @@ You must progress through these phases one at a time, asking only ONE question p
 6. **KEEP IT NATURAL** - Don't sound scripted, adapt to their communication style
 7. **SHORT RESPONSES** - Keep responses to 2-4 sentences max
 8. **NO TECHNICAL FORMATTING** - Never use markdown like **bold**, bullet lists, or structured data in your visible response. Write in natural, flowing sentences that feel human.
-9. **TRACK PROGRESS** - At the very end of your response, on a new line, include a progress tracker:
+9. **WAIT FOR RESPONSES** - NEVER advance to the next phase without receiving a clear answer from the user. If the user's response is ambiguous or incomplete, ask a follow-up in the SAME phase. This is especially important during PHOTOS, STYLE, and PAGES phases.
+10. **ACKNOWLEDGE UPLOADS** - When the user uploads photos, explicitly acknowledge that you received them and describe what you see (e.g., "I can see you've uploaded a logo and some project photos"). Don't just move on.
+11. **TRADE CONSISTENCY** - Once you identify the user's specific trade (e.g., "finish carpenter", "bathroom remodeler", "residential electrician"), use EXACTLY that terminology throughout the conversation. Do not switch between generic labels (like "general contractor" or "builder") and their specific trade. Their self-described specialty should be the primary label used everywhere.
+12. **ONLY STATE VERIFIED FACTS** - During the REVIEW phase, only mention stats and facts that the user explicitly stated. NEVER invent or estimate numbers like "projects completed", "homes built", or "customers served" unless the user told you those exact numbers. If they didn't mention a stat, don't include it in the review.
+13. **TRACK PROGRESS** - At the very end of your response, on a new line, include a progress tracker:
    <!--PROGRESS:{"phase":"PHASE_NAME","collected":{"key":"value"}}-->
    This is for internal tracking only and will not be shown to users.
 
@@ -1606,24 +1631,29 @@ Continue the conversation from here.`;
       const extractionPrompt = `You are a data extraction assistant for contractor websites. Extract comprehensive information from the conversation and return it as JSON.
 
 IMPORTANT: 
-- tradeType MUST be one of: general_contractor, plumber, electrician, roofer, hvac, painter, landscaper
+- tradeType MUST be one of: general_contractor, plumber, electrician, roofer, hvac, painter, landscaper. Choose the CLOSEST match to how the user described their trade. If they said "finish carpenter" or "custom builder", use general_contractor. If they said "bathroom remodeler", use general_contractor.
+- tradeLabel should be the user's OWN description of their trade/specialty (e.g., "Finish Carpenter", "Custom Home Builder", "Bathroom Remodeler"). This is used for display copy on the site and should match how they describe themselves, NOT the generic tradeType.
 - stylePreference MUST be one of: professional, bold, warm, luxury
 - selectedPages should include page IDs from: home, about, services, gallery, testimonials, faq, service-area, contact, quote, schedule, financing, blog
-- Generate a compelling tagline if none was explicitly mentioned
+- Generate a compelling tagline if none was explicitly mentioned. The tagline MUST use the tradeLabel (their specific trade), NOT the generic tradeType.
 - Extract years in business as a number
-- Extract total years of experience (including apprenticeship, prior work, and business years) as totalYearsExperience. This should be the TOTAL experience, not just years the business has been operating. If someone says they apprenticed for 5 years and then started their business 2 years ago, totalYearsExperience should be 7.
+- Extract total years of experience (including apprenticeship, prior work, and business years) as totalYearsExperience. This should be the TOTAL experience, not just years the business has been operating.
+- projectsCompleted should ONLY be set if the user explicitly stated a number of projects. Do NOT estimate or calculate this. Set to null if not mentioned.
+- The businessDescription MUST consistently use the tradeLabel terminology, not switch between different labels.
 
 Return this exact JSON structure:
 {
-  "tradeType": "one of the valid trade types",
+  "tradeType": "one of the valid trade types (closest match)",
+  "tradeLabel": "the user's own description of their trade/specialty",
   "services": ["list", "of", "specific", "services"],
   "serviceArea": "cities/areas they serve",
-  "businessDescription": "compelling description of the business (2-3 sentences)",
-  "tagline": "catchy tagline for the hero section",
+  "businessDescription": "compelling description using their specific trade label consistently (2-3 sentences)",
+  "tagline": "catchy tagline using their specific trade label",
   "ownerName": "owner's name if mentioned",
   "ownerStory": "the story of how they started/their background",
   "yearsInBusiness": 0,
   "totalYearsExperience": 0,
+  "projectsCompleted": null,
   "uniqueSellingPoints": ["what makes them different", "from competitors"],
   "certifications": ["licenses", "certifications", "awards"],
   "phone": "business phone if mentioned",
@@ -1650,6 +1680,7 @@ Only return valid JSON, nothing else.`;
       // Parse the extracted data
       let extractedData: {
         tradeType?: TradeType;
+        tradeLabel?: string;
         services?: string[];
         serviceArea?: string;
         businessDescription?: string;
@@ -1658,6 +1689,7 @@ Only return valid JSON, nothing else.`;
         ownerStory?: string;
         yearsInBusiness?: number;
         totalYearsExperience?: number;
+        projectsCompleted?: number | null;
         uniqueSellingPoints?: string[];
         certifications?: string[];
         phone?: string;
@@ -1711,15 +1743,20 @@ Only return valid JSON, nothing else.`;
       const extractedServices = extractedData.services || [];
       const mergedServices = Array.from(new Set([...extractedServices, ...tradeTemplate.defaultServices]));
 
+      // Use tradeLabel for display copy, tradeType for template matching
+      const tradeLabel = extractedData.tradeLabel || tradeTemplate.name;
+
       // RICH CONTENT GENERATION - Create compelling marketing copy using AI
       const contentGenerationPrompt = `You are an elite website copywriter specializing in contractor and home service businesses. Generate compelling, specific, and persuasive website content that will convert visitors into customers.
 
 BUSINESS DETAILS:
 - Business Name: ${site.businessName}
-- Trade: ${tradeType.replace(/_/g, ' ')}
+- Specific Trade/Specialty: ${tradeLabel} (ALWAYS use this exact term when referring to their trade - never substitute generic terms like "contractor" or "builder")
 - Location: ${extractedData.serviceArea || 'Local area'}
 - Services: ${mergedServices.join(', ')}
 - Years in Business: ${extractedData.yearsInBusiness || 'Established'}
+- Total Years Experience: ${extractedData.totalYearsExperience || extractedData.yearsInBusiness || 'Experienced'}
+- Projects Completed: ${extractedData.projectsCompleted || 'NOT PROVIDED - do NOT invent a number'}
 - Owner: ${extractedData.ownerName || 'Owner'}
 - Story: ${extractedData.ownerStory || 'Family-owned business'}
 - Differentiators: ${(extractedData.uniqueSellingPoints || []).join(', ')}
@@ -1730,35 +1767,41 @@ STYLE: ${stylePreference} (${stylePreference === 'professional' ? 'trustworthy, 
 Generate the following content as JSON:
 
 {
-  "heroHeadline": "A powerful, specific headline (not generic - reference their actual specialty or location)",
-  "heroSubheadline": "Compelling subheadline that highlights their main differentiator or promise",
-  "heroDescription": "2-3 sentences expanding on their value proposition - be specific about what they do and where",
+  "heroHeadline": "A powerful, specific headline referencing their EXACT trade specialty '${tradeLabel}' and/or their location. NOT a generic contractor headline.",
+  "heroSubheadline": "Compelling subheadline that highlights their main differentiator or promise, using '${tradeLabel}' terminology",
+  "heroDescription": "2-3 sentences expanding on their value proposition as a ${tradeLabel}. Be specific about what they do and where. Keep it concise.",
   "aboutSectionTitle": "Creative title for About section (not just 'About Us')",
-  "aboutContent": "3-4 compelling sentences about the business, weaving in their story, experience, and values. Make it personal and authentic.",
+  "aboutContent": "3-4 compelling sentences about the business, weaving in their story, experience, and values. Make it personal and authentic. Refer to them as a ${tradeLabel}, not a generic contractor.",
   "whyChooseUsTitle": "Creative section title",
   "serviceDescriptions": {
-    ${mergedServices.slice(0, 8).map(s => `"${s}": "Write a UNIQUE, specific 2-sentence description for this service. Each description MUST be completely different from the others - vary the sentence structure, opening words, and focus. Mention specific techniques, materials, or outcomes relevant to THIS particular service."`).join(',\n    ')}
+    ${mergedServices.slice(0, 8).map((s, i) => `"${s}": "Write a UNIQUE 2-sentence description for this service. RULE: Start with a completely different sentence structure than the other ${mergedServices.length - 1} services. Service #${i + 1} must NOT start with the same word or phrase as any other. Focus on specific techniques, materials, timelines, or customer outcomes unique to '${s}'. Avoid words like 'professional', 'quality', 'expert', 'tailored', 'comprehensive'."`).join(',\n    ')}
   },
   "trustStatements": [
-    "Four compelling trust statements/value props that highlight real differentiators",
-    "Each should be specific to this business, not generic",
-    "Reference real credentials, experience, or guarantees",
-    "Make customers feel confident choosing this business"
+    "Four trust statements that reference REAL facts from the business details above",
+    "Use specific numbers (years, certifications) when available",
+    "Do NOT invent stats that were not provided",
+    "Each must be distinct - no two should convey the same idea"
   ],
   "ctaPrimary": "Primary call-to-action button text",
   "ctaSecondary": "Secondary CTA text",
   "serviceAreaDescription": "Compelling description of their service area coverage",
-  "testimonialPrompt": "What satisfied customers would say about this business (2 example testimonials with realistic details)"
+  "testimonialPrompt": "What satisfied customers would say about this ${tradeLabel} business (2 example testimonials with realistic details)"
 }
 
 CRITICAL RULES:
-1. NEVER use generic phrases like "quality work", "professional service", "tailored to your needs"
+1. NEVER use generic phrases like "quality work", "professional service", "tailored to your needs", "comprehensive solutions", "exceeding expectations"
 2. BE SPECIFIC - mention the actual location, actual services, actual experience
 3. Write like a premium agency would - every word should earn its place
 4. Match the style preference - professional feels authoritative, warm feels friendly, luxury feels exclusive
 5. Reference their specific differentiators and story
 6. Create urgency and build trust simultaneously
-7. Each service description MUST be unique and different from the others - never use the same sentence template or opening phrase for multiple services
+7. SERVICE DESCRIPTION UNIQUENESS - Each service description MUST:
+   a. Start with a DIFFERENT first word (no two descriptions can begin with the same word)
+   b. Use a DIFFERENT sentence structure (e.g., one starts with a question, one with a statistic, one with an action verb, one with a customer benefit)
+   c. Mention specific techniques, materials, or outcomes unique to THAT service
+   d. NEVER reuse phrases like "backed by years of experience" or "our team of experts" across multiple descriptions
+8. TRADE LABEL - Always refer to the business as a "${tradeLabel}", NEVER as a generic "contractor" or "builder" unless that IS their specific label
+9. DO NOT invent statistics. If "Projects Completed" says "NOT PROVIDED", do not include any project count claims anywhere in the copy
 
 Return ONLY valid JSON.`;
 
@@ -1864,6 +1907,8 @@ Return ONLY valid JSON.`;
         isPublished: true,
       });
 
+      const sitePhotos = await storage.getSitePhotos(site.id);
+
       // Generate page content based on selected pages using rich AI-generated content
       const pageGenerators: Record<string, () => { slug: string; title: string; content: Record<string, any> }> = {
         home: () => ({
@@ -1916,8 +1961,9 @@ Return ONLY valid JSON.`;
           title: "Project Gallery",
           content: {
             galleryDescription: `View our recent ${tradeTemplate.name.toLowerCase()} projects and see the quality of our work.`,
-            projects: [],
-            categories: mergedServices.slice(0, 5),
+            projects: sitePhotos.filter(p => p.type === 'project').map(p => ({ url: p.url, caption: p.caption, type: p.type })),
+            categories: Array.from(new Set(sitePhotos.map(p => p.type).filter(t => t !== 'logo' && t !== 'hero'))),
+            hasPhotos: sitePhotos.length > 0,
           },
         }),
         testimonials: () => ({

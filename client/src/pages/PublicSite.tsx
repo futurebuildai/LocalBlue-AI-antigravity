@@ -39,9 +39,12 @@ import {
   Paintbrush,
   Leaf,
   ArrowRight,
-  Quote
+  Quote,
+  Camera,
+  ChevronLeft
 } from "lucide-react";
-import type { Site, Page, Testimonial, TradeType, StylePreference } from "@shared/schema";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import type { Site, Page, Testimonial, TradeType, StylePreference, SitePhoto } from "@shared/schema";
 import { TRADE_TEMPLATES, STYLE_TEMPLATES } from "@shared/tradeTemplates";
 import ChatBot from "@/components/ChatBot";
 import { useSEO } from "@/hooks/use-seo";
@@ -120,6 +123,8 @@ function getStyleClasses(stylePreference?: StylePreference | null) {
 
 function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
+  const logoPhoto = photos?.find(p => p.type === "logo");
 
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -130,6 +135,7 @@ function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean })
     { label: "Home", id: "hero" },
     { label: "Services", id: "services" },
     { label: "About", id: "about" },
+    { label: "Gallery", id: "gallery" },
     { label: "Reviews", id: "testimonials" },
     { label: "Contact", id: "contact" },
   ];
@@ -150,14 +156,23 @@ function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean })
             onClick={(e) => { e.preventDefault(); scrollToSection("hero"); }}
             className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-shrink"
           >
-            <div 
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
-              style={{ backgroundColor: site.brandColor }}
-            >
-              <span className="text-sm sm:text-base font-bold text-white">
-                {site.businessName.charAt(0).toUpperCase()}
-              </span>
-            </div>
+            {logoPhoto ? (
+              <img
+                src={logoPhoto.url}
+                alt={`${site.businessName} logo`}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg object-cover flex-shrink-0 shadow-sm"
+                data-testid="img-header-logo"
+              />
+            ) : (
+              <div 
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm"
+                style={{ backgroundColor: site.brandColor }}
+              >
+                <span className="text-sm sm:text-base font-bold text-white">
+                  {site.businessName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
             <span 
               className={`font-semibold text-sm sm:text-base md:text-lg truncate max-w-[120px] sm:max-w-[180px] md:max-w-none ${
                 isScrolled ? "text-foreground" : "text-white"
@@ -352,7 +367,7 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
           {description.length > 160 ? description.slice(0, 160).trim() + '...' : description}
         </p>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center mb-10 sm:mb-14 px-2 sm:px-0">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center px-2 sm:px-0">
           <Button 
             size="lg" 
             className="text-base sm:text-lg px-8 sm:px-10 min-h-[52px] sm:min-h-[56px] bg-white text-gray-900 border-0 shadow-xl font-semibold w-full sm:w-auto"
@@ -377,23 +392,6 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
             </a>
           )}
         </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 md:gap-6">
-          {yearsExp && (
-            <div className="flex items-center gap-2 sm:gap-2.5 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 sm:px-5 sm:py-2.5" data-testid="badge-trust-years">
-              <Award className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
-              <span className="font-semibold text-white text-sm sm:text-base">{yearsExp}+ Years</span>
-            </div>
-          )}
-          <div className="flex items-center gap-2 sm:gap-2.5 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 sm:px-5 sm:py-2.5" data-testid="badge-trust-licensed">
-            <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            <span className="font-semibold text-white text-sm sm:text-base">Licensed & Insured</span>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-2.5 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 sm:px-5 sm:py-2.5" data-testid="badge-trust-rating">
-            <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400" />
-            <span className="font-semibold text-white text-sm sm:text-base">5-Star Rated</span>
-          </div>
-        </div>
       </div>
 
       <div className="absolute bottom-0 left-0 right-0">
@@ -409,34 +407,29 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
 }
 
 function TrustBadgesBar({ site }: { site: Site }) {
-  // Dynamic stats based on actual site data
-  const stats = [
-    { 
-      value: (site.totalYearsExperience || site.yearsInBusiness) ? `${site.totalYearsExperience || site.yearsInBusiness}+` : "10+", 
-      label: "Years Experience",
-      icon: Award
-    },
-    { 
-      value: (site.totalYearsExperience || site.yearsInBusiness) ? `${Math.round(((site.totalYearsExperience || site.yearsInBusiness) || 10) * 25)}+` : "200+", 
-      label: "Projects Completed",
-      icon: CheckCircle
-    },
-    { 
-      value: "100%", 
-      label: "Satisfaction Rate",
-      icon: ThumbsUp
-    },
-    { 
-      value: "5.0", 
-      label: "Star Rating",
-      icon: Star
-    }
-  ];
+  const yearsExp = site.totalYearsExperience || site.yearsInBusiness;
+  const trustBadges = getTrustBadges(site.tradeType);
+
+  const stats: { value: string; label: string; icon: typeof Award }[] = [];
+
+  if (yearsExp) {
+    stats.push({ value: `${yearsExp}+`, label: "Years Experience", icon: Award });
+  }
+
+  stats.push({ value: trustBadges[0] || "Licensed & Insured", label: "Verified", icon: Shield });
+
+  if (site.serviceArea) {
+    stats.push({ value: "Local", label: site.serviceArea.split(",")[0].trim(), icon: MapPin });
+  }
+
+  stats.push({ value: "Free", label: "Estimates", icon: CheckCircle });
+
+  if (stats.length === 0) return null;
 
   return (
     <section className="bg-background py-8 sm:py-12 md:py-14 border-b" data-testid="section-trust-stats">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 md:gap-12">
+        <div className={`grid grid-cols-2 ${stats.length >= 4 ? 'md:grid-cols-4' : stats.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 sm:gap-8 md:gap-12`}>
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
@@ -450,8 +443,8 @@ function TrustBadgesBar({ site }: { site: Site }) {
                   style={{ backgroundColor: `${site.brandColor}15` }}
                 >
                   <IconComponent 
-                    className={`h-5 w-5 sm:h-7 sm:w-7 ${stat.label === 'Star Rating' ? 'fill-yellow-400 text-yellow-400' : ''}`} 
-                    style={stat.label !== 'Star Rating' ? { color: site.brandColor } : {}} 
+                    className="h-5 w-5 sm:h-7 sm:w-7"
+                    style={{ color: site.brandColor }} 
                   />
                 </div>
                 <div 
@@ -648,6 +641,124 @@ function AboutSection({ site, aboutPage }: { site: Site; aboutPage?: Page }) {
           </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+function GallerySection({ site }: { site: Site }) {
+  const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
+  const [selectedPhoto, setSelectedPhoto] = useState<SitePhoto | null>(null);
+
+  if (!photos || photos.length === 0) return null;
+
+  const displayPhotos = photos.filter(p => p.type !== "logo" && p.type !== "hero");
+  if (displayPhotos.length === 0) return null;
+
+  const photoGroups: { label: string; photos: SitePhoto[] }[] = [];
+
+  const projectPhotos = displayPhotos.filter(p => p.type === "project");
+  if (projectPhotos.length > 0) {
+    photoGroups.push({ label: "Our Projects", photos: projectPhotos });
+  }
+
+  const beforeAfterPhotos = displayPhotos.filter(p => p.type === "before" || p.type === "after");
+  if (beforeAfterPhotos.length > 0) {
+    photoGroups.push({ label: "Before & After", photos: beforeAfterPhotos });
+  }
+
+  const teamPhotos = displayPhotos.filter(p => p.type === "team");
+  if (teamPhotos.length > 0) {
+    photoGroups.push({ label: "Our Team", photos: teamPhotos });
+  }
+
+  const servicePhotos = displayPhotos.filter(p => p.type === "service");
+  if (servicePhotos.length > 0) {
+    photoGroups.push({ label: "Our Services", photos: servicePhotos });
+  }
+
+  if (photoGroups.length === 0) return null;
+
+  return (
+    <section id="gallery" className="py-12 sm:py-20 md:py-28 bg-muted/30" data-testid="section-gallery">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="text-center mb-8 sm:mb-14 md:mb-20">
+          <div
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6"
+            style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
+          >
+            <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            Our Work
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-6">Project Gallery</h2>
+          <p className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed px-2 sm:px-0">
+            Browse through our recent projects and see the quality of our craftsmanship firsthand.
+          </p>
+        </div>
+
+        {photoGroups.map((group) => (
+          <div key={group.label} className="mb-10 sm:mb-14 last:mb-0">
+            <h3
+              className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6"
+              style={{ color: site.brandColor }}
+              data-testid={`text-gallery-group-${group.label.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              {group.label}
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {group.photos.map((photo) => (
+                <div
+                  key={photo.id}
+                  className="group relative aspect-square rounded-lg cursor-pointer hover-elevate"
+                  onClick={() => setSelectedPhoto(photo)}
+                  data-testid={`gallery-photo-${photo.id}`}
+                >
+                  <img
+                    src={photo.url}
+                    alt={photo.caption || `${group.label} photo`}
+                    className="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 rounded-lg" />
+                  {photo.caption && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <p className="text-white text-sm truncate">{photo.caption}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Dialog
+        open={!!selectedPhoto}
+        onOpenChange={(open) => !open && setSelectedPhoto(null)}
+      >
+        <DialogContent
+          className="max-w-4xl w-full p-0 bg-black/95 border-none"
+          data-testid="gallery-lightbox"
+        >
+          {selectedPhoto && (
+            <div className="flex flex-col items-center w-full p-4">
+              <img
+                src={selectedPhoto.url}
+                alt={selectedPhoto.caption || "Photo"}
+                className="max-h-[70vh] max-w-full object-contain rounded-lg"
+                data-testid="lightbox-image"
+              />
+              {selectedPhoto.caption && (
+                <p
+                  className="mt-4 text-white text-center text-sm"
+                  data-testid="lightbox-caption"
+                >
+                  {selectedPhoto.caption}
+                </p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
@@ -1420,6 +1531,7 @@ export default function PublicSite({ site, isPreview }: PublicSiteProps) {
       <TrustBadgesBar site={site} />
       <ServicesSection site={site} servicesPage={servicesPage || undefined} />
       <AboutSection site={site} aboutPage={aboutPage || undefined} />
+      <GallerySection site={site} />
       <TestimonialsSection site={site} />
       <ServiceAreaSection site={site} />
       <ContactSection site={site} />
