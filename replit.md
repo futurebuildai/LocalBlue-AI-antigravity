@@ -119,6 +119,30 @@ Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimo
 - Shows revenue chart (last 6 months) and recent payments
 - Subscription breakdown by plan and trial phase
 
+## Future Roadmap (from Beta Feedback - TM:4, Feb 2026)
+
+### Photo Gallery Page
+- Uploaded photos during onboarding land in a basic gallery section but there's no dedicated gallery page on the generated site yet.
+- Photo categories (Projects, Before/Afters, Team) should translate directly into a gallery page with the same delineations.
+- Consider using uploaded hero/project photos in the home page hero image as well.
+
+### Post-Generation Feedback Loop
+- After site generation, bounce the user into a feedback/suggestions flow where they can tell us what they like, don't like, or want changed.
+- This could drive iterative AI-based refinements before the site goes live.
+
+### "Projects Completed Per Year" Onboarding Question
+- Add a question during onboarding: "On average, how many homes do you build per year?"
+- This gives insight into company size and can be leveraged in multiple areas (trust badges, about section, stats).
+
+### More Unique Styling Per Site
+- Beta feedback notes that generated sites look very similar with only minor copy variations.
+- Consider supplying a few templated visual examples of what each "style" represents to give the AI more stylistic direction.
+- Investigate ways to vary layout structure, section ordering, and visual treatments more dramatically between style preferences.
+
+### Expert Services Cards Enhancement
+- Consider connecting service cards to correlated gallery photos or FAQs for each specific service focus.
+- This would make the services section more valuable and less generic.
+
 ## External Dependencies
 - **PostgreSQL**: Primary database for all application data.
 - **Drizzle ORM**: Used for database interactions.
