@@ -50,9 +50,11 @@ None
 - **Public Website Customization**: Supports various trade types (General Contractor, Plumber, Electrician, Roofer, HVAC, Painter, Landscaper) and aesthetic styles (Professional, Bold, Warm, Luxury).
 - **Interactive Tools**: Built-in AI sales chatbot, quote calculator, appointment scheduler, before/after image slider, and filterable project gallery.
 - **SEO Optimization**: Dynamic title, description, Open Graph, Twitter cards, and JSON-LD structured data.
+- **Site Analytics**: Traffic tracking, daily rollup dashboards, device/referrer/page analytics, SEO keyword tracking, AI-powered monthly optimization with cross-site learning.
+- **Lead CRM**: Pipeline management (New→Contacted→Quoted→Won/Lost), priority tagging, source tracking, notes/activity log, follow-up reminders, estimated values, conversion metrics.
 
 ### Data Models
-Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimonial`, `ServicePricing`, `Appointment`, `ChatbotConversation`, `Page`, and `Lead`. These models capture comprehensive information for contractors' businesses, website content, and customer interactions.
+Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimonial`, `ServicePricing`, `Appointment`, `ChatbotConversation`, `Page`, `Lead`, `AnalyticsEvent`, `AnalyticsDaily`, `SeoMetric`, `SeoOptimization`, and `LeadNote`. These models capture comprehensive information for contractors' businesses, website content, customer interactions, analytics tracking, SEO performance, and lead management.
 
 ### Recent Changes (Feb 2026)
 - **Total Years Experience**: Added `totalYearsExperience` field to `sites` table. This captures total professional experience including apprenticeship and prior work, not just years the business has been operating. The AI extraction prompt asks for this explicitly. The public site displays `totalYearsExperience` (falling back to `yearsInBusiness` if not set). The value is guaranteed to be >= `yearsInBusiness`.
@@ -62,6 +64,10 @@ Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimo
 - **Stats Verification**: Removed fabricated metrics (project counts calculated from years, hardcoded satisfaction/rating). TrustBadgesBar now only shows: Years Experience (if available), Licensed/Insured badge, Service Area, Free Estimates.
 - **Trade Type Consistency**: Added `tradeLabel` field to preserve user's specific trade description (e.g., "Finish Carpenter" vs generic "General Contractor"). Extraction and content generation prompts use consistent terminology.
 - **Hero Section Cleanup**: Removed duplicate trust badges from hero bottom (years experience, star rating) since they appear in header badge and TrustBadgesBar section below.
+- **Site Analytics Engine**: Added lightweight page view tracking on public sites with analytics dashboard in tenant admin showing traffic metrics, charts, top pages, referrers, and device breakdown. Tables: `analytics_events`, `analytics_daily`.
+- **SEO Optimization System**: Monthly AI-powered SEO analysis that compares site performance against cross-site averages and auto-applies safe improvements (meta tags, titles). Cross-site learning from high-performing sites. Tables: `seo_metrics`, `seo_optimizations`.
+- **Lead Management CRM**: Extended leads with pipeline stages (New/Contacted/Quoted/Won/Lost), priority levels, source tracking, follow-up reminders, estimated values, and activity notes. Replaced basic leads list with full CRM dashboard including metrics and pipeline visualization. Tables: `lead_notes` (new), `leads` (extended with stage, priority, source, nextFollowUpAt, lastContactedAt, assignedTo, estimatedValue).
+- **AI Website Editor Vision**: Planned premium tier feature for builder.io-style visual CMS with AI content assistant in tenant admin.
 
 ### Pricing & Subscription Model
 

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth, requirePlatformAdmin } from "./middleware/tenantMiddleware";
-import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES, type TradeType, type StylePreference } from "@shared/schema";
+import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES, type TradeType, type StylePreference, LEAD_STAGES, type LeadStage, LEAD_PRIORITIES, type LeadPriority, insertAnalyticsEventSchema } from "@shared/schema";
 import { TRADE_TEMPLATES, STYLE_TEMPLATES, AVAILABLE_PAGES, getTradeTemplate, getStyleTemplate } from "@shared/tradeTemplates";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { sendLeadNotification, sendWelcomeEmail, sendContactSalesEmail } from "./services/email";
@@ -30,6 +30,9 @@ const signupSchema = z.object({
 });
 
 const SALT_ROUNDS = 10;
+
+// Simple in-memory rate limiter for analytics
+const analyticsRateLimit = new Map<string, { count: number; resetAt: number }>();
 
 function generateSubdomain(businessName: string): string {
   return businessName
@@ -670,6 +673,7 @@ export async function registerRoutes(
         phone: req.body.phone,
         message: req.body.message,
         siteId: req.site!.id,
+        source: "contact_form",
       };
 
       const result = insertLeadSchema.safeParse(leadData);
@@ -891,6 +895,7 @@ IMPORTANT:
         email,
         phone: phone || null,
         message: "Lead captured via chatbot conversation",
+        source: "chatbot",
       });
 
       res.json({ success: true });
@@ -1191,10 +1196,17 @@ IMPORTANT:
     }
   });
 
-  // Tenant Leads: Get all leads for this tenant
+  // Tenant Leads: Get all leads for this tenant (with optional filters)
   app.get("/api/tenant/leads", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const leads = await storage.getLeadsBySiteId(req.site!.id);
+      const filters: { stage?: string; priority?: string } = {};
+      if (req.query.stage && typeof req.query.stage === 'string') {
+        filters.stage = req.query.stage;
+      }
+      if (req.query.priority && typeof req.query.priority === 'string') {
+        filters.priority = req.query.priority;
+      }
+      const leads = await storage.getLeadsBySiteIdWithFilters(req.site!.id, Object.keys(filters).length > 0 ? filters : undefined);
       res.json(leads);
     } catch (error) {
       console.error("Error fetching tenant leads:", error);
@@ -2267,6 +2279,498 @@ Return ONLY valid JSON.`;
     } catch (error) {
       console.error("Error fetching appointments:", error);
       res.status(500).json({ error: "Failed to fetch appointments" });
+    }
+  });
+
+  // ============================================
+  // Public Analytics Tracking Routes
+  // ============================================
+
+  app.post("/api/site/analytics", requireTenant, async (req, res) => {
+    try {
+      const { sessionId, page, referrer, deviceType, duration } = req.body;
+      if (!sessionId || !page) {
+        return res.status(400).json({ error: "sessionId and page are required" });
+      }
+
+      // Rate limit: 10 events per session per minute
+      const key = `${req.site!.id}:${sessionId}`;
+      const now = Date.now();
+      const limit = analyticsRateLimit.get(key);
+      if (limit && limit.resetAt > now && limit.count >= 10) {
+        return res.status(429).json({ error: "Too many requests" });
+      }
+      if (!limit || limit.resetAt <= now) {
+        analyticsRateLimit.set(key, { count: 1, resetAt: now + 60000 });
+      } else {
+        limit.count++;
+      }
+
+      // Server-side enrichment - extract user agent from request headers
+      const userAgent = req.headers['user-agent'] || null;
+
+      const eventData = {
+        siteId: req.site!.id,
+        sessionId,
+        page,
+        referrer: referrer || null,
+        userAgent,
+        deviceType: deviceType || null,
+        duration: duration || null,
+        country: null,
+        city: null,
+      };
+
+      const result = insertAnalyticsEventSchema.safeParse(eventData);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid analytics data", details: result.error.flatten() });
+      }
+
+      const event = await storage.createAnalyticsEvent(result.data);
+      res.status(201).json({ success: true, id: event.id });
+    } catch (error) {
+      console.error("Error recording analytics event:", error);
+      res.status(500).json({ error: "Failed to record analytics event" });
+    }
+  });
+
+  // ============================================
+  // Tenant Admin Analytics & SEO Routes
+  // ============================================
+
+  app.get("/api/tenant/analytics/summary", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const endDate = (req.query.endDate as string) || new Date().toISOString().split('T')[0];
+      const startDate = (req.query.startDate as string) || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const dailyData = await storage.getAnalyticsDailySummary(req.site!.id, startDate, endDate);
+
+      const totals = dailyData.reduce((acc, day) => {
+        const pageViews = day.pageViews || 0;
+        const avgSessionDuration = day.avgSessionDuration || 0;
+        const bounceRate = day.bounceRate || 0;
+        return {
+          pageViews: acc.pageViews + pageViews,
+          uniqueVisitors: acc.uniqueVisitors + (day.uniqueVisitors || 0),
+          avgDuration: acc.avgDuration + (avgSessionDuration * pageViews),
+          bounceRate: acc.bounceRate + (bounceRate * pageViews),
+          _totalWeightPageViews: acc._totalWeightPageViews + pageViews,
+        };
+      }, { pageViews: 0, uniqueVisitors: 0, avgDuration: 0, bounceRate: 0, _totalWeightPageViews: 0 });
+
+      if (totals.pageViews > 0) {
+        totals.avgDuration = Math.round(totals.avgDuration / totals.pageViews);
+        totals.bounceRate = Math.round(totals.bounceRate / totals._totalWeightPageViews);
+      }
+      delete (totals as any)._totalWeightPageViews;
+
+      res.json({ dailyData, totals });
+    } catch (error) {
+      console.error("Error fetching analytics summary:", error);
+      res.status(500).json({ error: "Failed to fetch analytics summary" });
+    }
+  });
+
+  app.get("/api/tenant/analytics/realtime", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const dailyData = await storage.getAnalyticsDailySummary(req.site!.id, today, today);
+      res.json(dailyData[0] || { pageViews: 0, uniqueVisitors: 0, avgSessionDuration: 0, bounceRate: 0 });
+    } catch (error) {
+      console.error("Error fetching realtime analytics:", error);
+      res.status(500).json({ error: "Failed to fetch realtime analytics" });
+    }
+  });
+
+  app.get("/api/tenant/seo/metrics", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
+      const metrics = await storage.getSeoMetrics(req.site!.id, month);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching SEO metrics:", error);
+      res.status(500).json({ error: "Failed to fetch SEO metrics" });
+    }
+  });
+
+  app.get("/api/tenant/seo/optimizations", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const optimizations = await storage.getSeoOptimizations(req.site!.id);
+      res.json(optimizations);
+    } catch (error) {
+      console.error("Error fetching SEO optimizations:", error);
+      res.status(500).json({ error: "Failed to fetch SEO optimizations" });
+    }
+  });
+
+  // ============================================
+  // Tenant Admin Lead CRM Routes
+  // ============================================
+
+  app.get("/api/tenant/leads/metrics", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const allLeads = await storage.getLeadsBySiteIdWithFilters(req.site!.id);
+      
+      const byStage: Record<string, number> = {};
+      const byPriority: Record<string, number> = {};
+      
+      for (const lead of allLeads) {
+        byStage[lead.stage] = (byStage[lead.stage] || 0) + 1;
+        byPriority[lead.priority] = (byPriority[lead.priority] || 0) + 1;
+      }
+
+      const wonLeads = allLeads.filter(l => l.stage === 'won').length;
+      const totalWithOutcome = allLeads.filter(l => l.stage === 'won' || l.stage === 'lost').length;
+      const conversionRate = totalWithOutcome > 0 ? Math.round((wonLeads / totalWithOutcome) * 10000) : 0;
+
+      const contactedLeads = allLeads.filter(l => l.lastContactedAt && l.createdAt);
+      let avgResponseTime = 0;
+      if (contactedLeads.length > 0) {
+        const totalResponseTime = contactedLeads.reduce((sum, lead) => {
+          const created = new Date(lead.createdAt).getTime();
+          const contacted = new Date(lead.lastContactedAt!).getTime();
+          return sum + (contacted - created);
+        }, 0);
+        avgResponseTime = Math.round(totalResponseTime / contactedLeads.length / 1000 / 60);
+      }
+
+      res.json({
+        totalLeads: allLeads.length,
+        byStage,
+        byPriority,
+        avgResponseTime,
+        conversionRate,
+      });
+    } catch (error) {
+      console.error("Error fetching lead metrics:", error);
+      res.status(500).json({ error: "Failed to fetch lead metrics" });
+    }
+  });
+
+  app.patch("/api/tenant/leads/:id/stage", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const leadId = parseInt(req.params.id);
+      const { stage } = req.body;
+
+      if (!stage || !(LEAD_STAGES as readonly string[]).includes(stage)) {
+        return res.status(400).json({ error: "Invalid stage value" });
+      }
+
+      const lead = await storage.getLeadById(leadId);
+      if (!lead || lead.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      const updated = await storage.updateLead(leadId, { stage: stage as LeadStage });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating lead stage:", error);
+      res.status(500).json({ error: "Failed to update lead stage" });
+    }
+  });
+
+  app.patch("/api/tenant/leads/:id/priority", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const leadId = parseInt(req.params.id);
+      const { priority } = req.body;
+
+      if (!priority || !(LEAD_PRIORITIES as readonly string[]).includes(priority)) {
+        return res.status(400).json({ error: "Invalid priority value" });
+      }
+
+      const lead = await storage.getLeadById(leadId);
+      if (!lead || lead.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      const updated = await storage.updateLead(leadId, { priority: priority as LeadPriority });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating lead priority:", error);
+      res.status(500).json({ error: "Failed to update lead priority" });
+    }
+  });
+
+  app.patch("/api/tenant/leads/:id", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const leadId = parseInt(req.params.id);
+
+      const lead = await storage.getLeadById(leadId);
+      if (!lead || lead.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      const updateData: Record<string, any> = {};
+      if (req.body.stage !== undefined && (LEAD_STAGES as readonly string[]).includes(req.body.stage)) {
+        updateData.stage = req.body.stage;
+      }
+      if (req.body.priority !== undefined && (LEAD_PRIORITIES as readonly string[]).includes(req.body.priority)) {
+        updateData.priority = req.body.priority;
+      }
+      if (req.body.nextFollowUpAt !== undefined) {
+        updateData.nextFollowUpAt = req.body.nextFollowUpAt ? new Date(req.body.nextFollowUpAt) : null;
+      }
+      if (req.body.lastContactedAt !== undefined) {
+        updateData.lastContactedAt = req.body.lastContactedAt ? new Date(req.body.lastContactedAt) : null;
+      }
+      if (req.body.estimatedValue !== undefined) {
+        updateData.estimatedValue = req.body.estimatedValue;
+      }
+      if (req.body.assignedTo !== undefined) {
+        updateData.assignedTo = req.body.assignedTo;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
+      }
+
+      const updated = await storage.updateLead(leadId, updateData);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating lead:", error);
+      res.status(500).json({ error: "Failed to update lead" });
+    }
+  });
+
+  app.get("/api/tenant/leads/:id/notes", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const leadId = parseInt(req.params.id);
+      const lead = await storage.getLeadById(leadId);
+      if (!lead || lead.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+      const notes = await storage.getLeadNotes(leadId);
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching lead notes:", error);
+      res.status(500).json({ error: "Failed to fetch lead notes" });
+    }
+  });
+
+  app.post("/api/tenant/leads/:id/notes", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const leadId = parseInt(req.params.id);
+      const lead = await storage.getLeadById(leadId);
+      if (!lead || lead.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "Lead not found" });
+      }
+
+      const { content, type } = req.body;
+      if (!content) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+
+      const note = await storage.createLeadNote({
+        leadId,
+        siteId: req.site!.id,
+        authorId: req.session.userId || null,
+        content,
+        type: type || "note",
+      });
+      res.status(201).json(note);
+    } catch (error) {
+      console.error("Error creating lead note:", error);
+      res.status(500).json({ error: "Failed to create lead note" });
+    }
+  });
+
+  // ============================================
+  // Platform Admin Analytics & SEO Routes
+  // ============================================
+
+  app.get("/api/admin/analytics/aggregate", requirePlatformAdmin, async (req, res) => {
+    try {
+      const allSites = await storage.getAllSites();
+      const today = new Date().toISOString().split('T')[0];
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      let totalPageViews = 0;
+      let totalLeads = 0;
+      let totalConversionRateSum = 0;
+      let sitesWithData = 0;
+      const sitePerformance: Array<{ site: typeof allSites[0]; pageViews: number; leads: number }> = [];
+
+      for (const site of allSites) {
+        const dailyData = await storage.getAnalyticsDailySummary(site.id, thirtyDaysAgo, today);
+        const siteLeads = await storage.getLeadsBySiteIdWithFilters(site.id);
+        const sitePageViews = dailyData.reduce((sum, d) => sum + (d.pageViews || 0), 0);
+
+        totalPageViews += sitePageViews;
+        totalLeads += siteLeads.length;
+
+        if (siteLeads.length > 0) {
+          const wonLeads = siteLeads.filter(l => l.stage === 'won').length;
+          const totalOutcome = siteLeads.filter(l => l.stage === 'won' || l.stage === 'lost').length;
+          if (totalOutcome > 0) {
+            totalConversionRateSum += (wonLeads / totalOutcome) * 10000;
+            sitesWithData++;
+          }
+        }
+
+        sitePerformance.push({ site, pageViews: sitePageViews, leads: siteLeads.length });
+      }
+
+      const topPerformingSites = sitePerformance
+        .sort((a, b) => b.pageViews - a.pageViews)
+        .slice(0, 10)
+        .map(s => s.site);
+
+      res.json({
+        totalPageViews,
+        totalLeads,
+        avgConversionRate: sitesWithData > 0 ? Math.round(totalConversionRateSum / sitesWithData) : 0,
+        topPerformingSites,
+      });
+    } catch (error) {
+      console.error("Error fetching aggregate analytics:", error);
+      res.status(500).json({ error: "Failed to fetch aggregate analytics" });
+    }
+  });
+
+  app.post("/api/admin/seo/run-optimization", requirePlatformAdmin, async (req, res) => {
+    try {
+      const { siteId } = req.body;
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const today = new Date().toISOString().split('T')[0];
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      let targetSites: Awaited<ReturnType<typeof storage.getAllSites>>;
+      if (siteId) {
+        const site = await storage.getSite(siteId);
+        if (!site) {
+          return res.status(404).json({ error: "Site not found" });
+        }
+        targetSites = [site];
+      } else {
+        const allSites = await storage.getAllSites();
+        targetSites = allSites.filter(s => s.isPublished);
+      }
+
+      const allSitesForComparison = await storage.getAllSites();
+      let crossSiteAvgPageViews = 0;
+      let crossSiteAvgLeads = 0;
+      let crossSiteCount = 0;
+
+      for (const site of allSitesForComparison) {
+        const dailyData = await storage.getAnalyticsDailySummary(site.id, thirtyDaysAgo, today);
+        const siteLeads = await storage.getLeadsBySiteIdWithFilters(site.id);
+        crossSiteAvgPageViews += dailyData.reduce((sum, d) => sum + (d.pageViews || 0), 0);
+        crossSiteAvgLeads += siteLeads.length;
+        crossSiteCount++;
+      }
+
+      if (crossSiteCount > 0) {
+        crossSiteAvgPageViews = Math.round(crossSiteAvgPageViews / crossSiteCount);
+        crossSiteAvgLeads = Math.round(crossSiteAvgLeads / crossSiteCount);
+      }
+
+      const allOptimizations = [];
+
+      for (const site of targetSites) {
+        const dailyData = await storage.getAnalyticsDailySummary(site.id, thirtyDaysAgo, today);
+        const siteLeads = await storage.getLeadsBySiteIdWithFilters(site.id);
+        const pages = await storage.getPagesBySiteId(site.id);
+
+        const sitePageViews = dailyData.reduce((sum, d) => sum + (d.pageViews || 0), 0);
+        const topPages = dailyData.length > 0 ? (dailyData[dailyData.length - 1].topPages || []) : [];
+        const topReferrers = dailyData.length > 0 ? (dailyData[dailyData.length - 1].topReferrers || []) : [];
+
+        const seoPrompt = `You are an SEO optimization expert for contractor/home service websites. Analyze this site's performance and provide specific, actionable SEO optimizations.
+
+SITE INFORMATION:
+- Business Name: ${site.businessName}
+- Trade Type: ${site.tradeType || 'general_contractor'}
+- Service Area: ${site.serviceArea || 'Local area'}
+- Services: ${(site.services || []).join(', ')}
+
+PERFORMANCE DATA (Last 30 days):
+- Total Page Views: ${sitePageViews}
+- Total Leads: ${siteLeads.length}
+- Top Pages: ${JSON.stringify(topPages)}
+- Top Referrers: ${JSON.stringify(topReferrers)}
+
+CROSS-SITE AVERAGES (for comparison):
+- Avg Page Views (30 days): ${crossSiteAvgPageViews}
+- Avg Leads (30 days): ${crossSiteAvgLeads}
+
+EXISTING PAGES:
+${pages.map(p => `- ${p.slug}: "${p.title}"`).join('\n')}
+
+Provide exactly 3 optimization recommendations as a JSON array. Each item should have:
+{
+  "type": "meta_tags" | "content" | "keywords" | "structure",
+  "page": "page_slug or null for site-wide",
+  "description": "Clear description of what to optimize",
+  "changesMade": { "before": "current value", "after": "recommended value" },
+  "crossSiteInsight": true/false (true if this recommendation is based on cross-site comparison)
+}
+
+Focus on:
+1. Meta title and description improvements for better CTR
+2. Content improvements for key landing pages
+3. Local SEO keyword optimization for their trade and service area
+
+Return ONLY valid JSON array, nothing else.`;
+
+        try {
+          const aiResponse = await anthropic.messages.create({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2048,
+            messages: [{ role: "user", content: seoPrompt }],
+          });
+
+          let responseText = aiResponse.content[0].type === "text" ? aiResponse.content[0].text : "[]";
+          responseText = responseText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+          const recommendations = JSON.parse(responseText);
+
+          for (const rec of recommendations) {
+            const optimization = await storage.createSeoOptimization({
+              siteId: site.id,
+              month: currentMonth,
+              type: rec.type || "meta_tags",
+              page: rec.page || null,
+              description: rec.description || "SEO optimization",
+              changesMade: rec.changesMade || {},
+              impactMetrics: { trafficBefore: sitePageViews, leadsBefore: siteLeads.length },
+              status: "applied",
+              crossSiteInsight: rec.crossSiteInsight || false,
+            });
+            allOptimizations.push(optimization);
+
+            if (rec.type === "meta_tags" && rec.page && rec.changesMade?.after) {
+              const targetPage = pages.find(p => p.slug === rec.page);
+              if (targetPage) {
+                const currentContent = (targetPage.content || {}) as Record<string, any>;
+                const updatedContent = { ...currentContent };
+                if (rec.changesMade.after && typeof rec.changesMade.after === 'string') {
+                  updatedContent.metaDescription = rec.changesMade.after;
+                }
+                await storage.updatePage(targetPage.id, { content: updatedContent });
+              }
+            }
+          }
+        } catch (aiError) {
+          console.error(`AI optimization error for site ${site.id}:`, aiError);
+          const fallbackOptimization = await storage.createSeoOptimization({
+            siteId: site.id,
+            month: currentMonth,
+            type: "meta_tags",
+            page: null,
+            description: "Review and update meta titles and descriptions for all pages",
+            changesMade: {},
+            impactMetrics: { trafficBefore: sitePageViews, leadsBefore: siteLeads.length },
+            status: "pending",
+            crossSiteInsight: false,
+          });
+          allOptimizations.push(fallbackOptimization);
+        }
+      }
+
+      res.json({ optimizations: allOptimizations });
+    } catch (error) {
+      console.error("Error running SEO optimization:", error);
+      res.status(500).json({ error: "Failed to run SEO optimization" });
     }
   });
 

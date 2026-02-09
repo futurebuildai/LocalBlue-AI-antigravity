@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, FileText, Settings, Users, MessageSquare, LogOut, ExternalLink, Globe } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, Users, MessageSquare, LogOut, ExternalLink, Globe, BarChart3 } from "lucide-react";
 import type { Site, User } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -35,6 +35,7 @@ const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Pages", url: "/pages", icon: FileText },
   { title: "Leads", url: "/leads", icon: MessageSquare },
+  { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Users", url: "/users", icon: Users },
   { title: "Settings", url: "/settings", icon: Settings },
 ];

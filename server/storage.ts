@@ -1,6 +1,7 @@
 import { 
   tenantUsers, sites, conversations, messages, pages, leads,
   onboardingProgress, sitePhotos, testimonials, servicePricing, appointments, chatbotConversations,
+  leadNotes, analyticsEvents, analyticsDaily, seoMetrics, seoOptimizations,
   type TenantUser, type InsertTenantUser,
   type Site, type InsertSite,
   type Conversation, type Message,
@@ -11,10 +12,15 @@ import {
   type Testimonial, type InsertTestimonial,
   type ServicePricing, type InsertServicePricing,
   type Appointment, type InsertAppointment,
-  type ChatbotConversation, type InsertChatbotConversation
+  type ChatbotConversation, type InsertChatbotConversation,
+  type LeadNote, type InsertLeadNote,
+  type AnalyticsEvent, type InsertAnalyticsEvent,
+  type AnalyticsDaily, type InsertAnalyticsDaily,
+  type SeoMetric, type InsertSeoMetric,
+  type SeoOptimization, type InsertSeoOptimization
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Tenant User operations
@@ -84,6 +90,26 @@ export interface IStorage {
   getChatbotConversationsBySite(siteId: string): Promise<ChatbotConversation[]>;
   createChatbotConversation(conversation: InsertChatbotConversation): Promise<ChatbotConversation>;
   updateChatbotConversation(id: number, conversation: Partial<InsertChatbotConversation>): Promise<ChatbotConversation | undefined>;
+
+  // Lead CRM operations
+  updateLead(id: number, data: Partial<InsertLead>): Promise<Lead | undefined>;
+  getLeadById(id: number): Promise<Lead | undefined>;
+  getLeadsBySiteIdWithFilters(siteId: string, filters?: { stage?: string; priority?: string }): Promise<Lead[]>;
+
+  // Lead notes operations
+  getLeadNotes(leadId: number): Promise<LeadNote[]>;
+  createLeadNote(note: InsertLeadNote): Promise<LeadNote>;
+
+  // Analytics operations
+  createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
+  getAnalyticsDailySummary(siteId: string, startDate: string, endDate: string): Promise<AnalyticsDaily[]>;
+  upsertAnalyticsDaily(data: InsertAnalyticsDaily): Promise<AnalyticsDaily>;
+
+  // SEO operations
+  getSeoMetrics(siteId: string, month?: string): Promise<SeoMetric[]>;
+  createSeoMetric(metric: InsertSeoMetric): Promise<SeoMetric>;
+  getSeoOptimizations(siteId: string): Promise<SeoOptimization[]>;
+  createSeoOptimization(optimization: InsertSeoOptimization): Promise<SeoOptimization>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -343,6 +369,95 @@ export class DatabaseStorage implements IStorage {
       .where(eq(chatbotConversations.id, id))
       .returning();
     return updated || undefined;
+  }
+
+  // Lead CRM operations
+  async updateLead(id: number, data: Partial<InsertLead>): Promise<Lead | undefined> {
+    const [updated] = await db.update(leads).set(data).where(eq(leads.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getLeadById(id: number): Promise<Lead | undefined> {
+    const [lead] = await db.select().from(leads).where(eq(leads.id, id));
+    return lead || undefined;
+  }
+
+  async getLeadsBySiteIdWithFilters(siteId: string, filters?: { stage?: string; priority?: string }): Promise<Lead[]> {
+    const conditions = [eq(leads.siteId, siteId)];
+    if (filters?.stage) {
+      conditions.push(eq(leads.stage, filters.stage));
+    }
+    if (filters?.priority) {
+      conditions.push(eq(leads.priority, filters.priority));
+    }
+    return db.select().from(leads).where(and(...conditions)).orderBy(desc(leads.createdAt));
+  }
+
+  // Lead notes operations
+  async getLeadNotes(leadId: number): Promise<LeadNote[]> {
+    return db.select().from(leadNotes).where(eq(leadNotes.leadId, leadId)).orderBy(desc(leadNotes.createdAt));
+  }
+
+  async createLeadNote(note: InsertLeadNote): Promise<LeadNote> {
+    const [created] = await db.insert(leadNotes).values(note).returning();
+    return created;
+  }
+
+  // Analytics operations
+  async createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
+    const [created] = await db.insert(analyticsEvents).values(event).returning();
+    return created;
+  }
+
+  async getAnalyticsDailySummary(siteId: string, startDate: string, endDate: string): Promise<AnalyticsDaily[]> {
+    return db.select().from(analyticsDaily)
+      .where(and(
+        eq(analyticsDaily.siteId, siteId),
+        gte(analyticsDaily.date, startDate),
+        lte(analyticsDaily.date, endDate)
+      ))
+      .orderBy(analyticsDaily.date);
+  }
+
+  async upsertAnalyticsDaily(data: InsertAnalyticsDaily): Promise<AnalyticsDaily> {
+    const existing = await db.select().from(analyticsDaily)
+      .where(and(eq(analyticsDaily.siteId, data.siteId), eq(analyticsDaily.date, data.date)));
+    
+    if (existing.length > 0) {
+      const [updated] = await db.update(analyticsDaily)
+        .set(data)
+        .where(and(eq(analyticsDaily.siteId, data.siteId), eq(analyticsDaily.date, data.date)))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(analyticsDaily).values(data).returning();
+      return created;
+    }
+  }
+
+  // SEO operations
+  async getSeoMetrics(siteId: string, month?: string): Promise<SeoMetric[]> {
+    const conditions = [eq(seoMetrics.siteId, siteId)];
+    if (month) {
+      conditions.push(eq(seoMetrics.month, month));
+    }
+    return db.select().from(seoMetrics).where(and(...conditions)).orderBy(desc(seoMetrics.month));
+  }
+
+  async createSeoMetric(metric: InsertSeoMetric): Promise<SeoMetric> {
+    const [created] = await db.insert(seoMetrics).values(metric).returning();
+    return created;
+  }
+
+  async getSeoOptimizations(siteId: string): Promise<SeoOptimization[]> {
+    return db.select().from(seoOptimizations)
+      .where(eq(seoOptimizations.siteId, siteId))
+      .orderBy(desc(seoOptimizations.createdAt));
+  }
+
+  async createSeoOptimization(optimization: InsertSeoOptimization): Promise<SeoOptimization> {
+    const [created] = await db.insert(seoOptimizations).values(optimization).returning();
+    return created;
   }
 }
 

@@ -1493,6 +1493,41 @@ export default function PublicSite({ site, isPreview }: PublicSiteProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (isPreview) return;
+    const sessionId = (() => {
+      let sid = sessionStorage.getItem("lb_sid");
+      if (!sid) {
+        sid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        sessionStorage.setItem("lb_sid", sid);
+      }
+      return sid;
+    })();
+    const deviceType = window.innerWidth < 768 ? "mobile" : window.innerWidth < 1024 ? "tablet" : "desktop";
+    const start = Date.now();
+    const trackView = () => {
+      const duration = Math.round((Date.now() - start) / 1000);
+      fetch("/api/site/analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          page: window.location.pathname,
+          referrer: document.referrer || null,
+          deviceType,
+          duration: duration > 0 ? duration : 1,
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    };
+    window.addEventListener("beforeunload", trackView);
+    const timer = setTimeout(trackView, 30000);
+    return () => {
+      window.removeEventListener("beforeunload", trackView);
+      clearTimeout(timer);
+    };
+  }, [isPreview]);
+
   const { data: homePage } = useQuery<Page>({
     queryKey: ["/api/site/pages", "home"],
     queryFn: async () => {

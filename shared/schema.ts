@@ -196,6 +196,23 @@ export const insertPageSchema = createInsertSchema(pages).omit({
 export type Page = typeof pages.$inferSelect;
 export type InsertPage = z.infer<typeof insertPageSchema>;
 
+// Lead stages and priorities for CRM
+export const LEAD_STAGES = [
+  "new",
+  "contacted",
+  "quoted",
+  "won",
+  "lost",
+] as const;
+export type LeadStage = typeof LEAD_STAGES[number];
+
+export const LEAD_PRIORITIES = [
+  "low",
+  "medium",
+  "high",
+] as const;
+export type LeadPriority = typeof LEAD_PRIORITIES[number];
+
 // Leads model for contact form submissions
 export const leads = pgTable("leads", {
   id: serial("id").primaryKey(),
@@ -204,6 +221,13 @@ export const leads = pgTable("leads", {
   email: text("email").notNull(),
   phone: text("phone"),
   message: text("message"),
+  stage: text("stage").$type<LeadStage>().notNull().default("new"),
+  priority: text("priority").$type<LeadPriority>().notNull().default("medium"),
+  source: text("source"),
+  nextFollowUpAt: timestamp("next_follow_up_at"),
+  lastContactedAt: timestamp("last_contacted_at"),
+  assignedTo: varchar("assigned_to").references(() => tenantUsers.id),
+  estimatedValue: integer("estimated_value"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
@@ -351,3 +375,111 @@ export const insertChatbotConversationSchema = createInsertSchema(chatbotConvers
 
 export type ChatbotConversation = typeof chatbotConversations.$inferSelect;
 export type InsertChatbotConversation = z.infer<typeof insertChatbotConversationSchema>;
+
+// Lead notes - CRM activity log
+export const leadNotes = pgTable("lead_notes", {
+  id: serial("id").primaryKey(),
+  leadId: integer("lead_id").notNull().references(() => leads.id, { onDelete: "cascade" }),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  authorId: varchar("author_id").references(() => tenantUsers.id),
+  content: text("content").notNull(),
+  type: text("type").notNull().default("note"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertLeadNoteSchema = createInsertSchema(leadNotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type LeadNote = typeof leadNotes.$inferSelect;
+export type InsertLeadNote = z.infer<typeof insertLeadNoteSchema>;
+
+// Analytics events - raw page view events
+export const analyticsEvents = pgTable("analytics_events", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  sessionId: text("session_id").notNull(),
+  page: text("page").notNull(),
+  referrer: text("referrer"),
+  userAgent: text("user_agent"),
+  deviceType: text("device_type"),
+  country: text("country"),
+  city: text("city"),
+  duration: integer("duration"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+
+// Analytics daily - daily rollup aggregates
+export const analyticsDaily = pgTable("analytics_daily", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  date: text("date").notNull(),
+  pageViews: integer("page_views").notNull().default(0),
+  uniqueVisitors: integer("unique_visitors").notNull().default(0),
+  avgSessionDuration: integer("avg_session_duration").default(0),
+  bounceRate: integer("bounce_rate").default(0),
+  topPages: jsonb("top_pages").$type<Array<{page: string, views: number}>>().default([]),
+  topReferrers: jsonb("top_referrers").$type<Array<{referrer: string, count: number}>>().default([]),
+  deviceBreakdown: jsonb("device_breakdown").$type<{desktop: number, mobile: number, tablet: number}>().default({desktop: 0, mobile: 0, tablet: 0}),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertAnalyticsDailySchema = createInsertSchema(analyticsDaily).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type AnalyticsDaily = typeof analyticsDaily.$inferSelect;
+export type InsertAnalyticsDaily = z.infer<typeof insertAnalyticsDailySchema>;
+
+// SEO metrics - monthly tracking
+export const seoMetrics = pgTable("seo_metrics", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  month: text("month").notNull(),
+  keywords: jsonb("keywords").$type<Array<{keyword: string, position: number | null, impressions: number, clicks: number}>>().default([]),
+  organicTraffic: integer("organic_traffic").default(0),
+  totalLeads: integer("total_leads").default(0),
+  conversionRate: integer("conversion_rate").default(0),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertSeoMetricSchema = createInsertSchema(seoMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type SeoMetric = typeof seoMetrics.$inferSelect;
+export type InsertSeoMetric = z.infer<typeof insertSeoMetricSchema>;
+
+// SEO optimizations - AI optimization history
+export const seoOptimizations = pgTable("seo_optimizations", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  month: text("month").notNull(),
+  type: text("type").notNull(),
+  page: text("page"),
+  description: text("description").notNull(),
+  changesMade: jsonb("changes_made").$type<Record<string, any>>().default({}),
+  impactMetrics: jsonb("impact_metrics").$type<{leadsBefore?: number, leadsAfter?: number, trafficBefore?: number, trafficAfter?: number}>().default({}),
+  status: text("status").notNull().default("applied"),
+  crossSiteInsight: boolean("cross_site_insight").notNull().default(false),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertSeoOptimizationSchema = createInsertSchema(seoOptimizations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type SeoOptimization = typeof seoOptimizations.$inferSelect;
+export type InsertSeoOptimization = z.infer<typeof insertSeoOptimizationSchema>;

@@ -24,6 +24,7 @@
 11. [Interactive Components Deep Dive](#11-interactive-components-deep-dive)
 12. [Product Roadmap Vision](#12-product-roadmap-vision)
 13. [Success Metrics](#13-success-metrics)
+14. [Analytics & Lead Management Systems](#14-analytics--lead-management-systems)
 
 ---
 
@@ -1172,6 +1173,7 @@ The platform includes a custom React hook (`useSeo`) that dynamically sets:
 
 | Feature | Priority |
 |---------|----------|
+| **AI-Powered Website Editor (Premium Tier)** | High |
 | Multi-location support | High |
 | Reputation management (review collection & display) | High |
 | Google Ads integration | Medium |
@@ -1181,6 +1183,22 @@ The platform includes a custom React hook (`useSeo`) that dynamically sets:
 | Automated email follow-up sequences | High |
 | Blog/content management | Medium |
 | XML sitemap generation | Medium |
+
+#### AI-Powered Website Editor (Premium Tier - Future)
+
+**Vision:** A builder.io-style CMS with AI capabilities integrated directly into the tenant admin panel. Premium tier contractors will be able to visually edit their website with:
+
+| Feature | Description |
+|---------|-------------|
+| **Drag-and-drop page builder** | Visual editor where contractors can rearrange sections, add new blocks, and customize layouts without any code |
+| **AI content assistant** | Click any text block and ask AI to rewrite, expand, or optimize it for SEO and lead conversion |
+| **Smart component library** | Pre-built sections (hero variants, testimonial layouts, service grids, CTA blocks) that the AI can customize to the contractor's trade and brand |
+| **Real-time preview** | Live preview of changes across desktop, tablet, and mobile viewports |
+| **AI layout suggestions** | Based on the contractor's trade type and highest-converting patterns across all LocalBlue sites, the AI suggests optimal page layouts |
+| **Version history** | Undo/redo with full version history of all changes |
+| **Template marketplace** | Premium contractors can browse and apply curated templates designed for their specific trade |
+
+This feature represents the "Scale" plan's premium value proposition — turning LocalBlue from a website builder into a full AI-powered web presence management platform.
 
 ### Q3 2026: Expansion
 
@@ -1268,6 +1286,55 @@ LTV (24-month, 5% churn):           $1,343
 LTV:CAC Ratio:                      8.9:1
 Payback Period:                      1.9 months
 ```
+
+---
+
+## 14. Analytics & Lead Management Systems
+
+### Site Analytics & Intelligent Optimization Engine
+
+#### Current Implementation
+
+| Feature | Description |
+|---------|-------------|
+| **Analytics Tracking** | Lightweight client-side tracking on all public contractor sites captures page views, visitor sessions, referral sources, device types, and time on page |
+| **Analytics Dashboard** | Tenant admin dashboard showing traffic metrics (page views, unique visitors, session duration, bounce rate), traffic charts, top pages, referral sources, and device breakdown |
+| **SEO Keyword Tracking** | Keyword data is stored and displayed with positions, impressions, clicks, and conversion rates; keyword discovery/ingestion requires manual entry or future Google Search Console integration |
+| **AI-Powered Monthly Optimization** | Platform admin manually triggers AI analysis (not automated) that analyzes each site's traffic patterns, compares performance against cross-site averages for similar trades, generates specific improvements, and auto-applies safe changes (meta tags, page titles/descriptions) |
+| **Cross-Site Learning** | Implemented in the AI optimization prompt (not a separate ML system) — it pulls cross-site averages for the same trade type to inform individual site improvement recommendations |
+
+#### Data Models
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| `analytics_events` | Individual page view and interaction tracking | siteId, visitorId, eventType, pageUrl, referrer, deviceType, timestamp |
+| `analytics_daily` | Daily rolled-up metrics | siteId, date, pageViews, uniqueVisitors, avgSessionDuration, bounceRate |
+| `seo_metrics` | SEO performance tracking | siteId, keyword, position, impressions, clicks, conversionRate, trackingDate |
+| `seo_optimizations` | Applied SEO improvements | siteId, optimizationType (metaTag/title/description), appliedAt, impactMetric |
+
+---
+
+### Lead Management CRM
+
+#### Current Implementation (Built)
+
+| Feature | Description |
+|---------|-------------|
+| **Pipeline Stages** | Leads flow through structured stages: New → Contacted → Quoted → Won / Lost |
+| **Priority System** | Low / Medium / High priority tagging for lead prioritization and follow-up urgency |
+| **Source Tracking** | Automatically tags leads by origin: contact form, chatbot, quote calculator, appointment request |
+| **Lead Notes & Activity** | Add notes (general note, call log, email log) to each lead for team collaboration and context |
+| **Follow-up Reminders** | Set next follow-up dates with overdue highlighting and automated reminders |
+| **Estimated Value** | Track estimated project value per lead for pipeline forecasting |
+| **CRM Metrics** | Displays conversion rate, average response time, stage distribution, and total pipeline value |
+| **Pipeline Visualization** | Visual funnel showing lead counts per stage and conversion rates |
+
+#### Data Models
+
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| `leads` | Lead records (extended with CRM fields) | siteId, name, email, phone, message, stage (new/contacted/quoted/won/lost), priority (low/medium/high), source (form/chatbot/quote/appointment), nextFollowUpAt, lastContactedAt, assignedTo, estimatedValue |
+| `lead_notes` | Activity log and notes per lead | leadId, noteType (note/callLog/emailLog), content, createdBy, createdAt |
 
 ---
 

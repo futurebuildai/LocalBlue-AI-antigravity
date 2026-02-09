@@ -38,7 +38,8 @@ import TenantSettings from "@/pages/tenant-admin/Settings";
 import TenantUsers from "@/pages/tenant-admin/TenantUsers";
 import TenantPages from "@/pages/tenant-admin/Pages";
 import TenantPageEditor from "@/pages/tenant-admin/PageEditor";
-import TenantLeads from "@/pages/tenant-admin/Leads";
+import TenantLeads from "@/pages/tenant-admin/LeadsCRM";
+import TenantAnalytics from "@/pages/tenant-admin/Analytics";
 import TenantAdminLayout from "@/components/TenantAdminLayout";
 import PublicSite from "@/pages/PublicSite";
 import PreviewSite from "@/pages/PreviewSite";
@@ -265,6 +266,9 @@ function TenantAdminApp() {
         </Route>
         <Route path="/leads">
           <TenantLeads />
+        </Route>
+        <Route path="/analytics">
+          <TenantAnalytics />
         </Route>
         <Route component={NotFound} />
       </Switch>
