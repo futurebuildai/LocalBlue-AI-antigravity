@@ -1090,7 +1090,7 @@ function ContactSection({ site }: { site: Site }) {
                   <p className="font-semibold text-base sm:text-lg">Phone</p>
                   <p className="text-muted-foreground text-sm sm:text-base truncate">{site.phone}</p>
                   <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-                    {['plumber', 'electrician', 'hvac'].includes(site.tradeType) 
+                    {['plumber', 'electrician', 'hvac'].includes(site.tradeType || '') 
                       ? 'Available for emergency calls 24/7' 
                       : 'Call us for a free estimate'}
                   </p>
