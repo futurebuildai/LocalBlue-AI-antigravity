@@ -276,6 +276,7 @@ function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean })
 
 function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
   
   // Use rich content from AI generation
   const headline = homePage?.content?.heroHeadline || site.tagline || site.businessName;
@@ -289,8 +290,11 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
   const TradeIcon = getTradeIcon(site.tradeType);
   const styleClasses = getStyleClasses(site.stylePreference);
   
-  // Get trade-specific hero background image
-  const heroImage = site.tradeType ? TRADE_HERO_IMAGES[site.tradeType] : generalContractorHero;
+  // Determine hero background: uploaded hero photo > first project photo > stock trade image
+  const heroPhoto = photos?.find(p => p.type === "hero");
+  const firstProjectPhoto = photos?.find(p => p.type === "project");
+  const stockImage = site.tradeType ? TRADE_HERO_IMAGES[site.tradeType] : generalContractorHero;
+  const heroImage = heroPhoto?.url || firstProjectPhoto?.url || stockImage;
   
   const getOverlayStyle = () => {
     if (styleClasses.isLuxury) {
@@ -700,35 +704,40 @@ function AboutSection({ site, aboutPage }: { site: Site; aboutPage?: Page }) {
 function GallerySection({ site }: { site: Site }) {
   const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
   const [selectedPhoto, setSelectedPhoto] = useState<SitePhoto | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
 
   if (!photos || photos.length === 0) return null;
 
   const displayPhotos = photos.filter(p => p.type !== "logo" && p.type !== "hero");
   if (displayPhotos.length === 0) return null;
 
-  const photoGroups: { label: string; photos: SitePhoto[] }[] = [];
+  const categories: { key: string; label: string; photos: SitePhoto[] }[] = [];
 
   const projectPhotos = displayPhotos.filter(p => p.type === "project");
   if (projectPhotos.length > 0) {
-    photoGroups.push({ label: "Our Projects", photos: projectPhotos });
+    categories.push({ key: "projects", label: "Our Projects", photos: projectPhotos });
   }
 
   const beforeAfterPhotos = displayPhotos.filter(p => p.type === "before" || p.type === "after");
   if (beforeAfterPhotos.length > 0) {
-    photoGroups.push({ label: "Before & After", photos: beforeAfterPhotos });
+    categories.push({ key: "before-after", label: "Before & After", photos: beforeAfterPhotos });
   }
 
   const teamPhotos = displayPhotos.filter(p => p.type === "team");
   if (teamPhotos.length > 0) {
-    photoGroups.push({ label: "Our Team", photos: teamPhotos });
+    categories.push({ key: "team", label: "Our Team", photos: teamPhotos });
   }
 
   const servicePhotos = displayPhotos.filter(p => p.type === "service");
   if (servicePhotos.length > 0) {
-    photoGroups.push({ label: "Our Services", photos: servicePhotos });
+    categories.push({ key: "services", label: "Our Services", photos: servicePhotos });
   }
 
-  if (photoGroups.length === 0) return null;
+  if (categories.length === 0) return null;
+
+  const filteredPhotos = activeCategory === "all"
+    ? displayPhotos
+    : categories.find(c => c.key === activeCategory)?.photos || [];
 
   return (
     <section id="gallery" className="py-12 sm:py-20 md:py-28 bg-muted/30" data-testid="section-gallery">
@@ -747,40 +756,53 @@ function GallerySection({ site }: { site: Site }) {
           </p>
         </div>
 
-        {photoGroups.map((group) => (
-          <div key={group.label} className="mb-10 sm:mb-14 last:mb-0">
-            <h3
-              className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6"
-              style={{ color: site.brandColor }}
-              data-testid={`text-gallery-group-${group.label.toLowerCase().replace(/\s+/g, '-')}`}
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-12" data-testid="gallery-filter-tabs">
+          <Button
+            variant="ghost"
+            className={`toggle-elevate ${activeCategory === "all" ? "toggle-elevated" : ""}`}
+            style={activeCategory === "all" ? { backgroundColor: `${site.brandColor}15`, color: site.brandColor } : undefined}
+            onClick={() => setActiveCategory("all")}
+            data-testid="gallery-tab-all"
+          >
+            All ({displayPhotos.length})
+          </Button>
+          {categories.map((cat) => (
+            <Button
+              key={cat.key}
+              variant="ghost"
+              className={`toggle-elevate ${activeCategory === cat.key ? "toggle-elevated" : ""}`}
+              style={activeCategory === cat.key ? { backgroundColor: `${site.brandColor}15`, color: site.brandColor } : undefined}
+              onClick={() => setActiveCategory(cat.key)}
+              data-testid={`gallery-tab-${cat.key}`}
             >
-              {group.label}
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {group.photos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className="group relative aspect-square rounded-lg cursor-pointer hover-elevate"
-                  onClick={() => setSelectedPhoto(photo)}
-                  data-testid={`gallery-photo-${photo.id}`}
-                >
-                  <img
-                    src={photo.url}
-                    alt={photo.caption || `${group.label} photo`}
-                    className="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 rounded-lg" />
-                  {photo.caption && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <p className="text-white text-sm truncate">{photo.caption}</p>
-                    </div>
-                  )}
+              {cat.label} ({cat.photos.length})
+            </Button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
+          {filteredPhotos.map((photo) => (
+            <div
+              key={photo.id}
+              className="group relative aspect-square rounded-lg cursor-pointer hover-elevate"
+              onClick={() => setSelectedPhoto(photo)}
+              data-testid={`gallery-photo-${photo.id}`}
+            >
+              <img
+                src={photo.url}
+                alt={photo.caption || "Gallery photo"}
+                className="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 rounded-lg" />
+              {photo.caption && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <p className="text-white text-sm truncate">{photo.caption}</p>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <Dialog
