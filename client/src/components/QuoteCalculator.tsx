@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { usePreview } from "@/contexts/PreviewContext";
 
 const PROJECT_SIZES = [
   { value: "small", label: "Small Project", multiplier: 1 },
@@ -46,6 +47,7 @@ interface QuoteCalculatorProps {
 
 export function QuoteCalculator({ siteId, services, phone }: QuoteCalculatorProps) {
   const { toast } = useToast();
+  const { getSitePath } = usePreview();
   const [priceRange, setPriceRange] = useState<{ low: number; high: number } | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -79,7 +81,7 @@ export function QuoteCalculator({ siteId, services, phone }: QuoteCalculatorProp
     mutationFn: async (data: QuoteFormData) => {
       const message = `Quote Request:\nService: ${data.serviceType}\nProject Size: ${data.projectSize}\nUrgency: ${data.urgency}\nEstimated Range: $${priceRange?.low} - $${priceRange?.high}`;
       
-      const response = await apiRequest("POST", "/api/site/leads", {
+      const response = await apiRequest("POST", getSitePath("/api/site/leads"), {
         siteId,
         name: data.name,
         email: data.email,

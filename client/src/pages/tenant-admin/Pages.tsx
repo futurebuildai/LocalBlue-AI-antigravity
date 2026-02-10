@@ -3,11 +3,13 @@ import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, ChevronRight } from "lucide-react";
+import { usePreview } from "@/contexts/PreviewContext";
 import type { Page } from "@shared/schema";
 
 export default function Pages() {
+  const { getApiPath } = usePreview();
   const { data: pages = [], isLoading } = useQuery<Page[]>({
-    queryKey: ["/api/tenant/pages"],
+    queryKey: [getApiPath("/api/tenant/pages")],
   });
 
   if (isLoading) {

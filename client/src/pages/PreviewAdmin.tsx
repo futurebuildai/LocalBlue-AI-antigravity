@@ -8,8 +8,10 @@ import TenantDashboard from "./tenant-admin/Dashboard";
 import TenantPages from "./tenant-admin/Pages";
 import TenantPageEditor from "./tenant-admin/PageEditor";
 import TenantSettings from "./tenant-admin/Settings";
-import TenantLeads from "./tenant-admin/Leads";
+import TenantLeads from "./tenant-admin/LeadsCRM";
 import TenantUsers from "./tenant-admin/TenantUsers";
+import TenantAnalytics from "./tenant-admin/Analytics";
+import { PreviewProvider } from "@/contexts/PreviewContext";
 import type { Site } from "@shared/schema";
 
 export default function PreviewAdmin() {
@@ -75,55 +77,60 @@ export default function PreviewAdmin() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="bg-amber-500 text-white py-2 px-4 flex items-center justify-between sticky top-0 z-[60]">
-        <div className="flex items-center gap-3">
-          <Eye className="h-4 w-4" />
-          <span className="text-sm font-medium">Admin Preview Mode</span>
-          <Badge variant="secondary" className="text-xs bg-white/20 text-white">
-            {site.isPublished ? "Published" : "Draft"}
-          </Badge>
+    <PreviewProvider subdomain={subdomain!}>
+      <div className="min-h-screen flex flex-col">
+        <div className="bg-amber-500 text-white py-2 px-4 flex items-center justify-between sticky top-0 z-[60]">
+          <div className="flex items-center gap-3">
+            <Eye className="h-4 w-4" />
+            <span className="text-sm font-medium">Admin Preview Mode</span>
+            <Badge variant="secondary" className="text-xs bg-white/20 text-white">
+              {site.isPublished ? "Published" : "Draft"}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm opacity-80">{site.businessName}</span>
+            <Link href={`/preview/${subdomain}`}>
+              <Button size="sm" variant="secondary" data-testid="button-view-site">
+                <Eye className="h-3 w-3 mr-1" />
+                View Site
+              </Button>
+            </Link>
+            <Link href="/">
+              <Button size="sm" variant="secondary" data-testid="button-back-dashboard">
+                <ArrowLeft className="h-3 w-3 mr-1" />
+                Back
+              </Button>
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm opacity-80">{site.businessName}</span>
-          <Link href={`/preview/${subdomain}`}>
-            <Button size="sm" variant="secondary" data-testid="button-view-site">
-              <Eye className="h-3 w-3 mr-1" />
-              View Site
-            </Button>
-          </Link>
-          <Link href="/">
-            <Button size="sm" variant="secondary" data-testid="button-back-dashboard">
-              <ArrowLeft className="h-3 w-3 mr-1" />
-              Back
-            </Button>
-          </Link>
+        <div className="flex-1">
+          <TenantAdminLayout site={site} user={previewUser} onLogout={handleLogout} basePath={`/preview/${subdomain}/admin`}>
+            <Switch>
+              <Route path="/preview/:subdomain/admin/pages/:slug">
+                <TenantPageEditor />
+              </Route>
+              <Route path="/preview/:subdomain/admin/pages">
+                <TenantPages />
+              </Route>
+              <Route path="/preview/:subdomain/admin/leads">
+                <TenantLeads />
+              </Route>
+              <Route path="/preview/:subdomain/admin/analytics">
+                <TenantAnalytics />
+              </Route>
+              <Route path="/preview/:subdomain/admin/users">
+                <TenantUsers />
+              </Route>
+              <Route path="/preview/:subdomain/admin/settings">
+                <TenantSettings site={site} />
+              </Route>
+              <Route path="/preview/:subdomain/admin">
+                <TenantDashboard site={site} />
+              </Route>
+            </Switch>
+          </TenantAdminLayout>
         </div>
       </div>
-      <div className="flex-1">
-        <TenantAdminLayout site={site} user={previewUser} onLogout={handleLogout} basePath={`/preview/${subdomain}/admin`}>
-          <Switch>
-            <Route path="/preview/:subdomain/admin/pages/:slug">
-              <TenantPageEditor />
-            </Route>
-            <Route path="/preview/:subdomain/admin/pages">
-              <TenantPages />
-            </Route>
-            <Route path="/preview/:subdomain/admin/leads">
-              <TenantLeads />
-            </Route>
-            <Route path="/preview/:subdomain/admin/users">
-              <TenantUsers />
-            </Route>
-            <Route path="/preview/:subdomain/admin/settings">
-              <TenantSettings site={site} />
-            </Route>
-            <Route path="/preview/:subdomain/admin">
-              <TenantDashboard site={site} />
-            </Route>
-          </Switch>
-        </TenantAdminLayout>
-      </div>
-    </div>
+    </PreviewProvider>
   );
 }

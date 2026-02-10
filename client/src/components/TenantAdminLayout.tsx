@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LayoutDashboard, FileText, Settings, Users, MessageSquare, LogOut, ExternalLink, Globe, BarChart3 } from "lucide-react";
+import { usePreview } from "@/contexts/PreviewContext";
 import type { Site, User } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -43,6 +44,7 @@ const navItems = [
 export default function TenantAdminLayout({ site, user, onLogout, children, basePath = "" }: TenantAdminLayoutProps) {
   const [location] = useLocation();
   const { toast } = useToast();
+  const { isPreview, subdomain, getApiPath } = usePreview();
   
   const getNavUrl = (url: string) => {
     if (!basePath) return url;
@@ -60,10 +62,10 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/tenant/auth/logout", {});
+      return apiRequest("POST", getApiPath("/api/tenant/auth/logout"), {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/auth/me")] });
       toast({ title: "Logged out successfully" });
       onLogout();
     },
@@ -150,7 +152,7 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <a 
-                        href={site.customDomain ? `https://${site.customDomain}` : `https://${site.subdomain}.localblue`}
+                        href={isPreview ? `/preview/${subdomain}` : (site.customDomain ? `https://${site.customDomain}` : `https://${site.subdomain}.localblue`)}
                         target="_blank"
                         rel="noopener noreferrer"
                         data-testid="link-view-site"

@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { usePreview } from "@/contexts/PreviewContext";
 import { cn } from "@/lib/utils";
 
 const TIME_SLOTS = [
@@ -42,6 +43,7 @@ interface AppointmentSchedulerProps {
 
 export function AppointmentScheduler({ siteId, services }: AppointmentSchedulerProps) {
   const { toast } = useToast();
+  const { getApiPath } = usePreview();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState<AppointmentFormData | null>(null);
 
@@ -60,7 +62,7 @@ export function AppointmentScheduler({ siteId, services }: AppointmentSchedulerP
 
   const submitMutation = useMutation({
     mutationFn: async (data: AppointmentFormData) => {
-      const response = await apiRequest("POST", "/api/tenant/appointments", {
+      const response = await apiRequest("POST", getApiPath("/api/tenant/appointments"), {
         customerName: data.name,
         customerEmail: data.email,
         customerPhone: data.phone || null,

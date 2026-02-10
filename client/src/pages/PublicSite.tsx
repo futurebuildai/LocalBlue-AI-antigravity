@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { usePreview } from "@/contexts/PreviewContext";
 import { 
   Phone, 
   Mail, 
@@ -125,7 +126,15 @@ function getStyleClasses(stylePreference?: StylePreference | null) {
 
 function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
+  const { getSitePath } = usePreview();
+  const { data: photos } = useQuery<SitePhoto[]>({
+    queryKey: [getSitePath("/api/site/photos")],
+    queryFn: async () => {
+      const res = await fetch(getSitePath("/api/site/photos"));
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
   const logoPhoto = photos?.find(p => p.type === "logo");
 
   const scrollToSection = (id: string) => {
@@ -277,7 +286,15 @@ function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean })
 
 function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
+  const { getSitePath } = usePreview();
+  const { data: photos } = useQuery<SitePhoto[]>({
+    queryKey: [getSitePath("/api/site/photos")],
+    queryFn: async () => {
+      const res = await fetch(getSitePath("/api/site/photos"));
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
   
   // Use rich content from AI generation
   const headline = homePage?.content?.heroHeadline || site.tagline || site.businessName;
@@ -750,7 +767,15 @@ function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Pa
   const services = allServices.slice(0, 6);
   const TradeIcon = getTradeIcon(site.tradeType);
   const styleClasses = getStyleClasses(site.stylePreference);
-  const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
+  const { getSitePath } = usePreview();
+  const { data: photos } = useQuery<SitePhoto[]>({
+    queryKey: [getSitePath("/api/site/photos")],
+    queryFn: async () => {
+      const res = await fetch(getSitePath("/api/site/photos"));
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
   
   const serviceDescriptions = servicesPage?.content?.servicesList?.reduce((acc: Record<string, string>, item: { name: string; description: string }) => {
     acc[item.name] = item.description;
@@ -980,7 +1005,15 @@ function AboutSection({ site, aboutPage }: { site: Site; aboutPage?: Page }) {
 }
 
 function GallerySection({ site }: { site: Site }) {
-  const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
+  const { getSitePath } = usePreview();
+  const { data: photos } = useQuery<SitePhoto[]>({
+    queryKey: [getSitePath("/api/site/photos")],
+    queryFn: async () => {
+      const res = await fetch(getSitePath("/api/site/photos"));
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
   const [selectedPhoto, setSelectedPhoto] = useState<SitePhoto | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const styleClasses = getStyleClasses(site.stylePreference);
@@ -1127,8 +1160,14 @@ function GallerySection({ site }: { site: Site }) {
 }
 
 function TestimonialsSection({ site }: { site: Site }) {
+  const { getSitePath } = usePreview();
   const { data: testimonials = [] } = useQuery<Testimonial[]>({
-    queryKey: ["/api/site/testimonials"],
+    queryKey: [getSitePath("/api/site/testimonials")],
+    queryFn: async () => {
+      const res = await fetch(getSitePath("/api/site/testimonials"));
+      if (!res.ok) return [];
+      return res.json();
+    },
   });
   const styleClasses = getStyleClasses(site.stylePreference);
 
@@ -1367,6 +1406,7 @@ function ServiceAreaSection({ site }: { site: Site }) {
 
 function ContactSection({ site }: { site: Site }) {
   const { toast } = useToast();
+  const { getSitePath } = usePreview();
   const [submitted, setSubmitted] = useState(false);
   const styleClasses = getStyleClasses(site.stylePreference);
 
@@ -1388,7 +1428,7 @@ function ContactSection({ site }: { site: Site }) {
         return { success: true };
       }
       const { website, ...leadData } = data;
-      const response = await apiRequest("POST", "/api/site/leads", leadData);
+      const response = await apiRequest("POST", getSitePath("/api/site/leads"), leadData);
       return response.json();
     },
     onSuccess: () => {
@@ -1859,6 +1899,7 @@ function ComingSoon({ site }: { site: Site }) {
 }
 
 export default function PublicSite({ site, isPreview }: PublicSiteProps) {
+  const { getSitePath } = usePreview();
   const [isScrolled, setIsScrolled] = useState(false);
 
   const tradeLabel = site.tradeType && TRADE_TEMPLATES[site.tradeType] 
@@ -1907,7 +1948,7 @@ export default function PublicSite({ site, isPreview }: PublicSiteProps) {
     const start = Date.now();
     const trackView = () => {
       const duration = Math.round((Date.now() - start) / 1000);
-      fetch("/api/site/analytics", {
+      fetch(getSitePath("/api/site/analytics"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1929,27 +1970,27 @@ export default function PublicSite({ site, isPreview }: PublicSiteProps) {
   }, [isPreview]);
 
   const { data: homePage } = useQuery<Page>({
-    queryKey: ["/api/site/pages", "home"],
+    queryKey: [getSitePath("/api/site/pages"), "home"],
     queryFn: async () => {
-      const res = await fetch("/api/site/pages/home");
+      const res = await fetch(getSitePath("/api/site/pages/home"));
       if (!res.ok) return null;
       return res.json();
     },
   });
 
   const { data: aboutPage } = useQuery<Page>({
-    queryKey: ["/api/site/pages", "about"],
+    queryKey: [getSitePath("/api/site/pages"), "about"],
     queryFn: async () => {
-      const res = await fetch("/api/site/pages/about");
+      const res = await fetch(getSitePath("/api/site/pages/about"));
       if (!res.ok) return null;
       return res.json();
     },
   });
 
   const { data: servicesPage } = useQuery<Page>({
-    queryKey: ["/api/site/pages", "services"],
+    queryKey: [getSitePath("/api/site/pages"), "services"],
     queryFn: async () => {
-      const res = await fetch("/api/site/pages/services");
+      const res = await fetch(getSitePath("/api/site/pages/services"));
       if (!res.ok) return null;
       return res.json();
     },

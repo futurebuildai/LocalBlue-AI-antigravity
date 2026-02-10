@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Eye, LayoutDashboard } from "lucide-react";
 import PublicSite from "./PublicSite";
+import { PreviewProvider } from "@/contexts/PreviewContext";
 import type { Site } from "@shared/schema";
 
 export default function PreviewSite() {
@@ -49,32 +50,34 @@ export default function PreviewSite() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="bg-blue-600 text-white py-2 px-4 flex flex-wrap items-center justify-between gap-2 sticky top-0 z-50">
-        <div className="flex flex-wrap items-center gap-3">
-          <Eye className="h-4 w-4" />
-          <span className="text-sm font-medium">Preview Mode</span>
-          <Badge variant="secondary" className="text-xs">
-            {site.isPublished ? "Published" : "Draft"}
-          </Badge>
-          <span className="text-sm opacity-80">{site.businessName}</span>
+    <PreviewProvider subdomain={subdomain!}>
+      <div className="min-h-screen">
+        <div className="bg-blue-600 text-white py-2 px-4 flex flex-wrap items-center justify-between gap-2 sticky top-0 z-50">
+          <div className="flex flex-wrap items-center gap-3">
+            <Eye className="h-4 w-4" />
+            <span className="text-sm font-medium">Preview Mode</span>
+            <Badge variant="secondary" className="text-xs">
+              {site.isPublished ? "Published" : "Draft"}
+            </Badge>
+            <span className="text-sm opacity-80">{site.businessName}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={`/admin/sites/${site.id}`}>
+              <Button size="sm" variant="secondary" data-testid="button-manage-site">
+                <LayoutDashboard className="h-3 w-3 mr-1" />
+                Manage Site
+              </Button>
+            </Link>
+            <Link href="/">
+              <Button size="sm" variant="secondary" data-testid="button-back-dashboard">
+                <ArrowLeft className="h-3 w-3 mr-1" />
+                Back
+              </Button>
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/admin/sites/${site.id}`}>
-            <Button size="sm" variant="secondary" data-testid="button-manage-site">
-              <LayoutDashboard className="h-3 w-3 mr-1" />
-              Manage Site
-            </Button>
-          </Link>
-          <Link href="/">
-            <Button size="sm" variant="secondary" data-testid="button-back-dashboard">
-              <ArrowLeft className="h-3 w-3 mr-1" />
-              Back
-            </Button>
-          </Link>
-        </div>
+        <PublicSite site={site} isPreview />
       </div>
-      <PublicSite site={site} isPreview />
-    </div>
+    </PreviewProvider>
   );
 }

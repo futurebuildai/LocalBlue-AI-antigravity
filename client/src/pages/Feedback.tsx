@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, CheckCircle, Type, Palette, FileText, LayoutGrid, ArrowRight, RefreshCw } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { usePreview } from "@/contexts/PreviewContext";
 import PublicSite from "./PublicSite";
 import type { Site } from "@shared/schema";
 
@@ -22,6 +23,7 @@ export default function Feedback() {
   const { subdomain } = useParams<{ subdomain: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { getSitePath } = usePreview();
   const [feedbackText, setFeedbackText] = useState("");
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -58,7 +60,7 @@ export default function Feedback() {
 
     setIsRegenerating(true);
     try {
-      const response = await apiRequest("POST", "/api/site/feedback", {
+      const response = await apiRequest("POST", getSitePath("/api/site/feedback"), {
         feedback: feedbackText.trim(),
         sections: selectedSections.length > 0 ? selectedSections : undefined,
       });

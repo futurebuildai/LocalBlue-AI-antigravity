@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { usePreview } from "@/contexts/PreviewContext";
 import type { Lead, LeadNote } from "@shared/schema";
 import { LEAD_STAGES, LEAD_PRIORITIES } from "@shared/schema";
 
@@ -252,15 +253,16 @@ function LeadDetailDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { toast } = useToast();
+  const { getApiPath } = usePreview();
   const [noteContent, setNoteContent] = useState("");
   const [noteType, setNoteType] = useState("note");
   const [editValue, setEditValue] = useState("");
   const [editFollowUp, setEditFollowUp] = useState("");
 
   const { data: notes = [], isLoading: notesLoading } = useQuery<LeadNote[]>({
-    queryKey: ["/api/tenant/leads", lead?.id, "notes"],
+    queryKey: [getApiPath("/api/tenant/leads"), lead?.id, "notes"],
     queryFn: async () => {
-      const res = await fetch(`/api/tenant/leads/${lead!.id}/notes`, { credentials: "include" });
+      const res = await fetch(getApiPath(`/api/tenant/leads/${lead!.id}/notes`), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch notes");
       return res.json();
     },
@@ -269,11 +271,11 @@ function LeadDetailDialog({
 
   const stageMutation = useMutation({
     mutationFn: async (stage: string) => {
-      await apiRequest("PATCH", `/api/tenant/leads/${lead!.id}/stage`, { stage });
+      await apiRequest("PATCH", getApiPath(`/api/tenant/leads/${lead!.id}/stage`), { stage });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads/metrics"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads/metrics")] });
       toast({ title: "Stage updated" });
     },
     onError: (err: Error) => {
@@ -283,11 +285,11 @@ function LeadDetailDialog({
 
   const priorityMutation = useMutation({
     mutationFn: async (priority: string) => {
-      await apiRequest("PATCH", `/api/tenant/leads/${lead!.id}/priority`, { priority });
+      await apiRequest("PATCH", getApiPath(`/api/tenant/leads/${lead!.id}/priority`), { priority });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads/metrics"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads/metrics")] });
       toast({ title: "Priority updated" });
     },
     onError: (err: Error) => {
@@ -297,11 +299,11 @@ function LeadDetailDialog({
 
   const updateMutation = useMutation({
     mutationFn: async (body: Record<string, unknown>) => {
-      await apiRequest("PATCH", `/api/tenant/leads/${lead!.id}`, body);
+      await apiRequest("PATCH", getApiPath(`/api/tenant/leads/${lead!.id}`), body);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads/metrics"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads/metrics")] });
       toast({ title: "Lead updated" });
     },
     onError: (err: Error) => {
@@ -311,10 +313,10 @@ function LeadDetailDialog({
 
   const addNoteMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", `/api/tenant/leads/${lead!.id}/notes`, { content: noteContent, type: noteType });
+      await apiRequest("POST", getApiPath(`/api/tenant/leads/${lead!.id}/notes`), { content: noteContent, type: noteType });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads", lead!.id, "notes"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads"), lead!.id, "notes"] });
       setNoteContent("");
       toast({ title: "Note added" });
     },
@@ -531,6 +533,7 @@ function LeadDetailDialog({
 
 export default function LeadsCRM() {
   const { toast } = useToast();
+  const { getApiPath } = usePreview();
   const [stageFilter, setStageFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -544,9 +547,10 @@ export default function LeadsCRM() {
   const queryString = queryParams.toString();
 
   const { data: leads = [], isLoading: leadsLoading } = useQuery<Lead[]>({
-    queryKey: ["/api/tenant/leads", queryString],
+    queryKey: [getApiPath("/api/tenant/leads"), queryString],
     queryFn: async () => {
-      const url = queryString ? `/api/tenant/leads?${queryString}` : "/api/tenant/leads";
+      const baseUrl = getApiPath("/api/tenant/leads");
+      const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch leads");
       return res.json();
@@ -554,16 +558,16 @@ export default function LeadsCRM() {
   });
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<LeadMetrics>({
-    queryKey: ["/api/tenant/leads/metrics"],
+    queryKey: [getApiPath("/api/tenant/leads/metrics")],
   });
 
   const stageMutation = useMutation({
     mutationFn: async ({ leadId, stage }: { leadId: number; stage: string }) => {
-      await apiRequest("PATCH", `/api/tenant/leads/${leadId}/stage`, { stage });
+      await apiRequest("PATCH", getApiPath(`/api/tenant/leads/${leadId}/stage`), { stage });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads/metrics"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads/metrics")] });
       toast({ title: "Stage updated" });
     },
     onError: (err: Error) => {
@@ -573,11 +577,11 @@ export default function LeadsCRM() {
 
   const priorityMutation = useMutation({
     mutationFn: async ({ leadId, priority }: { leadId: number; priority: string }) => {
-      await apiRequest("PATCH", `/api/tenant/leads/${leadId}/priority`, { priority });
+      await apiRequest("PATCH", getApiPath(`/api/tenant/leads/${leadId}/priority`), { priority });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/leads/metrics"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/leads/metrics")] });
       toast({ title: "Priority updated" });
     },
     onError: (err: Error) => {

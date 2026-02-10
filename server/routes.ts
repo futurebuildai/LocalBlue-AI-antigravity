@@ -348,6 +348,9 @@ export async function registerRoutes(
     }
   });
 
+  // Preview routes require platform admin authentication
+  app.use("/api/preview", requirePlatformAdmin);
+
   // Preview site by subdomain (for development)
   app.get("/api/preview/:subdomain", async (req, res) => {
     try {
@@ -362,7 +365,20 @@ export async function registerRoutes(
     }
   });
 
-  // Get pages for preview site
+  // List all pages for a preview site
+  app.get("/api/preview/:subdomain/pages", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const pages = await storage.getPagesBySiteId(site.id);
+      res.json(pages);
+    } catch (error) {
+      console.error("Error fetching pages for preview:", error);
+      res.status(500).json({ error: "Failed to fetch pages" });
+    }
+  });
+
+  // Get single page for preview site
   app.get("/api/preview/:subdomain/pages/:slug", async (req, res) => {
     try {
       const site = await storage.getSiteBySubdomain(req.params.subdomain);
@@ -377,6 +393,226 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching page for preview:", error);
       res.status(500).json({ error: "Failed to fetch page" });
+    }
+  });
+
+  // Get photos for preview site
+  app.get("/api/preview/:subdomain/photos", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const photos = await storage.getSitePhotos(site.id);
+      res.json(photos.filter(p => p.type !== 'logo'));
+    } catch (error) {
+      console.error("Error fetching photos for preview:", error);
+      res.status(500).json({ error: "Failed to fetch photos" });
+    }
+  });
+
+  // Get testimonials for preview site
+  app.get("/api/preview/:subdomain/testimonials", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const testimonials = await storage.getTestimonials(site.id);
+      res.json(testimonials);
+    } catch (error) {
+      console.error("Error fetching testimonials for preview:", error);
+      res.status(500).json({ error: "Failed to fetch testimonials" });
+    }
+  });
+
+  // Get lead metrics for preview
+  app.get("/api/preview/:subdomain/leads/metrics", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const leads = await storage.getLeadsBySiteId(site.id);
+      const now = new Date();
+      const thisMonth = leads.filter(l => { const d = new Date(l.createdAt); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+      const won = leads.filter(l => l.stage === 'won');
+      const totalValue = won.reduce((sum, l) => sum + (l.estimatedValue || 0), 0);
+      res.json({
+        total: leads.length,
+        thisMonth: thisMonth.length,
+        conversionRate: leads.length > 0 ? Math.round((won.length / leads.length) * 100) : 0,
+        totalValue,
+        byStage: { new: leads.filter(l => l.stage === 'new').length, contacted: leads.filter(l => l.stage === 'contacted').length, quoted: leads.filter(l => l.stage === 'quoted').length, won: won.length, lost: leads.filter(l => l.stage === 'lost').length }
+      });
+    } catch (error) {
+      console.error("Error fetching lead metrics for preview:", error);
+      res.status(500).json({ error: "Failed to fetch lead metrics" });
+    }
+  });
+
+  // Get leads for preview site
+  app.get("/api/preview/:subdomain/leads", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const leads = await storage.getLeadsBySiteId(site.id);
+      res.json(leads);
+    } catch (error) {
+      console.error("Error fetching leads for preview:", error);
+      res.status(500).json({ error: "Failed to fetch leads" });
+    }
+  });
+
+  // Get users for preview site
+  app.get("/api/preview/:subdomain/users", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const users = await storage.getTenantUsersBySiteId(site.id);
+      const sanitized = users.map(({ password, ...u }) => u);
+      res.json(sanitized);
+    } catch (error) {
+      console.error("Error fetching users for preview:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Get settings for preview site
+  app.get("/api/preview/:subdomain/settings", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      res.json(site);
+    } catch (error) {
+      console.error("Error fetching settings for preview:", error);
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  // Analytics summary for preview
+  app.get("/api/preview/:subdomain/analytics/summary", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      res.json({ dailyData: [], totals: { pageViews: 0, uniqueVisitors: 0, avgDuration: 0, bounceRate: 0 } });
+    } catch (error) {
+      console.error("Error fetching analytics for preview:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  // Get lead notes for preview
+  app.get("/api/preview/:subdomain/leads/:id/notes", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const notes = await storage.getLeadNotes(parseInt(req.params.id));
+      res.json(notes);
+    } catch (error) {
+      console.error("Error fetching lead notes for preview:", error);
+      res.status(500).json({ error: "Failed to fetch lead notes" });
+    }
+  });
+
+  // Toggle publish for preview site
+  app.post("/api/preview/:subdomain/publish", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const updatedSite = await storage.updateSite(site.id, { isPublished: !site.isPublished });
+      res.json(updatedSite);
+    } catch (error) {
+      console.error("Error toggling publish for preview:", error);
+      res.status(500).json({ error: "Failed to toggle publish" });
+    }
+  });
+
+  // Submit lead from preview site
+  app.post("/api/preview/:subdomain/leads", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const lead = await storage.createLead({ ...req.body, siteId: site.id });
+      res.json(lead);
+    } catch (error) {
+      console.error("Error creating lead for preview:", error);
+      res.status(500).json({ error: "Failed to create lead" });
+    }
+  });
+
+  // Create lead note for preview
+  app.post("/api/preview/:subdomain/leads/:id/notes", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const note = await storage.createLeadNote({ leadId: parseInt(req.params.id), siteId: site.id, content: req.body.content });
+      res.json(note);
+    } catch (error) {
+      console.error("Error creating lead note for preview:", error);
+      res.status(500).json({ error: "Failed to create lead note" });
+    }
+  });
+
+  // Update settings for preview
+  app.patch("/api/preview/:subdomain/settings", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const { businessName, brandColor, phone, email, address, enableChatbot, enableQuoteCalculator } = req.body;
+      const updatedSite = await storage.updateSite(site.id, { businessName, brandColor, phone, email, address, enableChatbot, enableQuoteCalculator });
+      res.json(updatedSite);
+    } catch (error) {
+      console.error("Error updating settings for preview:", error);
+      res.status(500).json({ error: "Failed to update settings" });
+    }
+  });
+
+  // Update page content for preview
+  app.patch("/api/preview/:subdomain/pages/:slug", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const page = await storage.getPageBySiteAndSlug(site.id, req.params.slug);
+      if (!page) return res.status(404).json({ error: "Page not found" });
+      const updated = await storage.updatePage(page.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating page for preview:", error);
+      res.status(500).json({ error: "Failed to update page" });
+    }
+  });
+
+  // Update lead stage for preview
+  app.patch("/api/preview/:subdomain/leads/:id/stage", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const lead = await storage.updateLead(parseInt(req.params.id), { stage: req.body.stage });
+      res.json(lead);
+    } catch (error) {
+      console.error("Error updating lead stage for preview:", error);
+      res.status(500).json({ error: "Failed to update lead stage" });
+    }
+  });
+
+  // Update lead priority for preview
+  app.patch("/api/preview/:subdomain/leads/:id/priority", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const lead = await storage.updateLead(parseInt(req.params.id), { priority: req.body.priority });
+      res.json(lead);
+    } catch (error) {
+      console.error("Error updating lead priority for preview:", error);
+      res.status(500).json({ error: "Failed to update lead priority" });
+    }
+  });
+
+  // Update lead for preview
+  app.patch("/api/preview/:subdomain/leads/:id", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain(req.params.subdomain);
+      if (!site) return res.status(404).json({ error: "Site not found" });
+      const lead = await storage.updateLead(parseInt(req.params.id), req.body);
+      res.json(lead);
+    } catch (error) {
+      console.error("Error updating lead for preview:", error);
+      res.status(500).json({ error: "Failed to update lead" });
     }
   });
 

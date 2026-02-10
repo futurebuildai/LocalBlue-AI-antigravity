@@ -15,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Rocket, EyeOff, CheckCircle, Circle } from "lucide-react";
+import { usePreview } from "@/contexts/PreviewContext";
 import type { Site } from "@shared/schema";
 
 interface PublishButtonProps {
@@ -24,14 +25,15 @@ interface PublishButtonProps {
 
 export default function PublishButton({ site, variant = "default" }: PublishButtonProps) {
   const { toast } = useToast();
+  const { getApiPath } = usePreview();
 
   const publishMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("POST", "/api/tenant/publish");
+      return apiRequest("POST", getApiPath("/api/tenant/publish"));
     },
     onSuccess: (response: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/settings"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/settings")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/auth/me")] });
       toast({
         title: response.isPublished ? "Site Published!" : "Site Unpublished",
         description: response.isPublished

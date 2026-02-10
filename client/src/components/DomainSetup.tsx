@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { usePreview } from "@/contexts/PreviewContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ interface DomainSetupProps {
 
 export default function DomainSetup({ site }: DomainSetupProps) {
   const { toast } = useToast();
+  const { getApiPath } = usePreview();
   const [customDomain, setCustomDomain] = useState(site.customDomain || "");
   const [copied, setCopied] = useState(false);
 
@@ -24,11 +26,11 @@ export default function DomainSetup({ site }: DomainSetupProps) {
 
   const updateDomainMutation = useMutation({
     mutationFn: async (domain: string | null) => {
-      return apiRequest("PATCH", "/api/tenant/settings/domain", { customDomain: domain });
+      return apiRequest("PATCH", getApiPath("/api/tenant/settings/domain"), { customDomain: domain });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/settings"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/settings")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/auth/me")] });
       toast({ title: "Domain updated successfully" });
     },
     onError: (error: Error) => {

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { usePreview } from "@/contexts/PreviewContext";
 import type { Page } from "@shared/schema";
 
 interface HomeContent {
@@ -178,9 +179,10 @@ export default function PageEditor() {
   const [, params] = useRoute("/pages/:slug");
   const slug = params?.slug || "";
   const { toast } = useToast();
+  const { getApiPath } = usePreview();
 
   const { data: page, isLoading } = useQuery<Page>({
-    queryKey: ["/api/tenant/pages", slug],
+    queryKey: [getApiPath("/api/tenant/pages"), slug],
   });
 
   const form = useForm<PageFormValues>({
@@ -190,14 +192,14 @@ export default function PageEditor() {
   const updateMutation = useMutation({
     mutationFn: async (data: PageFormValues) => {
       const content = buildContent(slug, data);
-      return apiRequest("PATCH", `/api/tenant/pages/${slug}`, {
+      return apiRequest("PATCH", getApiPath(`/api/tenant/pages/${slug}`), {
         title: data.title,
         content,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/pages"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/pages", slug] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/pages")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/pages"), slug] });
       toast({ title: "Page updated successfully" });
     },
     onError: (error: Error) => {

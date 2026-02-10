@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { Site } from "@shared/schema";
 import { FormattedMessage } from "@/lib/message-utils";
+import { usePreview } from "@/contexts/PreviewContext";
 
 interface Message {
   role: "user" | "assistant";
@@ -46,6 +47,7 @@ export default function ChatBot({ site, isVisible = true }: ChatBotProps) {
   const [visitorId] = useState(() => getOrCreateVisitorId());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { getSitePath } = usePreview();
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -111,7 +113,7 @@ export default function ChatBot({ site, isVisible = true }: ChatBotProps) {
     setIsLoading(true);
 
     try {
-      const res = await fetch("/api/site/chat", {
+      const res = await fetch(getSitePath("/api/site/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

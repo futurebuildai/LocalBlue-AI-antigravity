@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { usePreview } from "@/contexts/PreviewContext";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import type { SitePhoto, PhotoType } from "@shared/schema";
 
@@ -25,9 +26,10 @@ export function ProjectGallery({ siteId, className }: ProjectGalleryProps) {
   const [activeFilter, setActiveFilter] = useState<PhotoType | "all">("all");
   const [selectedPhoto, setSelectedPhoto] = useState<SitePhoto | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const { getApiPath } = usePreview();
 
   const { data: photos, isLoading } = useQuery<SitePhoto[]>({
-    queryKey: ["/api/tenant/photos", siteId],
+    queryKey: [getApiPath("/api/tenant/photos"), siteId],
     enabled: !!siteId,
   });
 

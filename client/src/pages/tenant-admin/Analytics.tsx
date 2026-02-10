@@ -8,6 +8,7 @@ import {
   Eye, Users, Clock, ArrowDownRight, Monitor, Smartphone, Tablet,
   BarChart3, Search, Globe, TrendingUp, Lightbulb, FileText, ArrowUpRight
 } from "lucide-react";
+import { usePreview } from "@/contexts/PreviewContext";
 import type { AnalyticsDaily, SeoMetric, SeoOptimization } from "@shared/schema";
 
 interface AnalyticsSummary {
@@ -165,20 +166,21 @@ function MetricCardSkeleton() {
 export default function Analytics() {
   const [range, setRange] = useState<DateRange>("30");
   const { startDate, endDate } = getDateRange(range);
+  const { getApiPath } = usePreview();
 
   const {
     data: summary,
     isLoading: summaryLoading,
   } = useQuery<AnalyticsSummary>({
-    queryKey: ["/api/tenant/analytics/summary", `?startDate=${startDate}&endDate=${endDate}`],
+    queryKey: [getApiPath("/api/tenant/analytics/summary"), `?startDate=${startDate}&endDate=${endDate}`],
   });
 
   const { data: seoMetrics = [], isLoading: seoLoading } = useQuery<SeoMetric[]>({
-    queryKey: ["/api/tenant/seo/metrics"],
+    queryKey: [getApiPath("/api/tenant/seo/metrics")],
   });
 
   const { data: seoOptimizations = [], isLoading: optLoading } = useQuery<SeoOptimization[]>({
-    queryKey: ["/api/tenant/seo/optimizations"],
+    queryKey: [getApiPath("/api/tenant/seo/optimizations")],
   });
 
   const dailyData = summary?.dailyData ?? [];

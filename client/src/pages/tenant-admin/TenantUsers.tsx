@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { usePreview } from "@/contexts/PreviewContext";
 import type { User } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -25,17 +26,18 @@ type UserFormValues = z.infer<typeof userFormSchema>;
 export default function TenantUsers() {
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { getApiPath } = usePreview();
 
   const { data: users = [], isLoading } = useQuery<SanitizedUser[]>({
-    queryKey: ["/api/tenant/users"],
+    queryKey: [getApiPath("/api/tenant/users")],
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: UserFormValues) => {
-      return apiRequest("POST", "/api/tenant/users", data);
+      return apiRequest("POST", getApiPath("/api/tenant/users"), data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/users"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/users")] });
       setIsCreateOpen(false);
       toast({ title: "User created successfully" });
     },

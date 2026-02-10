@@ -12,6 +12,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Save } from "lucide-react";
 import DomainSetup from "@/components/DomainSetup";
 import PublishButton from "@/components/PublishButton";
+import { usePreview } from "@/contexts/PreviewContext";
 import type { Site } from "@shared/schema";
 
 const settingsSchema = z.object({
@@ -28,6 +29,7 @@ interface SettingsProps {
 
 export default function Settings({ site }: SettingsProps) {
   const { toast } = useToast();
+  const { getApiPath } = usePreview();
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -43,15 +45,15 @@ export default function Settings({ site }: SettingsProps) {
       const services = data.services 
         ? data.services.split(",").map((s) => s.trim()).filter(Boolean) 
         : [];
-      return apiRequest("PATCH", "/api/tenant/settings", {
+      return apiRequest("PATCH", getApiPath("/api/tenant/settings"), {
         businessName: data.businessName,
         brandColor: data.brandColor,
         services,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/settings"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenant/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/settings")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/auth/me")] });
       toast({ title: "Settings updated successfully" });
     },
     onError: (error: Error) => {

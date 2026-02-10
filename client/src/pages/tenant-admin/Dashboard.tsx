@@ -12,6 +12,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import PublishButton from "@/components/PublishButton";
+import { usePreview } from "@/contexts/PreviewContext";
 import type { Site, User, Lead } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -22,13 +23,16 @@ interface TenantDashboardProps {
 
 export default function Dashboard({ site }: TenantDashboardProps) {
   const { toast } = useToast();
+  const { isPreview, subdomain, getApiPath } = usePreview();
+  const navPath = (path: string) => isPreview ? `/preview/${subdomain}/admin${path}` : `/admin${path}`;
+  const viewSiteUrl = isPreview ? `/preview/${subdomain}` : (site.customDomain ? `https://${site.customDomain}` : `https://${site.subdomain}.localblue.co`);
   
   const { data: users = [], isLoading: usersLoading } = useQuery<SanitizedUser[]>({
-    queryKey: ["/api/tenant/users"],
+    queryKey: [getApiPath("/api/tenant/users")],
   });
 
   const { data: leads = [], isLoading: leadsLoading } = useQuery<Lead[]>({
-    queryKey: ["/api/tenant/leads"],
+    queryKey: [getApiPath("/api/tenant/leads")],
   });
 
   const publicUrl = site.customDomain 
@@ -36,7 +40,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
     : `https://${site.subdomain}.localblue.co`;
 
   const copyUrl = () => {
-    navigator.clipboard.writeText(publicUrl);
+    navigator.clipboard.writeText(isPreview ? viewSiteUrl : publicUrl);
     toast({ title: "URL copied to clipboard" });
   };
 
@@ -95,13 +99,13 @@ export default function Dashboard({ site }: TenantDashboardProps) {
             variant="outline" 
             size="default"
             className="min-h-[44px] flex-1 sm:flex-none"
-            onClick={() => window.open(publicUrl, "_blank")}
+            onClick={() => window.open(viewSiteUrl, "_blank")}
             data-testid="button-view-site-header"
           >
             <Eye className="h-4 w-4 mr-2" />
             View Site
           </Button>
-          <Link href="/admin/settings">
+          <Link href={navPath("/settings")}>
             <Button variant="outline" size="default" className="min-h-[44px]" data-testid="link-settings-header">
               <Settings className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Settings</span>
@@ -149,7 +153,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 {site.trialPhase === 'test_drive' ? (
                   <>
-                    <Link href="/admin/settings">
+                    <Link href={navPath("/settings")}>
                       <Button className="bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/30" data-testid="button-upgrade-domain">
                         <Globe className="h-4 w-4 mr-2" />
                         Connect Custom Domain
@@ -236,7 +240,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
             </p>
             <div className="flex items-center gap-3">
               <PublishButton site={site} />
-              <Link href="/admin/settings">
+              <Link href={navPath("/settings")}>
                 <Button variant="outline" size="sm" data-testid="link-go-to-settings">
                   <Settings className="h-4 w-4 mr-2" />
                   Go to Settings
@@ -276,7 +280,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => window.open(publicUrl, "_blank")}
+                  onClick={() => window.open(viewSiteUrl, "_blank")}
                   data-testid="button-view-site"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
@@ -370,7 +374,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
               <CardTitle>Recent Leads</CardTitle>
               <CardDescription>Latest inquiries from potential customers</CardDescription>
             </div>
-            <Link href="/admin/leads">
+            <Link href={navPath("/leads")}>
               <Button variant="ghost" size="sm" data-testid="link-view-all-leads">
                 View All
                 <ArrowRight className="h-4 w-4 ml-2" />
@@ -439,13 +443,13 @@ export default function Dashboard({ site }: TenantDashboardProps) {
             <CardDescription>Common tasks for your site</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link href="/admin/pages">
+            <Link href={navPath("/pages")}>
               <Button variant="outline" className="w-full justify-start" data-testid="link-edit-pages">
                 <FileText className="h-4 w-4 mr-3" />
                 Edit Pages
               </Button>
             </Link>
-            <Link href="/admin/leads">
+            <Link href={navPath("/leads")}>
               <Button variant="outline" className="w-full justify-start" data-testid="link-view-leads">
                 <MessageSquare className="h-4 w-4 mr-3" />
                 View All Leads
@@ -454,13 +458,13 @@ export default function Dashboard({ site }: TenantDashboardProps) {
                 )}
               </Button>
             </Link>
-            <Link href="/admin/settings">
+            <Link href={navPath("/settings")}>
               <Button variant="outline" className="w-full justify-start" data-testid="link-site-settings">
                 <Settings className="h-4 w-4 mr-3" />
                 Site Settings
               </Button>
             </Link>
-            <Link href="/admin/users">
+            <Link href={navPath("/users")}>
               <Button variant="outline" className="w-full justify-start" data-testid="link-manage-users">
                 <Users className="h-4 w-4 mr-3" />
                 Manage Team
@@ -469,7 +473,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
             <Button 
               variant="outline" 
               className="w-full justify-start"
-              onClick={() => window.open(publicUrl, "_blank")}
+              onClick={() => window.open(viewSiteUrl, "_blank")}
               data-testid="button-preview-site"
             >
               <Eye className="h-4 w-4 mr-3" />
@@ -555,7 +559,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
               </Badge>
             </div>
             <div className="pt-3 border-t">
-              <Link href="/admin/settings">
+              <Link href={navPath("/settings")}>
                 <Button variant="outline" size="sm" className="w-full" data-testid="link-manage-features">
                   <Settings className="h-4 w-4 mr-2" />
                   Manage Features
