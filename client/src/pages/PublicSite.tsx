@@ -311,10 +311,161 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
 
   const yearsExp = site.totalYearsExperience || site.yearsInBusiness;
 
+  const badgeEl = (
+    <div 
+      className={`inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-6 py-2 sm:py-2.5 text-white text-xs sm:text-sm font-medium mb-6 sm:mb-8 ${
+        styleClasses.isLuxury 
+          ? 'bg-white/10 backdrop-blur-xl border border-white/20 rounded-sm tracking-widest uppercase'
+          : styleClasses.isBold
+          ? 'bg-white/15 backdrop-blur-md border-2 border-white/30 rounded-none font-bold'
+          : styleClasses.isWarm
+          ? 'bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl'
+          : 'bg-white/10 backdrop-blur-md border border-white/20 rounded-full'
+      }`}
+      data-testid="badge-hero-credentials"
+    >
+      <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+      <span>
+        {yearsExp 
+          ? `${yearsExp}+ Years Experience`
+          : "Licensed & Insured"
+        }
+        {yearsExp ? ' \u00B7 Licensed & Insured' : ' \u00B7 Trusted Local Experts'}
+      </span>
+    </div>
+  );
+
+  const headlineEl = (
+    <h1 
+      className={`font-bold text-white mb-4 sm:mb-5 leading-[1.1] ${
+        styleClasses.isLuxury 
+          ? 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight font-serif max-w-4xl' 
+          : styleClasses.isBold 
+          ? 'text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-wide uppercase' 
+          : styleClasses.isWarm
+          ? 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight max-w-4xl'
+          : 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl tracking-tight max-w-4xl'
+      }`}
+      style={styleClasses.isLuxury ? { fontFamily: 'Playfair Display, serif' } : undefined}
+      data-testid="text-headline"
+    >
+      {headline}
+    </h1>
+  );
+
+  const descriptionEl = (
+    <div 
+      className={`text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-10 leading-relaxed ${
+        styleClasses.isLuxury ? 'tracking-wide max-w-2xl' : styleClasses.isBold ? 'max-w-3xl' : 'max-w-2xl'
+      }`}
+      data-testid="text-subheadline"
+    >
+      {isDescriptionExpanded || description.length <= 160 ? (
+        <>
+          <span>{description}</span>
+          {description.length > 160 && (
+            <button
+              onClick={() => setIsDescriptionExpanded(false)}
+              className="inline ml-1 text-white/80 underline font-medium cursor-pointer bg-transparent border-none p-0"
+              data-testid="button-show-less"
+              aria-label="Show less"
+            >
+              Show Less
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <span>{description.slice(0, 160).trim()}</span>
+          <button
+            onClick={() => setIsDescriptionExpanded(true)}
+            className="inline ml-1 text-white/80 underline font-medium cursor-pointer bg-transparent border-none p-0"
+            data-testid="button-read-more"
+            aria-label="Read more"
+          >
+            Read More
+          </button>
+        </>
+      )}
+    </div>
+  );
+
+  const ctaEl = (
+    <div className={`flex flex-col gap-3 sm:flex-row sm:gap-4 px-2 sm:px-0 ${
+      styleClasses.isBold || styleClasses.isLuxury ? 'justify-start' : 'justify-center'
+    }`}>
+      <Button 
+        size="lg" 
+        className="text-base sm:text-lg px-8 sm:px-10 min-h-[52px] sm:min-h-[56px] bg-white text-gray-900 border-0 shadow-xl font-semibold w-full sm:w-auto"
+        onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+        data-testid="button-get-quote"
+      >
+        {ctaPrimary}
+        <ArrowRight className="ml-2 h-5 w-5" />
+      </Button>
+      {site.phone && (
+        <a href={`tel:${site.phone}`} className="w-full sm:w-auto">
+          <Button 
+            size="lg" 
+            variant="outline"
+            className="text-base sm:text-lg px-8 sm:px-10 min-h-[52px] sm:min-h-[56px] bg-transparent backdrop-blur-sm border border-white/40 text-white w-full font-medium"
+            data-testid="button-call-now"
+          >
+            <Phone className="mr-2 h-5 w-5" />
+            <span className="sm:hidden">Call Now</span>
+            <span className="hidden sm:inline">{ctaSecondary}: {site.phone}</span>
+          </Button>
+        </a>
+      )}
+    </div>
+  );
+
+  const renderHeroContent = () => {
+    if (styleClasses.isBold) {
+      return (
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left pt-24 sm:pt-32 pb-20 sm:pb-28">
+          {badgeEl}
+          {headlineEl}
+          {descriptionEl}
+          {ctaEl}
+        </div>
+      );
+    }
+    if (styleClasses.isLuxury) {
+      return (
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 pb-20 sm:pb-28">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
+            <div className="lg:col-span-3 text-left">
+              {badgeEl}
+              {headlineEl}
+              {descriptionEl}
+              {ctaEl}
+            </div>
+            <div className="hidden lg:block lg:col-span-2" />
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20 sm:pt-28 pb-16 sm:pb-20">
+        {badgeEl}
+        {headlineEl}
+        {descriptionEl}
+        {ctaEl}
+      </div>
+    );
+  };
+
   return (
     <section 
       id="hero"
-      className="relative min-h-[85svh] flex items-center justify-center overflow-hidden"
+      className={`relative flex items-center overflow-hidden ${
+        styleClasses.isWarm 
+          ? 'min-h-[75svh] justify-center' 
+          : styleClasses.isBold
+          ? 'min-h-[90svh] items-end'
+          : 'min-h-[85svh] justify-center'
+      }`}
       data-testid="section-hero"
       data-style={site.stylePreference || 'professional'}
     >
@@ -330,102 +481,7 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
       
       <div className={`absolute inset-0 ${styleClasses.isLuxury ? 'bg-gradient-to-b from-black/20 via-transparent to-black/40' : 'bg-gradient-to-b from-black/30 via-black/10 to-black/35'}`} />
       
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20 sm:pt-28 pb-16 sm:pb-20">
-        <div 
-          className={`inline-flex items-center gap-2 sm:gap-2.5 px-4 sm:px-6 py-2 sm:py-2.5 text-white text-xs sm:text-sm font-medium mb-6 sm:mb-8 ${
-            styleClasses.isLuxury 
-              ? 'bg-white/10 backdrop-blur-xl border border-white/20 rounded-sm tracking-widest uppercase'
-              : styleClasses.isBold
-              ? 'bg-white/15 backdrop-blur-md border-2 border-white/30 rounded-none font-bold'
-              : 'bg-white/10 backdrop-blur-md border border-white/20 rounded-full'
-          }`}
-          data-testid="badge-hero-credentials"
-        >
-          <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          <span>
-            {yearsExp 
-              ? `${yearsExp}+ Years Experience`
-              : "Licensed & Insured"
-            }
-            {yearsExp ? ' \u00B7 Licensed & Insured' : ' \u00B7 Trusted Local Experts'}
-          </span>
-        </div>
-
-        <h1 
-          className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-5 leading-[1.1] max-w-4xl mx-auto ${
-            styleClasses.isLuxury 
-              ? 'tracking-tight font-serif' 
-              : styleClasses.isBold 
-              ? 'tracking-wide uppercase' 
-              : 'tracking-tight'
-          }`}
-          style={styleClasses.isLuxury ? { fontFamily: 'Playfair Display, serif' } : undefined}
-          data-testid="text-headline"
-        >
-          {headline}
-        </h1>
-        
-        <div 
-          className={`text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed ${
-            styleClasses.isLuxury ? 'tracking-wide' : ''
-          }`}
-          data-testid="text-subheadline"
-        >
-          {isDescriptionExpanded || description.length <= 160 ? (
-            <>
-              <span>{description}</span>
-              {description.length > 160 && (
-                <button
-                  onClick={() => setIsDescriptionExpanded(false)}
-                  className="inline ml-1 text-white/80 underline font-medium cursor-pointer bg-transparent border-none p-0"
-                  data-testid="button-show-less"
-                  aria-label="Show less"
-                >
-                  Show Less
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              <span>{description.slice(0, 160).trim()}</span>
-              <button
-                onClick={() => setIsDescriptionExpanded(true)}
-                className="inline ml-1 text-white/80 underline font-medium cursor-pointer bg-transparent border-none p-0"
-                data-testid="button-read-more"
-                aria-label="Read more"
-              >
-                Read More
-              </button>
-            </>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center px-2 sm:px-0">
-          <Button 
-            size="lg" 
-            className="text-base sm:text-lg px-8 sm:px-10 min-h-[52px] sm:min-h-[56px] bg-white text-gray-900 border-0 shadow-xl font-semibold w-full sm:w-auto"
-            onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-            data-testid="button-get-quote"
-          >
-            {ctaPrimary}
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-          {site.phone && (
-            <a href={`tel:${site.phone}`} className="w-full sm:w-auto">
-              <Button 
-                size="lg" 
-                variant="outline"
-                className="text-base sm:text-lg px-8 sm:px-10 min-h-[52px] sm:min-h-[56px] bg-transparent backdrop-blur-sm border border-white/40 text-white w-full font-medium"
-                data-testid="button-call-now"
-              >
-                <Phone className="mr-2 h-5 w-5" />
-                <span className="sm:hidden">Call Now</span>
-                <span className="hidden sm:inline">{ctaSecondary}: {site.phone}</span>
-              </Button>
-            </a>
-          )}
-        </div>
-      </div>
+      {renderHeroContent()}
 
       <div className="absolute bottom-0 left-0 right-0">
         <svg className="w-full h-8 sm:h-14 md:h-20" viewBox="0 0 1440 80" preserveAspectRatio="none">
@@ -506,8 +562,8 @@ function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Pa
   const allServices = site.services || [];
   const services = allServices.slice(0, 6);
   const TradeIcon = getTradeIcon(site.tradeType);
+  const styleClasses = getStyleClasses(site.stylePreference);
   
-  // Get service descriptions from AI-generated page content
   const serviceDescriptions = servicesPage?.content?.servicesList?.reduce((acc: Record<string, string>, item: { name: string; description: string }) => {
     acc[item.name] = item.description;
     return acc;
@@ -515,18 +571,166 @@ function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Pa
 
   if (services.length === 0) return null;
 
+  const sectionHeadingClass = styleClasses.isBold
+    ? 'uppercase tracking-wider'
+    : styleClasses.isLuxury
+    ? 'font-serif'
+    : '';
+
+  const getServiceDescription = (service: string, index: number) => {
+    const fallbackDescriptions = [
+      `Professional ${service.toLowerCase()} services tailored to your specific needs and budget.`,
+      `Reliable ${service.toLowerCase()} solutions backed by years of hands-on expertise.`,
+      `Comprehensive ${service.toLowerCase()} services from consultation through project completion.`,
+      `Trusted ${service.toLowerCase()} work with a focus on quality materials and craftsmanship.`,
+      `Skilled ${service.toLowerCase()} services designed to exceed your expectations.`,
+      `Dependable ${service.toLowerCase()} solutions with transparent pricing and timely delivery.`,
+    ];
+    return serviceDescriptions[service] || fallbackDescriptions[index % fallbackDescriptions.length];
+  };
+
+  const renderServiceCard = (service: string, index: number) => {
+    const description = getServiceDescription(service, index);
+
+    if (styleClasses.isLuxury) {
+      return (
+        <Card 
+          key={index} 
+          className="group hover-elevate border border-border/30 transition-all duration-300 hover:shadow-lg"
+          data-testid={`card-service-${index}`}
+        >
+          <CardContent className="p-6 sm:p-8 lg:p-10 flex flex-col sm:flex-row items-start gap-5 sm:gap-8">
+            <div 
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-sm flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-105"
+              style={{ 
+                backgroundColor: `${site.brandColor}10`,
+                border: `1px solid ${site.brandColor}20`
+              }}
+            >
+              <TradeIcon className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: site.brandColor }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 font-serif" style={{ fontFamily: 'Playfair Display, serif' }}>{service}</h3>
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4">
+                {description}
+              </p>
+              <button 
+                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+                className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px] -mb-2"
+                style={{ color: site.brandColor }}
+                data-testid={`button-service-cta-${index}`}
+              >
+                Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (styleClasses.isBold) {
+      return (
+        <Card 
+          key={index} 
+          className="group hover-elevate border border-border/50 transition-all duration-300 hover:shadow-xl"
+          data-testid={`card-service-${index}`}
+        >
+          <CardContent className="p-5 sm:p-6 lg:p-8 relative">
+            <div 
+              className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full"
+              style={{ backgroundColor: site.brandColor }}
+            />
+            <div className="pl-4">
+              <div 
+                className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-md flex items-center justify-center mb-4 sm:mb-6 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
+                style={{ 
+                  backgroundColor: `${site.brandColor}15`,
+                  boxShadow: `0 4px 14px ${site.brandColor}20`
+                }}
+              >
+                <TradeIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" style={{ color: site.brandColor }} />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4 uppercase tracking-wider">{service}</h3>
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
+                {description}
+              </p>
+              <button 
+                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+                className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px] -mb-2 uppercase tracking-wider"
+                style={{ color: site.brandColor }}
+                data-testid={`button-service-cta-${index}`}
+              >
+                Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card 
+        key={index} 
+        className={`group hover-elevate border border-border/50 hover:border-[var(--brand-color)] transition-all duration-300 hover:shadow-xl ${
+          styleClasses.isWarm ? 'rounded-2xl' : ''
+        }`}
+        style={{ "--brand-color": site.brandColor } as React.CSSProperties}
+        data-testid={`card-service-${index}`}
+      >
+        <CardContent className="p-5 sm:p-6 lg:p-8">
+          <div 
+            className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex items-center justify-center mb-4 sm:mb-6 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ${
+              styleClasses.isWarm ? 'rounded-2xl' : 'rounded-xl sm:rounded-2xl'
+            }`}
+            style={{ 
+              backgroundColor: `${site.brandColor}15`,
+              boxShadow: styleClasses.isWarm ? `0 2px 8px ${site.brandColor}10` : `0 4px 14px ${site.brandColor}20`
+            }}
+          >
+            <TradeIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" style={{ color: site.brandColor }} />
+          </div>
+          <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4">{service}</h3>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
+            {description}
+          </p>
+          <button 
+            onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+            className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px] -mb-2"
+            style={{ color: site.brandColor }}
+            data-testid={`button-service-cta-${index}`}
+          >
+            Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </button>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const getGridClass = () => {
+    if (styleClasses.isLuxury) return 'grid grid-cols-1 gap-4 sm:gap-6';
+    if (styleClasses.isBold) return 'grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8';
+    if (styleClasses.isWarm) return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8';
+    return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8';
+  };
+
   return (
-    <section id="services" className="py-12 sm:py-20 md:py-28 bg-muted/30" data-testid="section-services">
+    <section id="services" className={`bg-muted/30 ${
+      styleClasses.isLuxury ? 'py-16 sm:py-24 md:py-32' : 'py-12 sm:py-20 md:py-28'
+    }`} data-testid="section-services">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="text-center mb-8 sm:mb-14 md:mb-20">
           <div 
-            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6"
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold mb-4 sm:mb-6 ${
+              styleClasses.isWarm ? 'rounded-2xl' : 'rounded-full'
+            }`}
             style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
           >
             <TradeIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             What We Do Best
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-6">Our Expert Services</h2>
+          <h2 className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-6 ${sectionHeadingClass}`}
+            style={styleClasses.isLuxury ? { fontFamily: 'Playfair Display, serif' } : undefined}
+          >Our Expert Services</h2>
           <p className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed px-2 sm:px-0">
             {site.serviceArea 
               ? `From ${site.serviceArea}, we bring expertise and dedication to every project. Here's how we can help you.`
@@ -535,50 +739,16 @@ function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Pa
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <div className={getGridClass()}>
           {services.map((service, index) => {
-            const fallbackDescriptions = [
-              `Professional ${service.toLowerCase()} services tailored to your specific needs and budget.`,
-              `Reliable ${service.toLowerCase()} solutions backed by years of hands-on expertise.`,
-              `Comprehensive ${service.toLowerCase()} services from consultation through project completion.`,
-              `Trusted ${service.toLowerCase()} work with a focus on quality materials and craftsmanship.`,
-              `Skilled ${service.toLowerCase()} services designed to exceed your expectations.`,
-              `Dependable ${service.toLowerCase()} solutions with transparent pricing and timely delivery.`,
-            ];
-            const description = serviceDescriptions[service] || fallbackDescriptions[index % fallbackDescriptions.length];
-            
-            return (
-              <Card 
-                key={index} 
-                className="group hover-elevate border border-border/50 hover:border-[var(--brand-color)] transition-all duration-300 hover:shadow-xl"
-                style={{ "--brand-color": site.brandColor } as React.CSSProperties}
-                data-testid={`card-service-${index}`}
-              >
-                <CardContent className="p-5 sm:p-6 lg:p-8">
-                  <div 
-                    className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
-                    style={{ 
-                      backgroundColor: `${site.brandColor}15`,
-                      boxShadow: `0 4px 14px ${site.brandColor}20`
-                    }}
-                  >
-                    <TradeIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" style={{ color: site.brandColor }} />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4">{service}</h3>
-                  <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
-                    {description}
-                  </p>
-                  <button 
-                    onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-                    className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px] -mb-2"
-                    style={{ color: site.brandColor }}
-                    data-testid={`button-service-cta-${index}`}
-                  >
-                    Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </button>
-                </CardContent>
-              </Card>
-            );
+            if (styleClasses.isWarm) {
+              return (
+                <div key={index} className={index % 3 === 0 ? 'sm:col-span-2 lg:col-span-1' : ''}>
+                  {renderServiceCard(service, index)}
+                </div>
+              );
+            }
+            return renderServiceCard(service, index);
           })}
         </div>
       </div>
@@ -587,7 +757,7 @@ function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Pa
 }
 
 function AboutSection({ site, aboutPage }: { site: Site; aboutPage?: Page }) {
-  // Use rich AI-generated content when available
+  const styleClasses = getStyleClasses(site.stylePreference);
   const sectionTitle = aboutPage?.content?.sectionTitle || 
     (site.ownerName ? `Meet ${site.ownerName}` : `The ${site.businessName} Story`);
   const description = aboutPage?.content?.companyStory || site.ownerStory || site.businessDescription || 
@@ -595,19 +765,29 @@ function AboutSection({ site, aboutPage }: { site: Site; aboutPage?: Page }) {
   const uniquePoints = site.uniqueSellingPoints || [];
   const certifications = site.certifications || [];
 
+  const sectionHeadingClass = styleClasses.isBold
+    ? 'uppercase tracking-wider'
+    : styleClasses.isLuxury
+    ? 'font-serif'
+    : '';
+
   return (
-    <section id="about" className="py-12 sm:py-20 md:py-28" data-testid="section-about">
+    <section id="about" className={`${styleClasses.isLuxury ? 'py-16 sm:py-24 md:py-32' : 'py-12 sm:py-20 md:py-28'}`} data-testid="section-about">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-20 items-center">
           <div>
             <div 
-              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6"
+              className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold mb-4 sm:mb-6 ${
+                styleClasses.isWarm ? 'rounded-2xl' : 'rounded-full'
+              }`}
               style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
             >
               <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Our Story
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-8 leading-tight">
+            <h2 className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-8 leading-tight ${sectionHeadingClass}`}
+              style={styleClasses.isLuxury ? { fontFamily: 'Playfair Display, serif' } : undefined}
+            >
               {sectionTitle}
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg md:text-xl mb-6 sm:mb-10 leading-relaxed">
@@ -705,6 +885,7 @@ function GallerySection({ site }: { site: Site }) {
   const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
   const [selectedPhoto, setSelectedPhoto] = useState<SitePhoto | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const styleClasses = getStyleClasses(site.stylePreference);
 
   if (!photos || photos.length === 0) return null;
 
@@ -739,18 +920,28 @@ function GallerySection({ site }: { site: Site }) {
     ? displayPhotos
     : categories.find(c => c.key === activeCategory)?.photos || [];
 
+  const sectionHeadingClass = styleClasses.isBold
+    ? 'uppercase tracking-wider'
+    : styleClasses.isLuxury
+    ? 'font-serif'
+    : '';
+
   return (
-    <section id="gallery" className="py-12 sm:py-20 md:py-28 bg-muted/30" data-testid="section-gallery">
+    <section id="gallery" className={`bg-muted/30 ${styleClasses.isLuxury ? 'py-16 sm:py-24 md:py-32' : 'py-12 sm:py-20 md:py-28'}`} data-testid="section-gallery">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="text-center mb-8 sm:mb-14 md:mb-20">
           <div
-            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold mb-4 sm:mb-6"
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold mb-4 sm:mb-6 ${
+              styleClasses.isWarm ? 'rounded-2xl' : 'rounded-full'
+            }`}
             style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
           >
             <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Our Work
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-6">Project Gallery</h2>
+          <h2 className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-6 ${sectionHeadingClass}`}
+            style={styleClasses.isLuxury ? { fontFamily: 'Playfair Display, serif' } : undefined}
+          >Project Gallery</h2>
           <p className="text-muted-foreground text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed px-2 sm:px-0">
             Browse through our recent projects and see the quality of our craftsmanship firsthand.
           </p>
@@ -841,6 +1032,7 @@ function TestimonialsSection({ site }: { site: Site }) {
   const { data: testimonials = [] } = useQuery<Testimonial[]>({
     queryKey: ["/api/site/testimonials"],
   });
+  const styleClasses = getStyleClasses(site.stylePreference);
 
   if (testimonials.length === 0) {
     return null;
@@ -853,18 +1045,28 @@ function TestimonialsSection({ site }: { site: Site }) {
   const featuredTestimonial = testimonials[0];
   const otherTestimonials = testimonials.slice(1, 7);
 
+  const sectionHeadingClass = styleClasses.isBold
+    ? 'uppercase tracking-wider'
+    : styleClasses.isLuxury
+    ? 'font-serif'
+    : '';
+
   return (
-    <section id="testimonials" className="py-12 sm:py-16 md:py-24 bg-muted/30" data-testid="section-testimonials">
+    <section id="testimonials" className={`bg-muted/30 ${styleClasses.isLuxury ? 'py-16 sm:py-20 md:py-28' : 'py-12 sm:py-16 md:py-24'}`} data-testid="section-testimonials">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <div 
-            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium mb-4"
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium mb-4 ${
+              styleClasses.isWarm ? 'rounded-2xl' : 'rounded-full'
+            }`}
             style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
           >
             <ThumbsUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Customer Reviews
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4">What Our Customers Say</h2>
+          <h2 className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 ${sectionHeadingClass}`}
+            style={styleClasses.isLuxury ? { fontFamily: 'Playfair Display, serif' } : undefined}
+          >What Our Customers Say</h2>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mt-4 sm:mt-6" data-testid="testimonials-aggregate-rating">
             <div className="flex items-center gap-0.5 sm:gap-1">
@@ -998,21 +1200,32 @@ function TestimonialsSection({ site }: { site: Site }) {
 }
 
 function ServiceAreaSection({ site }: { site: Site }) {
+  const styleClasses = getStyleClasses(site.stylePreference);
   if (!site.serviceArea) return null;
 
+  const sectionHeadingClass = styleClasses.isBold
+    ? 'uppercase tracking-wider'
+    : styleClasses.isLuxury
+    ? 'font-serif'
+    : '';
+
   return (
-    <section id="service-area" className="py-12 sm:py-16 md:py-24" data-testid="section-service-area">
+    <section id="service-area" className={`${styleClasses.isLuxury ? 'py-16 sm:py-20 md:py-28' : 'py-12 sm:py-16 md:py-24'}`} data-testid="section-service-area">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           <div>
             <div 
-              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium mb-3 sm:mb-4"
+              className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium mb-3 sm:mb-4 ${
+                styleClasses.isWarm ? 'rounded-2xl' : 'rounded-full'
+              }`}
               style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
             >
               <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Service Area
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">Where We Serve</h2>
+            <h2 className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 ${sectionHeadingClass}`}
+              style={styleClasses.isLuxury ? { fontFamily: 'Playfair Display, serif' } : undefined}
+            >Where We Serve</h2>
             <p className="text-muted-foreground text-base sm:text-lg mb-6 sm:mb-8 leading-relaxed">
               We proudly serve {site.serviceArea} and surrounding communities. Not sure if you're in our area? Give us a call!
             </p>
@@ -1057,6 +1270,7 @@ function ServiceAreaSection({ site }: { site: Site }) {
 function ContactSection({ site }: { site: Site }) {
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+  const styleClasses = getStyleClasses(site.stylePreference);
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -1100,18 +1314,28 @@ function ContactSection({ site }: { site: Site }) {
     submitLead.mutate(data);
   };
 
+  const sectionHeadingClass = styleClasses.isBold
+    ? 'uppercase tracking-wider'
+    : styleClasses.isLuxury
+    ? 'font-serif'
+    : '';
+
   return (
-    <section id="contact" className="py-12 sm:py-16 md:py-24 bg-muted/30" data-testid="section-contact">
+    <section id="contact" className={`bg-muted/30 ${styleClasses.isLuxury ? 'py-16 sm:py-20 md:py-28' : 'py-12 sm:py-16 md:py-24'}`} data-testid="section-contact">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <div 
-            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium mb-3 sm:mb-4"
+            className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium mb-3 sm:mb-4 ${
+              styleClasses.isWarm ? 'rounded-2xl' : 'rounded-full'
+            }`}
             style={{ backgroundColor: `${site.brandColor}15`, color: site.brandColor }}
           >
             <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             Get In Touch
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4">Ready to Get Started?</h2>
+          <h2 className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 ${sectionHeadingClass}`}
+            style={styleClasses.isLuxury ? { fontFamily: 'Playfair Display, serif' } : undefined}
+          >Ready to Get Started?</h2>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto px-2 sm:px-0">
             Contact us today for a free estimate. We're here to help with all your needs.
           </p>
@@ -1637,17 +1861,37 @@ export default function PublicSite({ site, isPreview }: PublicSiteProps) {
     return <ComingSoon site={site} />;
   }
 
+  const sectionComponents: Record<string, JSX.Element> = {
+    hero: <HeroSection key="hero" site={site} homePage={homePage || undefined} />,
+    trustBadges: <TrustBadgesBar key="trustBadges" site={site} />,
+    services: <ServicesSection key="services" site={site} servicesPage={servicesPage || undefined} />,
+    about: <AboutSection key="about" site={site} aboutPage={aboutPage || undefined} />,
+    gallery: <GallerySection key="gallery" site={site} />,
+    testimonials: <TestimonialsSection key="testimonials" site={site} />,
+    serviceArea: <ServiceAreaSection key="serviceArea" site={site} />,
+    contact: <ContactSection key="contact" site={site} />,
+  };
+
+  const getSectionOrder = (): string[] => {
+    switch (site.stylePreference) {
+      case 'bold':
+        return ['hero', 'services', 'trustBadges', 'gallery', 'about', 'testimonials', 'serviceArea', 'contact'];
+      case 'warm':
+        return ['hero', 'about', 'trustBadges', 'services', 'testimonials', 'gallery', 'serviceArea', 'contact'];
+      case 'luxury':
+        return ['hero', 'trustBadges', 'about', 'gallery', 'services', 'testimonials', 'serviceArea', 'contact'];
+      case 'professional':
+      default:
+        return ['hero', 'trustBadges', 'services', 'about', 'testimonials', 'gallery', 'serviceArea', 'contact'];
+    }
+  };
+
+  const orderedSections = getSectionOrder();
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <StickyHeader site={site} isScrolled={isScrolled} />
-      <HeroSection site={site} homePage={homePage || undefined} />
-      <TrustBadgesBar site={site} />
-      <ServicesSection site={site} servicesPage={servicesPage || undefined} />
-      <AboutSection site={site} aboutPage={aboutPage || undefined} />
-      <GallerySection site={site} />
-      <TestimonialsSection site={site} />
-      <ServiceAreaSection site={site} />
-      <ContactSection site={site} />
+      {orderedSections.map((sectionKey) => sectionComponents[sectionKey])}
       <Footer site={site} />
       <MobileCTABar site={site} />
       {site.enableChatbot && <ChatBot site={site} isVisible={true} />}
