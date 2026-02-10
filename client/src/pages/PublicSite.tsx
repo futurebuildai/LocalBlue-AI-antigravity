@@ -28,6 +28,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronDown,
   Award,
   Users,
   ThumbsUp,
@@ -558,14 +559,208 @@ function TrustBadgesBar({ site }: { site: Site }) {
   );
 }
 
+function ServiceCard({ site, service, index, description, faqs, matchingPhoto, styleClasses, TradeIcon }: {
+  site: Site;
+  service: string;
+  index: number;
+  description: string;
+  faqs: Array<{question: string; answer: string}>;
+  matchingPhoto?: SitePhoto;
+  styleClasses: ReturnType<typeof getStyleClasses>;
+  TradeIcon: typeof Wrench;
+}) {
+  const [faqOpen, setFaqOpen] = useState(false);
+  const firstFaq = faqs?.[0];
+
+  const photoThumbnail = matchingPhoto ? (
+    <div className="w-full h-32 sm:h-40 overflow-hidden rounded-t-md">
+      <img
+        src={matchingPhoto.url}
+        alt={matchingPhoto.caption || service}
+        className="w-full h-full object-cover"
+        data-testid={`img-service-photo-${index}`}
+      />
+    </div>
+  ) : null;
+
+  const faqSection = firstFaq ? (
+    <div className="mt-3 border-t border-border/40 pt-3">
+      <button
+        onClick={(e) => { e.stopPropagation(); setFaqOpen(!faqOpen); }}
+        className="flex items-start gap-2 w-full text-left min-h-[36px]"
+        data-testid={`button-faq-toggle-${index}`}
+      >
+        <ChevronDown
+          className={`h-4 w-4 mt-0.5 flex-shrink-0 transition-transform duration-200 ${faqOpen ? 'rotate-180' : ''}`}
+          style={{ color: site.brandColor }}
+        />
+        <span className="text-sm font-medium text-foreground/80 leading-snug">{firstFaq.question}</span>
+      </button>
+      {faqOpen && (
+        <p className="text-sm text-muted-foreground leading-relaxed mt-2 ml-6" data-testid={`text-faq-answer-${index}`}>
+          {firstFaq.answer}
+        </p>
+      )}
+    </div>
+  ) : null;
+
+  const galleryLink = (
+    <button
+      onClick={() => document.getElementById("gallery")?.scrollIntoView({ behavior: "smooth" })}
+      className="inline-flex items-center text-xs font-medium mt-3 min-h-[32px] transition-colors"
+      style={{ color: site.brandColor }}
+      data-testid={`link-gallery-${index}`}
+    >
+      <Camera className="h-3.5 w-3.5 mr-1" />
+      View Gallery <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+    </button>
+  );
+
+  if (styleClasses.isLuxury) {
+    return (
+      <Card 
+        key={index} 
+        className="group hover-elevate border border-border/30 transition-all duration-300 hover:shadow-lg"
+        data-testid={`card-service-${index}`}
+      >
+        {photoThumbnail}
+        <CardContent className="p-6 sm:p-8 lg:p-10 flex flex-col sm:flex-row items-start gap-5 sm:gap-8">
+          <div 
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-sm flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-105"
+            style={{ 
+              backgroundColor: `${site.brandColor}10`,
+              border: `1px solid ${site.brandColor}20`
+            }}
+          >
+            <TradeIcon className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: site.brandColor }} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 font-serif" style={{ fontFamily: 'Playfair Display, serif' }}>{service}</h3>
+            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4">
+              {description}
+            </p>
+            {faqSection}
+            <div className="flex flex-wrap items-center gap-4 mt-4">
+              <button 
+                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+                className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px]"
+                style={{ color: site.brandColor }}
+                data-testid={`button-service-cta-${index}`}
+              >
+                Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+              {galleryLink}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (styleClasses.isBold) {
+    return (
+      <Card 
+        key={index} 
+        className="group hover-elevate border border-border/50 transition-all duration-300 hover:shadow-xl"
+        data-testid={`card-service-${index}`}
+      >
+        {photoThumbnail}
+        <CardContent className="p-5 sm:p-6 lg:p-8 relative">
+          <div 
+            className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full"
+            style={{ backgroundColor: site.brandColor }}
+          />
+          <div className="pl-4">
+            <div 
+              className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-md flex items-center justify-center mb-4 sm:mb-6 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
+              style={{ 
+                backgroundColor: `${site.brandColor}15`,
+                boxShadow: `0 4px 14px ${site.brandColor}20`
+              }}
+            >
+              <TradeIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" style={{ color: site.brandColor }} />
+            </div>
+            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4 uppercase tracking-wider">{service}</h3>
+            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
+              {description}
+            </p>
+            {faqSection}
+            <div className="flex flex-wrap items-center gap-4 mt-4">
+              <button 
+                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+                className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px] uppercase tracking-wider"
+                style={{ color: site.brandColor }}
+                data-testid={`button-service-cta-${index}`}
+              >
+                Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+              {galleryLink}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card 
+      key={index} 
+      className={`group hover-elevate border border-border/50 hover:border-[var(--brand-color)] transition-all duration-300 hover:shadow-xl ${
+        styleClasses.isWarm ? 'rounded-2xl' : ''
+      }`}
+      style={{ "--brand-color": site.brandColor } as React.CSSProperties}
+      data-testid={`card-service-${index}`}
+    >
+      {photoThumbnail}
+      <CardContent className="p-5 sm:p-6 lg:p-8">
+        <div 
+          className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex items-center justify-center mb-4 sm:mb-6 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ${
+            styleClasses.isWarm ? 'rounded-2xl' : 'rounded-xl sm:rounded-2xl'
+          }`}
+          style={{ 
+            backgroundColor: `${site.brandColor}15`,
+            boxShadow: styleClasses.isWarm ? `0 2px 8px ${site.brandColor}10` : `0 4px 14px ${site.brandColor}20`
+          }}
+        >
+          <TradeIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" style={{ color: site.brandColor }} />
+        </div>
+        <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4">{service}</h3>
+        <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
+          {description}
+        </p>
+        {faqSection}
+        <div className="flex flex-wrap items-center gap-4 mt-4">
+          <button 
+            onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+            className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px]"
+            style={{ color: site.brandColor }}
+            data-testid={`button-service-cta-${index}`}
+          >
+            Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </button>
+          {galleryLink}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Page }) {
   const allServices = site.services || [];
   const services = allServices.slice(0, 6);
   const TradeIcon = getTradeIcon(site.tradeType);
   const styleClasses = getStyleClasses(site.stylePreference);
+  const { data: photos } = useQuery<SitePhoto[]>({ queryKey: ["/api/site/photos"] });
   
   const serviceDescriptions = servicesPage?.content?.servicesList?.reduce((acc: Record<string, string>, item: { name: string; description: string }) => {
     acc[item.name] = item.description;
+    return acc;
+  }, {}) || {};
+
+  const serviceFaqs = servicesPage?.content?.servicesList?.reduce((acc: Record<string, Array<{question: string; answer: string}>>, item: { name: string; faqs?: Array<{question: string; answer: string}> }) => {
+    if (item.faqs && item.faqs.length > 0) {
+      acc[item.name] = item.faqs;
+    }
     return acc;
   }, {}) || {};
 
@@ -589,120 +784,10 @@ function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Pa
     return serviceDescriptions[service] || fallbackDescriptions[index % fallbackDescriptions.length];
   };
 
-  const renderServiceCard = (service: string, index: number) => {
-    const description = getServiceDescription(service, index);
-
-    if (styleClasses.isLuxury) {
-      return (
-        <Card 
-          key={index} 
-          className="group hover-elevate border border-border/30 transition-all duration-300 hover:shadow-lg"
-          data-testid={`card-service-${index}`}
-        >
-          <CardContent className="p-6 sm:p-8 lg:p-10 flex flex-col sm:flex-row items-start gap-5 sm:gap-8">
-            <div 
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-sm flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-105"
-              style={{ 
-                backgroundColor: `${site.brandColor}10`,
-                border: `1px solid ${site.brandColor}20`
-              }}
-            >
-              <TradeIcon className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: site.brandColor }} />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 font-serif" style={{ fontFamily: 'Playfair Display, serif' }}>{service}</h3>
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4">
-                {description}
-              </p>
-              <button 
-                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-                className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px] -mb-2"
-                style={{ color: site.brandColor }}
-                data-testid={`button-service-cta-${index}`}
-              >
-                Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    if (styleClasses.isBold) {
-      return (
-        <Card 
-          key={index} 
-          className="group hover-elevate border border-border/50 transition-all duration-300 hover:shadow-xl"
-          data-testid={`card-service-${index}`}
-        >
-          <CardContent className="p-5 sm:p-6 lg:p-8 relative">
-            <div 
-              className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full"
-              style={{ backgroundColor: site.brandColor }}
-            />
-            <div className="pl-4">
-              <div 
-                className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-md flex items-center justify-center mb-4 sm:mb-6 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
-                style={{ 
-                  backgroundColor: `${site.brandColor}15`,
-                  boxShadow: `0 4px 14px ${site.brandColor}20`
-                }}
-              >
-                <TradeIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" style={{ color: site.brandColor }} />
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4 uppercase tracking-wider">{service}</h3>
-              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
-                {description}
-              </p>
-              <button 
-                onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-                className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px] -mb-2 uppercase tracking-wider"
-                style={{ color: site.brandColor }}
-                data-testid={`button-service-cta-${index}`}
-              >
-                Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return (
-      <Card 
-        key={index} 
-        className={`group hover-elevate border border-border/50 hover:border-[var(--brand-color)] transition-all duration-300 hover:shadow-xl ${
-          styleClasses.isWarm ? 'rounded-2xl' : ''
-        }`}
-        style={{ "--brand-color": site.brandColor } as React.CSSProperties}
-        data-testid={`card-service-${index}`}
-      >
-        <CardContent className="p-5 sm:p-6 lg:p-8">
-          <div 
-            className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex items-center justify-center mb-4 sm:mb-6 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ${
-              styleClasses.isWarm ? 'rounded-2xl' : 'rounded-xl sm:rounded-2xl'
-            }`}
-            style={{ 
-              backgroundColor: `${site.brandColor}15`,
-              boxShadow: styleClasses.isWarm ? `0 2px 8px ${site.brandColor}10` : `0 4px 14px ${site.brandColor}20`
-            }}
-          >
-            <TradeIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" style={{ color: site.brandColor }} />
-          </div>
-          <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4">{service}</h3>
-          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
-            {description}
-          </p>
-          <button 
-            onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-            className="inline-flex items-center text-sm font-semibold transition-all duration-200 group-hover:gap-2 min-h-[44px] -mb-2"
-            style={{ color: site.brandColor }}
-            data-testid={`button-service-cta-${index}`}
-          >
-            Get Started <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </button>
-        </CardContent>
-      </Card>
+  const getMatchingPhoto = (service: string) => {
+    return photos?.find(p =>
+      (p.type === "service" || p.type === "project") &&
+      p.caption?.toLowerCase().includes(service.toLowerCase())
     );
   };
 
@@ -741,14 +826,27 @@ function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Pa
 
         <div className={getGridClass()}>
           {services.map((service, index) => {
+            const cardEl = (
+              <ServiceCard
+                key={index}
+                site={site}
+                service={service}
+                index={index}
+                description={getServiceDescription(service, index)}
+                faqs={serviceFaqs[service] || []}
+                matchingPhoto={getMatchingPhoto(service)}
+                styleClasses={styleClasses}
+                TradeIcon={TradeIcon}
+              />
+            );
             if (styleClasses.isWarm) {
               return (
                 <div key={index} className={index % 3 === 0 ? 'sm:col-span-2 lg:col-span-1' : ''}>
-                  {renderServiceCard(service, index)}
+                  {cardEl}
                 </div>
               );
             }
-            return renderServiceCard(service, index);
+            return cardEl;
           })}
         </div>
       </div>

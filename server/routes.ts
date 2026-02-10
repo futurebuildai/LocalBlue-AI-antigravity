@@ -1805,6 +1805,9 @@ Generate the following content as JSON:
   "ctaPrimary": "Primary call-to-action button text",
   "ctaSecondary": "Secondary CTA text",
   "serviceAreaDescription": "Compelling description of their service area coverage",
+  "serviceFaqs": {
+    ${mergedServices.slice(0, 8).map(s => `"${s}": [{"question": "A common question a homeowner would ask about ${s}?", "answer": "A helpful, specific 1-2 sentence answer"}]`).join(',\n    ')}
+  },
   "testimonialPrompt": "What satisfied customers would say about this ${tradeLabel} business (2 example testimonials with realistic details)"
 }
 
@@ -1833,6 +1836,7 @@ Return ONLY valid JSON.`;
         aboutContent?: string;
         whyChooseUsTitle?: string;
         serviceDescriptions?: Record<string, string>;
+        serviceFaqs?: Record<string, Array<{question: string; answer: string}>>;
         trustStatements?: string[];
         ctaPrimary?: string;
         ctaSecondary?: string;
@@ -1972,6 +1976,7 @@ Return ONLY valid JSON.`;
               description: richContent.serviceDescriptions?.[service] || `Expert ${service.toLowerCase()} solutions designed for lasting results.`,
               icon: tradeTemplate.iconName,
               order: index,
+              faqs: richContent.serviceFaqs?.[service] || [],
             })),
             serviceArea: extractedData.serviceArea || "",
             serviceAreaDescription: richContent.serviceAreaDescription || "",
