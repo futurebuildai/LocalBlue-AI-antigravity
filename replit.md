@@ -119,29 +119,22 @@ Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimo
 - Shows revenue chart (last 6 months) and recent payments
 - Subscription breakdown by plan and trial phase
 
-## Future Roadmap (from Beta Feedback - TM:4, Feb 2026)
+### TM:5 Implemented Features (Feb 2026)
+- **Projects Per Year**: Added `projectsPerYear` field to `sites` table. Captured during AI onboarding extraction. Displayed in TrustBadgesBar and About section when available.
+- **Photo Gallery Page**: Dedicated gallery page with category filter tabs (All/Projects/Before & After/Team/Services) showing photo counts. Hero section uses uploaded photos (hero type → first project photo → stock image fallback). Gallery page auto-generated during site creation with `gallery` slug.
+- **Post-Generation Feedback Loop**: After site generation, users redirect to `/feedback/:subdomain`. They can preview their site and submit textual feedback. `POST /api/site/feedback` endpoint uses Claude Sonnet to regenerate specific content sections based on feedback. Iterative refinement until satisfied. Includes `updatePageContent` storage method for targeted page updates.
+- **4 Distinct Template Layouts**: Each style preference (Professional/Bold/Warm/Luxury) now has meaningfully different section ordering, hero layouts, services grids, and typographic treatments:
+  - Professional: Centered hero, 3-col services, standard order
+  - Bold: Left-aligned hero, 2-col services with accent borders, services-first ordering, uppercase headings
+  - Warm: Smaller hero (75svh), masonry services grid, about-first ordering, rounded-2xl elements
+  - Luxury: Split hero layout, horizontal service cards, serif fonts (Playfair Display), gallery-forward ordering
+- **Enhanced Service Cards**: Each service card now includes:
+  - Photo thumbnails (matched from uploaded photos by caption/service name)
+  - AI-generated FAQ per service (1-2 questions with expandable answers, stored in `serviceFaqs` in content generation)
+  - "View Gallery" link that smooth-scrolls to gallery section
+  - All enhancements work across all 4 style variants
 
-### Photo Gallery Page
-- Uploaded photos during onboarding land in a basic gallery section but there's no dedicated gallery page on the generated site yet.
-- Photo categories (Projects, Before/Afters, Team) should translate directly into a gallery page with the same delineations.
-- Consider using uploaded hero/project photos in the home page hero image as well.
-
-### Post-Generation Feedback Loop
-- After site generation, bounce the user into a feedback/suggestions flow where they can tell us what they like, don't like, or want changed.
-- This could drive iterative AI-based refinements before the site goes live.
-
-### "Projects Completed Per Year" Onboarding Question
-- Add a question during onboarding: "On average, how many homes do you build per year?"
-- This gives insight into company size and can be leveraged in multiple areas (trust badges, about section, stats).
-
-### More Unique Styling Per Site
-- Beta feedback notes that generated sites look very similar with only minor copy variations.
-- Consider supplying a few templated visual examples of what each "style" represents to give the AI more stylistic direction.
-- Investigate ways to vary layout structure, section ordering, and visual treatments more dramatically between style preferences.
-
-### Expert Services Cards Enhancement
-- Consider connecting service cards to correlated gallery photos or FAQs for each specific service focus.
-- This would make the services section more valuable and less generic.
+## Future Roadmap
 
 ## External Dependencies
 - **PostgreSQL**: Primary database for all application data.
