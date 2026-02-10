@@ -274,6 +274,8 @@ function StickyHeader({ site, isScrolled }: { site: Site; isScrolled: boolean })
 }
 
 function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  
   // Use rich content from AI generation
   const headline = homePage?.content?.heroHeadline || site.tagline || site.businessName;
   const subheadline = homePage?.content?.heroSubheadline || 
@@ -358,14 +360,40 @@ function HeroSection({ site, homePage }: { site: Site; homePage?: Page }) {
           {headline}
         </h1>
         
-        <p 
+        <div 
           className={`text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed ${
             styleClasses.isLuxury ? 'tracking-wide' : ''
           }`}
           data-testid="text-subheadline"
         >
-          {description.length > 160 ? description.slice(0, 160).trim() + '...' : description}
-        </p>
+          {isDescriptionExpanded || description.length <= 160 ? (
+            <>
+              <span>{description}</span>
+              {description.length > 160 && (
+                <button
+                  onClick={() => setIsDescriptionExpanded(false)}
+                  className="inline ml-1 text-white/80 underline font-medium cursor-pointer bg-transparent border-none p-0"
+                  data-testid="button-show-less"
+                  aria-label="Show less"
+                >
+                  Show Less
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <span>{description.slice(0, 160).trim()}</span>
+              <button
+                onClick={() => setIsDescriptionExpanded(true)}
+                className="inline ml-1 text-white/80 underline font-medium cursor-pointer bg-transparent border-none p-0"
+                data-testid="button-read-more"
+                aria-label="Read more"
+              >
+                Read More
+              </button>
+            </>
+          )}
+        </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 justify-center px-2 sm:px-0">
           <Button 
@@ -466,7 +494,8 @@ function TrustBadgesBar({ site }: { site: Site }) {
 }
 
 function ServicesSection({ site, servicesPage }: { site: Site; servicesPage?: Page }) {
-  const services = site.services || [];
+  const allServices = site.services || [];
+  const services = allServices.slice(0, 6);
   const TradeIcon = getTradeIcon(site.tradeType);
   
   // Get service descriptions from AI-generated page content
@@ -1060,7 +1089,11 @@ function ContactSection({ site }: { site: Site }) {
                 <div className="min-w-0">
                   <p className="font-semibold text-base sm:text-lg">Phone</p>
                   <p className="text-muted-foreground text-sm sm:text-base truncate">{site.phone}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Available for emergency calls 24/7</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
+                    {['plumber', 'electrician', 'hvac'].includes(site.tradeType) 
+                      ? 'Available for emergency calls 24/7' 
+                      : 'Call us for a free estimate'}
+                  </p>
                 </div>
               </a>
             )}

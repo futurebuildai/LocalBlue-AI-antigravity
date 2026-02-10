@@ -1751,9 +1751,12 @@ Only return valid JSON, nothing else.`;
       // Get style template
       const styleTemplate = getStyleTemplate(stylePreference);
 
-      // Merge extracted services with trade default services
+      // Use only the services the contractor actually mentioned during onboarding.
+      // Only fall back to trade defaults if no services were extracted at all.
       const extractedServices = extractedData.services || [];
-      const mergedServices = Array.from(new Set([...extractedServices, ...tradeTemplate.defaultServices]));
+      const mergedServices = extractedServices.length > 0 
+        ? extractedServices 
+        : tradeTemplate.defaultServices;
 
       // Use tradeLabel for display copy, tradeType for template matching
       const tradeLabel = extractedData.tradeLabel || tradeTemplate.name;

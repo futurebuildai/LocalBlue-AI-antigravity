@@ -314,11 +314,17 @@ export default function Onboarding() {
 
   const displayMessages = messages.map(m => ({
     ...m,
-    content: m.content.replace("READY_TO_GENERATE", "").trim(),
+    content: m.content
+      .replace("READY_TO_GENERATE", "")
+      .replace(/<!--PROGRESS:\{[^}]*\}-->/g, '')
+      .replace(/<!--PROGRESS:[\s\S]*?-->/g, '')
+      .replace(/<!--[^>]*-->/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
   }));
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-800 dark:via-blue-900 dark:to-indigo-950">
+    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 dark:from-blue-900 dark:via-blue-950 dark:to-indigo-950">
       {/* Minimal Header */}
       <header className="flex-shrink-0 z-50">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4 h-14 px-4">
@@ -421,7 +427,7 @@ export default function Onboarding() {
                 {displayMessages.map((message, index) => (
                   <div
                     key={index}
-                    className={`flex gap-3 flex-wrap ${message.role === "user" ? "flex-row-reverse" : ""}`}
+                    className={`flex gap-3 flex-wrap transition-opacity duration-300 ${message.role === "user" ? "flex-row-reverse" : ""}`}
                     data-testid={`message-${message.role}-${index}`}
                   >
                     <div className="flex-shrink-0">
@@ -437,7 +443,7 @@ export default function Onboarding() {
                     </div>
                     <div className={`flex-1 ${message.role === "user" ? "flex justify-end flex-wrap" : ""}`}>
                       <div
-                        className={`max-w-[85%] px-5 py-4 ${
+                        className={`max-w-[85%] px-5 py-4 transition-all duration-300 ${
                           message.role === "user"
                             ? "bg-white text-gray-900 rounded-2xl rounded-tr-md shadow-lg"
                             : "bg-white/15 backdrop-blur-md border border-white/20 text-white rounded-2xl rounded-tl-md"
