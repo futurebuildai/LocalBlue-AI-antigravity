@@ -1333,6 +1333,7 @@ You must progress through these phases one at a time, asking only ONE question p
 - Ask how long they've been in business
 - Ask about their background/story (how they got started)
 - Ask about the owner's name and role
+- Ask "On average, how many projects or homes do you complete per year?"
 
 ### Phase 5: DIFFERENTIATORS (2-3 messages)
 - Ask what makes them different from competitors
@@ -1651,6 +1652,7 @@ IMPORTANT:
 - Extract years in business as a number
 - Extract total years of experience (including apprenticeship, prior work, and business years) as totalYearsExperience. This should be the TOTAL experience, not just years the business has been operating.
 - projectsCompleted should ONLY be set if the user explicitly stated a number of projects. Do NOT estimate or calculate this. Set to null if not mentioned.
+- projectsPerYear should be set if the user mentions how many projects/homes they complete per year. Set to null if not mentioned.
 - The businessDescription MUST consistently use the tradeLabel terminology, not switch between different labels.
 
 Return this exact JSON structure:
@@ -1666,6 +1668,7 @@ Return this exact JSON structure:
   "yearsInBusiness": 0,
   "totalYearsExperience": 0,
   "projectsCompleted": null,
+  "projectsPerYear": null,
   "uniqueSellingPoints": ["what makes them different", "from competitors"],
   "certifications": ["licenses", "certifications", "awards"],
   "phone": "business phone if mentioned",
@@ -1702,6 +1705,7 @@ Only return valid JSON, nothing else.`;
         yearsInBusiness?: number;
         totalYearsExperience?: number;
         projectsCompleted?: number | null;
+        projectsPerYear?: number | null;
         uniqueSellingPoints?: string[];
         certifications?: string[];
         phone?: string;
@@ -1772,6 +1776,7 @@ BUSINESS DETAILS:
 - Years in Business: ${extractedData.yearsInBusiness || 'Established'}
 - Total Years Experience: ${extractedData.totalYearsExperience || extractedData.yearsInBusiness || 'Experienced'}
 - Projects Completed: ${extractedData.projectsCompleted || 'NOT PROVIDED - do NOT invent a number'}
+- Projects Per Year: ${extractedData.projectsPerYear || 'NOT PROVIDED - do NOT invent a number'}
 - Owner: ${extractedData.ownerName || 'Owner'}
 - Story: ${extractedData.ownerStory || 'Family-owned business'}
 - Differentiators: ${(extractedData.uniqueSellingPoints || []).join(', ')}
@@ -1908,6 +1913,7 @@ Return ONLY valid JSON.`;
         serviceArea: extractedData.serviceArea || "",
         yearsInBusiness: extractedData.yearsInBusiness || undefined,
         totalYearsExperience: Math.max(extractedData.totalYearsExperience || 0, extractedData.yearsInBusiness || 0) || undefined,
+        projectsPerYear: extractedData.projectsPerYear || undefined,
         ownerName: extractedData.ownerName || undefined,
         ownerStory: extractedData.ownerStory || undefined,
         uniqueSellingPoints: extractedData.uniqueSellingPoints || tradeTemplate.trustBadges,
@@ -1951,6 +1957,7 @@ Return ONLY valid JSON.`;
             ownerName: extractedData.ownerName || "",
             yearsInBusiness: extractedData.yearsInBusiness || 0,
             totalYearsExperience: extractedData.totalYearsExperience || extractedData.yearsInBusiness || 0,
+            projectsPerYear: extractedData.projectsPerYear || 0,
             uniqueSellingPoints: extractedData.uniqueSellingPoints || [],
             certifications: mergedCertifications,
             serviceAreaDescription: richContent.serviceAreaDescription || "",

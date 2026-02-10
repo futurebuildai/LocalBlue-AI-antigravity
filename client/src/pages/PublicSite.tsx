@@ -41,7 +41,8 @@ import {
   ArrowRight,
   Quote,
   Camera,
-  ChevronLeft
+  ChevronLeft,
+  Briefcase
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Site, Page, Testimonial, TradeType, StylePreference, SitePhoto } from "@shared/schema";
@@ -444,6 +445,10 @@ function TrustBadgesBar({ site }: { site: Site }) {
     stats.push({ value: `${yearsExp}+`, label: "Years Experience", icon: Award });
   }
 
+  if (site.projectsPerYear) {
+    stats.push({ value: `${site.projectsPerYear}+`, label: "Projects Per Year", icon: Briefcase });
+  }
+
   stats.push({ value: trustBadges[0] || "Licensed & Insured", label: "Verified", icon: Shield });
 
   if (site.serviceArea) {
@@ -605,18 +610,36 @@ function AboutSection({ site, aboutPage }: { site: Site; aboutPage?: Page }) {
               {description}
             </p>
 
-            {(site.totalYearsExperience || site.yearsInBusiness) && (
-              <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8 p-3 sm:p-4 rounded-xl bg-muted/50">
-                <div 
-                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: site.brandColor }}
-                >
-                  <span className="text-lg sm:text-2xl font-bold text-white">{site.totalYearsExperience || site.yearsInBusiness}+</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-base sm:text-lg">Years of Experience</p>
-                  <p className="text-muted-foreground text-sm sm:text-base">Serving our community with pride</p>
-                </div>
+            {((site.totalYearsExperience || site.yearsInBusiness) || site.projectsPerYear) && (
+              <div className="flex flex-wrap gap-3 sm:gap-4 mb-6 sm:mb-8">
+                {(site.totalYearsExperience || site.yearsInBusiness) && (
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-[200px] p-3 sm:p-4 rounded-xl bg-muted/50">
+                    <div 
+                      className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: site.brandColor }}
+                    >
+                      <span className="text-lg sm:text-2xl font-bold text-white">{site.totalYearsExperience || site.yearsInBusiness}+</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base sm:text-lg">Years of Experience</p>
+                      <p className="text-muted-foreground text-sm sm:text-base">Serving our community with pride</p>
+                    </div>
+                  </div>
+                )}
+                {site.projectsPerYear && (
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-[200px] p-3 sm:p-4 rounded-xl bg-muted/50">
+                    <div 
+                      className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: site.brandColor }}
+                    >
+                      <span className="text-lg sm:text-2xl font-bold text-white">{site.projectsPerYear}+</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-base sm:text-lg">Projects Per Year</p>
+                      <p className="text-muted-foreground text-sm sm:text-base">Consistent delivery, every time</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
