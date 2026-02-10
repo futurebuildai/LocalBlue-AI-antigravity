@@ -91,6 +91,9 @@ export interface IStorage {
   createChatbotConversation(conversation: InsertChatbotConversation): Promise<ChatbotConversation>;
   updateChatbotConversation(id: number, conversation: Partial<InsertChatbotConversation>): Promise<ChatbotConversation | undefined>;
 
+  // Page content update operations
+  updatePageContent(siteId: string, slug: string, content: Record<string, any>): Promise<Page | undefined>;
+
   // Lead CRM operations
   updateLead(id: number, data: Partial<InsertLead>): Promise<Lead | undefined>;
   getLeadById(id: number): Promise<Lead | undefined>;
@@ -234,6 +237,18 @@ export class DatabaseStorage implements IStorage {
       updatedAt: new Date(),
     };
     const [page] = await db.update(pages).set(updateData).where(eq(pages.id, id)).returning();
+    return page || undefined;
+  }
+
+  // Page content update operations
+  async updatePageContent(siteId: string, slug: string, content: Record<string, any>): Promise<Page | undefined> {
+    const existingPage = await this.getPageBySiteAndSlug(siteId, slug);
+    if (!existingPage) return undefined;
+    const mergedContent = { ...(existingPage.content as Record<string, any> || {}), ...content };
+    const [page] = await db.update(pages).set({
+      content: mergedContent,
+      updatedAt: new Date(),
+    }).where(eq(pages.id, existingPage.id)).returning();
     return page || undefined;
   }
 

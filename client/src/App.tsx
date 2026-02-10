@@ -45,6 +45,7 @@ import PublicSite from "@/pages/PublicSite";
 import PreviewSite from "@/pages/PreviewSite";
 import PreviewAdmin from "@/pages/PreviewAdmin";
 import Demo from "@/pages/Demo";
+import Feedback from "@/pages/Feedback";
 import TenantImpersonate from "@/pages/TenantImpersonate";
 import type { Site, User } from "@shared/schema";
 
@@ -382,6 +383,7 @@ function MainSiteApp() {
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/onboarding" component={Onboarding} />
+      <Route path="/feedback/:subdomain" component={Feedback} />
       <Route path="/preview/:subdomain/admin/:rest*" component={PreviewAdmin} />
       <Route path="/preview/:subdomain/admin" component={PreviewAdmin} />
       <Route path="/preview/:subdomain" component={PreviewSite} />

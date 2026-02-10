@@ -2102,7 +2102,7 @@ Return ONLY valid JSON.`;
 
       // Generate redirect URL - always use preview route after onboarding
       // This allows users to review their site before it goes live
-      const redirectUrl = `/preview/${site.subdomain}`;
+      const redirectUrl = `/feedback/${site.subdomain}`;
 
       res.json({
         success: true,
@@ -2131,6 +2131,112 @@ Return ONLY valid JSON.`;
     } catch (error) {
       console.error("Error generating site:", error);
       res.status(500).json({ error: "Failed to generate site" });
+    }
+  });
+
+  // ============================================
+  // Post-Generation Feedback Route
+  // ============================================
+
+  app.post("/api/site/feedback", async (req, res) => {
+    try {
+      if (!req.session.userId || !req.session.siteId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { feedback, sections } = req.body as { feedback: string; sections?: string[] };
+
+      if (!feedback || typeof feedback !== "string" || feedback.trim().length === 0) {
+        return res.status(400).json({ error: "Feedback text is required" });
+      }
+
+      const site = await storage.getSite(req.session.siteId);
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+
+      const sitePages = await storage.getPagesBySiteId(site.id);
+
+      const pageData = sitePages.map(p => ({
+        slug: p.slug,
+        title: p.title,
+        content: p.content,
+      }));
+
+      const siteDetails = {
+        businessName: site.businessName,
+        tradeType: site.tradeType,
+        tagline: site.tagline,
+        services: site.services,
+        serviceArea: site.serviceArea,
+        stylePreference: site.stylePreference,
+        brandColor: site.brandColor,
+        ownerStory: site.ownerStory,
+      };
+
+      const sectionsInstruction = sections && sections.length > 0
+        ? `\nThe user specifically wants changes to these sections: ${sections.join(", ")}.`
+        : "";
+
+      const aiPrompt = `You are a website content improvement assistant. A contractor just generated their website and has provided feedback.
+
+Current site: ${JSON.stringify(siteDetails)}
+Current pages: ${JSON.stringify(pageData)}
+
+User feedback: "${feedback.trim()}"${sectionsInstruction}
+
+Based on their feedback, regenerate ONLY the content that needs to change. Return a JSON object with page slugs as keys and their updated content as values.
+
+For example, if they want a different hero headline, return:
+{
+  "home": { "heroHeadline": "New headline", "heroSubheadline": "New subheadline" }
+}
+
+Only include pages/fields that need to change. Keep everything else the same.
+Return valid JSON only. No markdown code fences, no explanation text.`;
+
+      const aiResponse = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 4096,
+        messages: [{ role: "user", content: aiPrompt }],
+      });
+
+      const responseText = aiResponse.content
+        .filter((block): block is Anthropic.TextBlock => block.type === "text")
+        .map(block => block.text)
+        .join("");
+
+      let updatedPages: Record<string, Record<string, any>>;
+      try {
+        const cleaned = responseText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        updatedPages = JSON.parse(cleaned);
+      } catch (parseError) {
+        console.error("Failed to parse AI feedback response:", responseText);
+        return res.status(500).json({ error: "Failed to parse AI response" });
+      }
+
+      if (typeof updatedPages !== "object" || updatedPages === null || Object.keys(updatedPages).length === 0) {
+        return res.status(422).json({ error: "AI could not determine what to change. Please provide more specific feedback." });
+      }
+
+      for (const [slug, content] of Object.entries(updatedPages)) {
+        if (typeof content === "object" && content !== null) {
+          await storage.updatePageContent(site.id, slug, content);
+        }
+      }
+
+      const refreshedSite = await storage.getSite(site.id);
+      const refreshedPages = await storage.getPagesBySiteId(site.id);
+
+      res.json({
+        success: true,
+        site: refreshedSite,
+        pages: refreshedPages,
+        updatedSlugs: Object.keys(updatedPages),
+      });
+    } catch (error) {
+      console.error("Error processing feedback:", error);
+      res.status(500).json({ error: "Failed to process feedback" });
     }
   });
 
