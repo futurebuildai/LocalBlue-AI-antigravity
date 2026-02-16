@@ -20,10 +20,10 @@ const signUpSchema = z.object({
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const benefits = [
-  "30-day free trial on localblue.co",
-  "No credit card required to start",
-  "AI-powered website in minutes",
-  "Unlimited lead capture",
+  "Free access during beta",
+  "No credit card required",
+  "AI-powered website builder",
+  "Help shape the product with your feedback",
 ];
 
 export default function SignUp() {
@@ -80,10 +80,10 @@ export default function SignUp() {
                 <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold mb-2" data-testid="text-signup-title">
-                Start Your Free Trial
+                Join the Beta
               </h1>
               <p className="text-sm sm:text-base text-muted-foreground">
-                30 days free on yourbusiness.localblue.co - no credit card required
+                Get free early access and help us build the best contractor website tool
               </p>
             </div>
             
@@ -151,10 +151,10 @@ export default function SignUp() {
                       data-testid="button-signup-submit"
                     >
                       {signUpMutation.isPending ? (
-                        "Starting your trial..."
+                        "Creating your account..."
                       ) : (
                         <>
-                          Start 30-Day Free Trial
+                          Join the Beta
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </>
                       )}
@@ -182,10 +182,10 @@ export default function SignUp() {
         <div className="relative z-10 flex flex-col justify-center px-8 lg:px-12 xl:px-20">
           <div className="max-w-md">
             <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-white mb-6">
-              Your "Test Drive" starts now
+              Join Our Beta Program
             </h2>
             <p className="text-white/70 text-base lg:text-lg mb-10">
-              Try everything free for 30 days on your localblue.co subdomain. Upgrade to your custom domain when you're ready.
+              Get early access to LocalBlue and help us build something great for contractors. Your feedback directly shapes what we build next.
             </p>
             
             <div className="space-y-4">
@@ -197,24 +197,6 @@ export default function SignUp() {
                   <span className="text-white/90 text-sm lg:text-base">{benefit}</span>
                 </div>
               ))}
-            </div>
-
-            <div className="mt-12 pt-8 border-t border-white/10">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="flex -space-x-2">
-                  {['M', 'S', 'D'].map((initial, i) => (
-                    <div 
-                      key={i} 
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center text-white font-medium text-sm border-2 border-slate-900"
-                    >
-                      {initial}
-                    </div>
-                  ))}
-                </div>
-                <div className="text-white/80 text-xs sm:text-sm">
-                  <span className="font-semibold text-white">500+</span> contractors already trust us
-                </div>
-              </div>
             </div>
           </div>
         </div>

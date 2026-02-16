@@ -5,6 +5,8 @@ import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { BetaBanner } from "@/components/BetaBanner";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
 import {
   SidebarProvider,
   Sidebar,
@@ -377,37 +379,41 @@ function TenantPublicApp() {
 
 function MainSiteApp() {
   return (
-    <Switch>
-      <Route path="/landing" component={Landing} />
-      <Route path="/demo" component={Demo} />
-      <Route path="/signup" component={SignUp} />
-      <Route path="/login" component={Login} />
-      <Route path="/onboarding" component={Onboarding} />
-      <Route path="/feedback/:subdomain" component={Feedback} />
-      <Route path="/preview/:subdomain/admin/:rest*" component={PreviewAdmin} />
-      <Route path="/preview/:subdomain/admin" component={PreviewAdmin} />
-      <Route path="/preview/:subdomain" component={PreviewSite} />
-      <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
-      <Route path="/admin/sites/:id">
-        {() => <PlatformAdminGuard><PlatformAdminLayout><SiteDetail /></PlatformAdminLayout></PlatformAdminGuard>}
-      </Route>
-      <Route path="/admin/sites">
-        {() => <PlatformAdminGuard><PlatformAdminLayout><Sites /></PlatformAdminLayout></PlatformAdminGuard>}
-      </Route>
-      <Route path="/admin/users">
-        {() => <PlatformAdminGuard><PlatformAdminLayout><UsersPage /></PlatformAdminLayout></PlatformAdminGuard>}
-      </Route>
-      <Route path="/admin/revenue">
-        {() => <PlatformAdminGuard><PlatformAdminLayout><Revenue /></PlatformAdminLayout></PlatformAdminGuard>}
-      </Route>
-      <Route path="/admin">
-        {() => <PlatformAdminGuard><PlatformAdminLayout><Dashboard /></PlatformAdminLayout></PlatformAdminGuard>}
-      </Route>
-      <Route path="/">
-        <Landing />
-      </Route>
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      <Switch>
+        <Route path="/landing" component={Landing} />
+        <Route path="/demo" component={Demo} />
+        <Route path="/signup" component={SignUp} />
+        <Route path="/login" component={Login} />
+        <Route path="/onboarding" component={Onboarding} />
+        <Route path="/feedback/:subdomain" component={Feedback} />
+        <Route path="/preview/:subdomain/admin/:rest*" component={PreviewAdmin} />
+        <Route path="/preview/:subdomain/admin" component={PreviewAdmin} />
+        <Route path="/preview/:subdomain" component={PreviewSite} />
+        <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
+        <Route path="/admin/sites/:id">
+          {() => <PlatformAdminGuard><PlatformAdminLayout><SiteDetail /></PlatformAdminLayout></PlatformAdminGuard>}
+        </Route>
+        <Route path="/admin/sites">
+          {() => <PlatformAdminGuard><PlatformAdminLayout><Sites /></PlatformAdminLayout></PlatformAdminGuard>}
+        </Route>
+        <Route path="/admin/users">
+          {() => <PlatformAdminGuard><PlatformAdminLayout><UsersPage /></PlatformAdminLayout></PlatformAdminGuard>}
+        </Route>
+        <Route path="/admin/revenue">
+          {() => <PlatformAdminGuard><PlatformAdminLayout><Revenue /></PlatformAdminLayout></PlatformAdminGuard>}
+        </Route>
+        <Route path="/admin">
+          {() => <PlatformAdminGuard><PlatformAdminLayout><Dashboard /></PlatformAdminLayout></PlatformAdminGuard>}
+        </Route>
+        <Route path="/">
+          <Landing />
+        </Route>
+        <Route component={NotFound} />
+      </Switch>
+      <BetaBanner />
+      <FeedbackWidget />
+    </>
   );
 }
 

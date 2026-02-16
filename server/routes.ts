@@ -5,7 +5,7 @@ import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth,
 import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES, type TradeType, type StylePreference, LEAD_STAGES, type LeadStage, LEAD_PRIORITIES, type LeadPriority, insertAnalyticsEventSchema } from "@shared/schema";
 import { TRADE_TEMPLATES, STYLE_TEMPLATES, AVAILABLE_PAGES, getTradeTemplate, getStyleTemplate } from "@shared/tradeTemplates";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
-import { sendLeadNotification, sendWelcomeEmail, sendContactSalesEmail } from "./services/email";
+import { sendLeadNotification, sendWelcomeEmail, sendContactSalesEmail, sendBetaFeedbackEmail } from "./services/email";
 import { registerStripeRoutes } from "./stripeRoutes";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -3155,6 +3155,32 @@ Return ONLY valid JSON array, nothing else.`;
       res.status(200).json({ success: true, message: "Your message has been sent successfully" });
     } catch (error) {
       console.error("Error processing contact sales request:", error);
+      res.status(500).json({ error: "Failed to process request" });
+    }
+  });
+
+  // Beta Feedback - public endpoint for beta feedback submissions
+  app.post("/api/feedback", async (req, res) => {
+    try {
+      const { name, email, message } = req.body;
+      
+      if (!email || !message || message.trim().length === 0) {
+        return res.status(400).json({ error: "Email and message are required" });
+      }
+
+      const emailSent = await sendBetaFeedbackEmail({
+        name,
+        email,
+        message,
+      });
+
+      if (!emailSent) {
+        return res.status(500).json({ error: "Failed to send feedback. Please try again." });
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error processing feedback request:", error);
       res.status(500).json({ error: "Failed to process request" });
     }
   });

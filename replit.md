@@ -1,7 +1,7 @@
 # LocalBlue Platform
 
 ## Overview
-LocalBlue is a website builder platform designed for local general contractors and trade contractors (mostly residential). Its core differentiator is enabling contractors to manage their websites directly from their custom domain (e.g., `admin.smithplumbing.com`) after initial setup, rather than requiring them to return to the LocalBlue platform. The platform supports both a global Platform Admin for the LocalBlue team and individual Tenant Admins for each contractor. The project aims to provide "Best in Class" contractor website builder capabilities.
+LocalBlue is a multi-tenant website builder platform specifically designed for local general and trade contractors (primarily residential). Its core purpose is to empower contractors to manage their professional websites directly from their custom domain (e.g., `admin.smithplumbing.com`) after an initial setup, eliminating the need to return to the LocalBlue platform itself. The platform supports both a global Platform Admin for the LocalBlue team and individual Tenant Admins for each contractor. The project's vision is to deliver "Best in Class" contractor website builder capabilities, leveraging AI for an intuitive and powerful user experience.
 
 ## User Preferences
 None
@@ -9,137 +9,51 @@ None
 ## System Architecture
 
 ### Core Design Principles
-- **Multi-tenancy**: The platform is built from the ground up to support multiple independent contractor websites, each with its own administrative panel and data.
-- **AI-driven Onboarding**: Utilizes advanced AI for an interactive onboarding process to gather business details and generate website content.
+- **Multi-tenancy**: Designed for multiple independent contractor websites, each with its own admin panel and data.
+- **AI-driven Onboarding**: Utilizes AI for interactive onboarding to gather business details and generate website content.
 - **Custom Domain Management**: Contractors manage their sites directly from their custom domain, abstracting away the LocalBlue platform post-creation.
-- **Modern Web Technologies**: Leverages a modern stack for both backend and frontend development to ensure scalability, performance, and a rich user experience.
+- **Modern Web Technologies**: Leverages a modern stack for backend and frontend development.
 
 ### Backend
 - **Framework**: Express.js
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication (Multi-Tenant)**:
-    - **Platform Admin (main site)**: Replit Auth via OpenID Connect. Users log in at `/api/login`, authenticated via OIDC, user data stored in `users` table. Platform admin access restricted by `PLATFORM_ADMIN_EMAILS` env var. OIDC routes (`/api/login`, `/api/callback`, `/api/logout`) are domain-restricted — only available on the main domain, blocked on tenant domains via `isTenantDomain()` check.
-    - **Tenant Admin**: Email/password auth via bcrypt + express-session. Tenant admins log in at `/api/tenant/auth/login` on their `admin.{subdomain}` domain. Session stores `userId` + `siteId`.
-    - **Session Store**: PostgreSQL-backed via `connect-pg-simple` (`sessions` table). Both auth systems share the session store but use different session fields to avoid conflicts. Cookie domain defaults to current host, naturally isolating sessions between main and tenant domains.
-    - **Frontend Guards**: `PlatformAdminGuard` checks both Replit Auth authentication AND admin API authorization before rendering admin UI. `TenantAdminApp` uses its own auth check via `/api/tenant/auth/me`.
-- **Multi-Tenant Middleware**: Hostname-based detection (`admin.{subdomain}` or `admin.{customDomain}`) to route requests to the correct tenant context.
+- **Authentication**:
+    - **Platform Admin**: Replit Auth via OpenID Connect, restricted to platform admin emails.
+    - **Tenant Admin**: Email/password auth via bcrypt + express-session, specific to `admin.{subdomain}` domains.
+    - **Session Store**: PostgreSQL-backed (`connect-pg-simple`).
+- **Multi-Tenant Middleware**: Hostname-based detection routes requests to the correct tenant context.
 
 ### Frontend
 - **Framework**: React with Vite
 - **UI/UX**:
-    - **Components**: Shadcn/ui for a consistent and modern component library.
-    - **Styling**: Tailwind CSS for utility-first styling.
-    - **Design**: Modern, sleek aesthetics with blue gradient accents, glass-morphism effects, and smooth animations. Includes a redesigned Landing page, SignUp page, and TenantAdminLayout.
-    - **Public Site Template**: Spectacular template with sticky header, hero section, trust badges, services, testimonials, contact form, and AI chatbot integration. Features trade-specific hero images and style preference visual treatments (luxury, bold, warm, professional).
+    - **Components**: Shadcn/ui for consistent components.
+    - **Styling**: Tailwind CSS.
+    - **Design**: Modern aesthetics with blue gradient accents, glass-morphism effects, and animations. Features redesigned Landing, SignUp, and TenantAdminLayout.
+    - **Public Site Templates**: Flexible templates with sticky headers, hero sections, trust badges, services, testimonials, contact forms, and AI chatbot integration. Supports trade-specific images and aesthetic styles (luxury, bold, warm, professional) with 4 distinct layouts.
     - **Interactive Components**: ChatBot, QuoteCalculator, AppointmentScheduler, BeforeAfterSlider, ProjectGallery, ServiceAreaMap, StylePicker, PageSelector, PhotoUpload, OnboardingProgress.
-    - **Mobile Optimization**: All pages are fully mobile-responsive (400px+ viewport support). Key patterns:
-        - Touch-friendly controls with 44px minimum tap targets
-        - Mobile navigation via hamburger menus and collapsible sidebars
-        - Responsive grids (2-column on mobile, 3-4 column on desktop)
-        - Tables converted to card layouts on mobile
-        - Full-width buttons and form inputs on mobile
-        - Horizontal scroll for data tables where needed
-        - Sticky mobile CTA bars on public sites
+    - **Mobile Optimization**: Fully mobile-responsive design with touch-friendly controls, mobile navigation, responsive grids, and sticky mobile CTAs.
 - **State Management**: TanStack React Query
 - **Routing**: Wouter
 
 ### Key Features
-- **AI Onboarding**: Interactive chat-based process with Claude Opus 4.5 for business details, service areas, and content generation. Includes progress tracking and phase-based questioning.
-- **Site Generation**: AI extracts business details to create website pages automatically.
-- **Tenant Admin Panel**: Each contractor gets an admin panel for site management (editing pages, viewing leads, managing users, updating settings, custom domain connection, publishing status).
-- **Public Website Customization**: Supports various trade types (General Contractor, Plumber, Electrician, Roofer, HVAC, Painter, Landscaper) and aesthetic styles (Professional, Bold, Warm, Luxury).
+- **AI Onboarding**: Interactive chat-based process with AI for business details, service areas, and content generation, including progress tracking.
+- **Site Generation**: AI extracts business details to automatically create website pages.
+- **Tenant Admin Panel**: Provides each contractor with a panel for site management (editing pages, leads, users, settings, custom domain, publishing).
+- **Public Website Customization**: Supports various trade types and aesthetic styles.
 - **Interactive Tools**: Built-in AI sales chatbot, quote calculator, appointment scheduler, before/after image slider, and filterable project gallery.
 - **SEO Optimization**: Dynamic title, description, Open Graph, Twitter cards, and JSON-LD structured data.
-- **Site Analytics**: Traffic tracking, daily rollup dashboards, device/referrer/page analytics, SEO keyword tracking, AI-powered monthly optimization with cross-site learning.
+- **Site Analytics**: Traffic tracking, daily rollup dashboards, device/referrer/page analytics, SEO keyword tracking, AI-powered monthly optimization.
 - **Lead CRM**: Pipeline management (New→Contacted→Quoted→Won/Lost), priority tagging, source tracking, notes/activity log, follow-up reminders, estimated values, conversion metrics.
+- **Iterative Site Feedback**: Users can preview generated sites and provide feedback to AI for content regeneration.
+- **Enhanced Service Cards**: Include photo thumbnails, AI-generated FAQs, and "View Gallery" links.
 
 ### Data Models
-Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimonial`, `ServicePricing`, `Appointment`, `ChatbotConversation`, `Page`, `Lead`, `AnalyticsEvent`, `AnalyticsDaily`, `SeoMetric`, `SeoOptimization`, and `LeadNote`. These models capture comprehensive information for contractors' businesses, website content, customer interactions, analytics tracking, SEO performance, and lead management.
-
-### Recent Changes (Feb 2026)
-- **Total Years Experience**: Added `totalYearsExperience` field to `sites` table. This captures total professional experience including apprenticeship and prior work, not just years the business has been operating. The AI extraction prompt asks for this explicitly. The public site displays `totalYearsExperience` (falling back to `yearsInBusiness` if not set). The value is guaranteed to be >= `yearsInBusiness`.
-- **Service Descriptions**: Improved AI content generation prompt to produce unique, varied descriptions for each service card instead of repetitive templated text. Fallback descriptions now use an array of 6 varied templates instead of one repeated pattern.
-- **Photo Integration**: Uploaded logos display in site header, gallery section added with categorized photos (Projects, Before & After, Team). `/api/site/photos` endpoint serves public photos. `ProjectGallery` component renders photos grouped by category.
-- **Onboarding AI Improvements**: Added explicit photo upload acknowledgment in prompts, phase-waiting rules to prevent skipping user responses (especially during photos/style/generate phases).
-- **Stats Verification**: Removed fabricated metrics (project counts calculated from years, hardcoded satisfaction/rating). TrustBadgesBar now only shows: Years Experience (if available), Licensed/Insured badge, Service Area, Free Estimates.
-- **Trade Type Consistency**: Added `tradeLabel` field to preserve user's specific trade description (e.g., "Finish Carpenter" vs generic "General Contractor"). Extraction and content generation prompts use consistent terminology.
-- **Hero Section Cleanup**: Removed duplicate trust badges from hero bottom (years experience, star rating) since they appear in header badge and TrustBadgesBar section below.
-- **Site Analytics Engine**: Added lightweight page view tracking on public sites with analytics dashboard in tenant admin showing traffic metrics, charts, top pages, referrers, and device breakdown. Tables: `analytics_events`, `analytics_daily`.
-- **SEO Optimization System**: Monthly AI-powered SEO analysis that compares site performance against cross-site averages and auto-applies safe improvements (meta tags, titles). Cross-site learning from high-performing sites. Tables: `seo_metrics`, `seo_optimizations`.
-- **Lead Management CRM**: Extended leads with pipeline stages (New/Contacted/Quoted/Won/Lost), priority levels, source tracking, follow-up reminders, estimated values, and activity notes. Replaced basic leads list with full CRM dashboard including metrics and pipeline visualization. Tables: `lead_notes` (new), `leads` (extended with stage, priority, source, nextFollowUpAt, lastContactedAt, assignedTo, estimatedValue).
-- **AI Website Editor Vision**: Planned premium tier feature for builder.io-style visual CMS with AI content assistant in tenant admin.
-
-### Pricing & Subscription Model
-
-**Pricing Tiers (All include Unlimited Leads):**
-
-| Plan | Monthly | Annual | Core Value | Key Features |
-|------|---------|--------|------------|--------------|
-| Starter | $49 | $490 ($41/mo) | Professional Presence | Contact forms, appointment requests, project gallery, SEO |
-| Growth | $99 | $990 ($82/mo) | Lead Automation | AI Sales Chatbot 24/7, before/after galleries, testimonials |
-| Scale | $199 | $1,990 ($165/mo) | Local Dominance | Instant quote calculator, service pricing display, multi-service pages |
-
-**Graduated Trial Model:**
-- **Phase 1: "Test Drive" (30 days)** - Site on `yourbusiness.localblue.co`, no credit card required
-- **Phase 2: "Professional Launch" (14 days)** - Custom domain connection, credit card required, 14 days free before billing
-
-**Annual Discount Strategy:**
-- "2 Months Free" model (10 months pricing)
-- Launch as "Founding Partner Plan" with price locked for life
-
-**Schema Fields:** `subscriptionPlan`, `trialPhase`, `trialStartDate`, `trialEndDate`, `hasCreditCard`, `billingPeriod`
-
-### Documentation
-- **Product Memo:** See `docs/PRODUCT_MEMO.md` for comprehensive vision, pricing strategy, and business case
-
-### Stripe Payment Integration
-
-**Architecture:**
-- Uses `stripe-replit-sync` for automatic data synchronization between Stripe and PostgreSQL
-- Stripe data is synced to `stripe.*` schema tables (products, prices, subscriptions, customers, payment_intents)
-- Webhook registered before `express.json()` middleware for raw body access
-
-**Key Files:**
-- `server/stripeClient.ts`: Stripe sync client initialization
-- `server/webhookHandlers.ts`: Webhook event processing
-- `server/stripeRoutes.ts`: API routes for checkout, portal, subscription status, and revenue dashboard
-- `server/seed-stripe-products.ts`: Product seeding script (run with `npx tsx server/seed-stripe-products.ts`)
-
-**API Endpoints:**
-- `GET /api/stripe/publishable-key`: Returns Stripe publishable key
-- `GET /api/stripe/products`: Returns LocalBlue subscription products from synced data
-- `POST /api/stripe/checkout`: Creates checkout session for a site
-- `POST /api/stripe/portal`: Creates customer billing portal session
-- `GET /api/stripe/subscription/:siteId`: Returns subscription status for a site
-- `GET /api/admin/revenue`: Platform Admin revenue dashboard data
-
-**Revenue Dashboard:**
-- Located at `/admin/revenue` in Platform Admin
-- Displays MRR, active subscriptions, customer count, conversion rate
-- Shows revenue chart (last 6 months) and recent payments
-- Subscription breakdown by plan and trial phase
-
-### TM:5 Implemented Features (Feb 2026)
-- **Projects Per Year**: Added `projectsPerYear` field to `sites` table. Captured during AI onboarding extraction. Displayed in TrustBadgesBar and About section when available.
-- **Photo Gallery Page**: Dedicated gallery page with category filter tabs (All/Projects/Before & After/Team/Services) showing photo counts. Hero section uses uploaded photos (hero type → first project photo → stock image fallback). Gallery page auto-generated during site creation with `gallery` slug.
-- **Post-Generation Feedback Loop**: After site generation, users redirect to `/feedback/:subdomain`. They can preview their site and submit textual feedback. `POST /api/site/feedback` endpoint uses Claude Sonnet to regenerate specific content sections based on feedback. Iterative refinement until satisfied. Includes `updatePageContent` storage method for targeted page updates.
-- **4 Distinct Template Layouts**: Each style preference (Professional/Bold/Warm/Luxury) now has meaningfully different section ordering, hero layouts, services grids, and typographic treatments:
-  - Professional: Centered hero, 3-col services, standard order
-  - Bold: Left-aligned hero, 2-col services with accent borders, services-first ordering, uppercase headings
-  - Warm: Smaller hero (75svh), masonry services grid, about-first ordering, rounded-2xl elements
-  - Luxury: Split hero layout, horizontal service cards, serif fonts (Playfair Display), gallery-forward ordering
-- **Enhanced Service Cards**: Each service card now includes:
-  - Photo thumbnails (matched from uploaded photos by caption/service name)
-  - AI-generated FAQ per service (1-2 questions with expandable answers, stored in `serviceFaqs` in content generation)
-  - "View Gallery" link that smooth-scrolls to gallery section
-  - All enhancements work across all 4 style variants
-
-## Future Roadmap
+Key entities include `User`, `Site`, `OnboardingProgress`, `SitePhoto`, `Testimonial`, `ServicePricing`, `Appointment`, `ChatbotConversation`, `Page`, `Lead`, `AnalyticsEvent`, `AnalyticsDaily`, `SeoMetric`, `SeoOptimization`, and `LeadNote`. These models support comprehensive business, content, interaction, analytics, SEO, and lead management.
 
 ## External Dependencies
-- **PostgreSQL**: Primary database for all application data.
-- **Drizzle ORM**: Used for database interactions.
-- **Claude Opus 4.5**: AI model used for the interactive onboarding process and content generation.
-- **Resend**: Integrated for sending lead notification emails.
-- **Replit Auth**: Utilized for secure user authentication via OpenID Connect.
-- **Stripe**: Payment processing and subscription management via Replit connector with automatic data sync.
+- **PostgreSQL**: Primary database.
+- **Drizzle ORM**: Database interaction.
+- **Claude Opus 4.5**: AI model for onboarding and content generation.
+- **Resend**: For sending lead notification emails.
+- **Replit Auth**: Secure user authentication via OpenID Connect.
+- **Stripe**: Payment processing and subscription management, including `stripe-replit-sync` for data synchronization.
