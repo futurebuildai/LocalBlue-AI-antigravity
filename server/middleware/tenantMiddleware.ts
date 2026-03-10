@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
-import { Site } from "@shared/schema";
+import { Site, TenantUser, TenantUserRole } from "@shared/schema";
 
 declare global {
   namespace Express {
@@ -8,6 +8,7 @@ declare global {
       site?: Site;
       tenantId?: string;
       isTenantAdmin?: boolean;
+      user?: TenantUser;
       platformAdmin?: {
         email: string;
         id: string;
@@ -28,6 +29,10 @@ declare module "express-session" {
     siteId?: string;
     isImpersonating?: boolean;
     impersonatedBy?: string;
+    platformAdmin?: {
+      email: string;
+      id: string;
+    };
   }
 }
 
@@ -38,7 +43,7 @@ export async function tenantMiddleware(
 ): Promise<void> {
   try {
     const hostname = req.hostname;
-    
+
     // Skip tenant detection for admin routes or API routes without tenant context
     if (req.path.startsWith("/api/admin")) {
       return next();
@@ -66,17 +71,17 @@ export async function tenantMiddleware(
       // For hostnames like "mysite.example.com", the subdomain is "mysite"
       // For local development, handle "mysite.localhost" pattern
       const parts = hostname.split(".");
-      
+
       if (parts.length >= 2) {
         let subdomain = parts[0];
-        
+
         // Check if this is an admin subdomain (admin.acme.localhost, admin.acme.repl.co)
         if (subdomain === "admin" && parts.length >= 3) {
           // Strip "admin." and use the next part as the tenant subdomain
           subdomain = parts[1];
           isTenantAdmin = true;
         }
-        
+
         // Skip common non-subdomain prefixes
         if (subdomain !== "www" && subdomain !== "api") {
           site = await storage.getSiteBySubdomain(subdomain);
@@ -103,21 +108,21 @@ export function requireTenant(
   next: NextFunction
 ): void {
   if (!req.site) {
-    res.status(404).json({ 
+    res.status(404).json({
       error: "Site not found",
-      message: "No site is configured for this domain" 
+      message: "No site is configured for this domain"
     });
     return;
   }
-  
+
   if (!req.site.isPublished) {
-    res.status(403).json({ 
+    res.status(403).json({
       error: "Site not published",
-      message: "This site is not yet published" 
+      message: "This site is not yet published"
     });
     return;
   }
-  
+
   next();
 }
 
@@ -127,21 +132,21 @@ export function requireTenantAdmin(
   next: NextFunction
 ): void {
   if (!req.site) {
-    res.status(404).json({ 
+    res.status(404).json({
       error: "Site not found",
-      message: "No site is configured for this domain" 
+      message: "No site is configured for this domain"
     });
     return;
   }
 
   if (!req.isTenantAdmin) {
-    res.status(403).json({ 
+    res.status(403).json({
       error: "Forbidden",
-      message: "This endpoint requires tenant admin access" 
+      message: "This endpoint requires tenant admin access"
     });
     return;
   }
-  
+
   next();
 }
 
@@ -151,31 +156,75 @@ export function requireTenantAuth(
   next: NextFunction
 ): void {
   if (!req.site) {
-    res.status(404).json({ 
+    res.status(404).json({
       error: "Site not found",
-      message: "No site is configured for this domain" 
+      message: "No site is configured for this domain"
     });
     return;
   }
 
   if (!req.session.userId || !req.session.siteId) {
-    res.status(401).json({ 
+    res.status(401).json({
       error: "Unauthorized",
-      message: "Authentication required" 
+      message: "Authentication required"
     });
     return;
   }
 
   // Verify the session is for the current site
   if (req.session.siteId !== req.site.id) {
-    res.status(403).json({ 
+    res.status(403).json({
       error: "Forbidden",
-      message: "Session is not valid for this site" 
+      message: "Session is not valid for this site"
     });
     return;
   }
-  
+
   next();
+}
+
+/**
+ * Middleware factory to require specific tenant roles
+ * Must be used AFTER requireTenantAuth middleware
+ */
+export function requireTenantRole(allowedRoles: TenantUserRole[]) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.session.userId) {
+        res.status(401).json({
+          error: "Unauthorized",
+          message: "Authentication required"
+        });
+        return;
+      }
+
+      // We can optionally cache this user on the request to avoid multiple queries 
+      // if multiple middlewares need the user object
+      if (!req.user) {
+        const user = await storage.getTenantUser(req.session.userId);
+        if (!user) {
+          res.status(401).json({
+            error: "Unauthorized",
+            message: "User not found"
+          });
+          return;
+        }
+        req.user = user;
+      }
+
+      if (!allowedRoles.includes(req.user.role as TenantUserRole)) {
+        res.status(403).json({
+          error: "Forbidden",
+          message: "You do not have the required role to perform this action"
+        });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 /**
@@ -187,40 +236,38 @@ export function requirePlatformAdmin(
   res: Response,
   next: NextFunction
 ): void {
-  const user = req.user as any;
-  
-  // Check if authenticated via Replit Auth
-  if (!req.isAuthenticated() || !user?.claims) {
-    res.status(401).json({ 
+  // Check if authenticated via local auth
+  if (!req.session.platformAdmin) {
+    res.status(401).json({
       error: "Unauthorized",
-      message: "Platform admin authentication required. Please log in." 
+      message: "Platform admin authentication required. Please log in."
     });
     return;
   }
-  
-  const userEmail = (user.claims.email || "").toLowerCase();
+
+  const userEmail = req.session.platformAdmin.email.toLowerCase();
   const allowedEmails = getPlatformAdminEmails();
-  
+
   // SECURITY: If no admin emails configured, deny access
   // This prevents accidental exposure of admin routes in production
   if (allowedEmails.length === 0) {
     console.error("SECURITY: PLATFORM_ADMIN_EMAILS not configured - denying access to admin routes");
-    res.status(403).json({ 
+    res.status(403).json({
       error: "Forbidden",
-      message: "Platform admin access is not configured. Please set PLATFORM_ADMIN_EMAILS environment variable." 
+      message: "Platform admin access is not configured. Please set PLATFORM_ADMIN_EMAILS environment variable."
     });
     return;
   }
-  
+
   // Check if user's email is in allowed list
   if (!allowedEmails.includes(userEmail)) {
-    res.status(403).json({ 
+    res.status(403).json({
       error: "Forbidden",
-      message: "You do not have platform admin access" 
+      message: "You do not have platform admin access"
     });
     return;
   }
-  
-  req.platformAdmin = { email: userEmail, id: user.claims.sub };
+
+  req.platformAdmin = req.session.platformAdmin;
   next();
 }

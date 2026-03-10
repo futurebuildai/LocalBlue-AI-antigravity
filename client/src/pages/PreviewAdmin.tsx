@@ -9,6 +9,7 @@ import TenantPages from "./tenant-admin/Pages";
 import TenantPageEditor from "./tenant-admin/PageEditor";
 import TenantSettings from "./tenant-admin/Settings";
 import TenantLeads from "./tenant-admin/LeadsCRM";
+import TenantRFQInbox from "./tenant-admin/RFQInbox";
 import TenantUsers from "./tenant-admin/TenantUsers";
 import TenantAnalytics from "./tenant-admin/Analytics";
 import { PreviewProvider } from "@/contexts/PreviewContext";
@@ -111,6 +112,9 @@ export default function PreviewAdmin() {
               </Route>
               <Route path="/preview/:subdomain/admin/pages">
                 <TenantPages />
+              </Route>
+              <Route path="/preview/:subdomain/admin/rfqs">
+                <TenantRFQInbox />
               </Route>
               <Route path="/preview/:subdomain/admin/leads">
                 <TenantLeads />

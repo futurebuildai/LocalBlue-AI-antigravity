@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Dashboard from "@/pages/admin/Dashboard";
+import AdminLogin from "@/pages/admin/Login";
 import Sites from "@/pages/admin/Sites";
 import SiteDetail from "@/pages/admin/SiteDetail";
 import UsersPage from "@/pages/admin/Users";
@@ -41,7 +42,10 @@ import TenantUsers from "@/pages/tenant-admin/TenantUsers";
 import TenantPages from "@/pages/tenant-admin/Pages";
 import TenantPageEditor from "@/pages/tenant-admin/PageEditor";
 import TenantLeads from "@/pages/tenant-admin/LeadsCRM";
+import TenantRFQInbox from "@/pages/tenant-admin/RFQInbox";
 import TenantAnalytics from "@/pages/tenant-admin/Analytics";
+import TenantServicePricing from "@/pages/tenant-admin/ServicePricing";
+import TenantTestimonials from "@/pages/tenant-admin/Testimonials";
 import TenantAdminLayout from "@/components/TenantAdminLayout";
 import PublicSite from "@/pages/PublicSite";
 import PreviewSite from "@/pages/PreviewSite";
@@ -101,7 +105,7 @@ function AppSidebar() {
 
 function PlatformAdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
-  
+
   const { data: adminCheck, isLoading: adminLoading, error: adminError } = useQuery({
     queryKey: ["/api/admin/sites"],
     queryFn: async () => {
@@ -139,11 +143,11 @@ function PlatformAdminGuard({ children }: { children: React.ReactNode }) {
           <p className="text-muted-foreground mb-6">
             You must be signed in to access the platform admin panel.
           </p>
-          <a href="/api/login">
+          <Link href="/admin/login">
             <Button data-testid="button-admin-login">
               Sign In
             </Button>
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -194,9 +198,9 @@ function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
                 <span className="text-sm font-medium" data-testid="text-admin-username">
                   {user.firstName} {user.lastName}
                 </span>
-                <a href="/api/logout" data-testid="button-admin-logout" className="text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={() => { window.location.href = "/api/admin/logout"; fetch("/api/admin/logout", { method: "POST" }).then(() => window.location.href = "/admin/login") }} data-testid="button-admin-logout" className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                   <LogOut className="h-4 w-4" />
-                </a>
+                </button>
               </div>
             )}
           </header>
@@ -267,11 +271,20 @@ function TenantAdminApp() {
         <Route path="/users">
           <TenantUsers />
         </Route>
+        <Route path="/rfqs">
+          <TenantRFQInbox />
+        </Route>
         <Route path="/leads">
           <TenantLeads />
         </Route>
         <Route path="/analytics">
           <TenantAnalytics />
+        </Route>
+        <Route path="/service-pricing">
+          <TenantServicePricing />
+        </Route>
+        <Route path="/testimonials">
+          <TenantTestimonials />
         </Route>
         <Route component={NotFound} />
       </Switch>
@@ -283,51 +296,25 @@ type DomainType = "tenantAdmin" | "tenantPublic" | "main";
 
 function detectDomainType(): DomainType {
   const hostname = window.location.hostname;
-  
-  // Check if this is an admin subdomain (admin.acme.localblue or admin.acme.localhost)
+
+  // Check if this is an admin subdomain (e.g. admin.smithplumbing.com or admin.acme.localblue.co)
   if (hostname.startsWith("admin.")) {
     return "tenantAdmin";
   }
-  
+
   // Main site: localhost without subdomain, or the main domain
-  if (hostname === "localhost" || 
-      hostname === "localblue" ||
-      hostname === "www.localblue" ||
-      hostname === "localblue.co" ||
-      hostname === "www.localblue.co") {
+  const mainDomain = import.meta.env.VITE_MAIN_DOMAIN || "localblue.co";
+  const isMainDomain = hostname === "localhost" ||
+    hostname === mainDomain ||
+    hostname === `www.${mainDomain}` ||
+    hostname === "localblue" ||
+    hostname === "www.localblue";
+
+  if (isMainDomain) {
     return "main";
   }
-  
-  // Replit dev domains are the main site (e.g., xxxxx.replit.dev, xxxxx-00-xxxxx.replit.dev)
-  if (hostname.endsWith(".replit.dev") || hostname.endsWith(".repl.co") || hostname.endsWith(".picard.replit.dev")) {
-    // Count the parts - Replit dev URLs have a specific pattern
-    // For the main app, treat any direct replit.dev URL as main
-    // Subdomains would be like: tenant.xxxxx.replit.dev
-    const parts = hostname.split(".");
-    // If the hostname matches the pattern of a Replit dev URL (not a subdomain of it), treat as main
-    // Replit URLs typically: [random]-00-[username].replit.dev or [repname].[username].repl.co
-    // We check if there are tenant-like subdomains (starts with known tenant patterns)
-    const firstPart = parts[0];
-    // If the first part looks like a tenant subdomain (not a Replit-generated ID)
-    // Tenant subdomains would be like: acme, smithplumbing, etc.
-    // Replit IDs are alphanumeric with hyphens and specific patterns
-    if (parts.length <= 3 || firstPart.includes("-00-") || /^[a-f0-9-]{20,}$/.test(firstPart)) {
-      return "main";
-    }
-    return "tenantPublic";
-  }
-  
-  // Check if this is a subdomain of localblue or localhost (tenant public site)
-  const parts = hostname.split(".");
-  if (parts.length >= 2) {
-    const tld = parts.slice(-1)[0];
-    // Subdomain patterns like: acme.localblue, acme.localhost
-    if (tld === "localhost" || hostname.endsWith(".localblue")) {
-      return "tenantPublic";
-    }
-  }
-  
-  // Custom domain (like smithplumbing.com) - treat as tenant public
+
+  // All other domains (custom domains or subdomains) are treated as tenant public sites
   return "tenantPublic";
 }
 
@@ -361,8 +348,8 @@ function TenantPublicApp() {
           <p className="text-muted-foreground mb-6">
             The site you're looking for doesn't exist or hasn't been configured yet.
           </p>
-          <a 
-            href="https://localblue" 
+          <a
+            href="https://localblue"
             className="inline-flex items-center gap-2 text-foreground hover:text-muted-foreground transition-colors"
             data-testid="link-localblue"
           >
@@ -391,6 +378,7 @@ function MainSiteApp() {
         <Route path="/preview/:subdomain/admin" component={PreviewAdmin} />
         <Route path="/preview/:subdomain" component={PreviewSite} />
         <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
+        <Route path="/admin/login" component={AdminLogin} />
         <Route path="/admin/sites/:id">
           {() => <PlatformAdminGuard><PlatformAdminLayout><SiteDetail /></PlatformAdminLayout></PlatformAdminGuard>}
         </Route>

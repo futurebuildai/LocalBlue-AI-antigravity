@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, FileText, Settings, Users, MessageSquare, LogOut, ExternalLink, Globe, BarChart3 } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, Users, MessageSquare, LogOut, ExternalLink, Globe, BarChart3, Tag, Star, Inbox } from "lucide-react";
 import { usePreview } from "@/contexts/PreviewContext";
 import type { Site, User } from "@shared/schema";
 
@@ -34,9 +34,12 @@ interface TenantAdminLayoutProps {
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "RFQ Inbox", url: "/rfqs", icon: Inbox },
   { title: "Pages", url: "/pages", icon: FileText },
   { title: "Leads", url: "/leads", icon: MessageSquare },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Service Pricing", url: "/service-pricing", icon: Tag },
+  { title: "Testimonials", url: "/testimonials", icon: Star },
   { title: "Users", url: "/users", icon: Users },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
@@ -45,13 +48,13 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
   const [location] = useLocation();
   const { toast } = useToast();
   const { isPreview, subdomain, getApiPath } = usePreview();
-  
+
   const getNavUrl = (url: string) => {
     if (!basePath) return url;
     if (url === "/") return basePath;
     return `${basePath}${url}`;
   };
-  
+
   const isActive = (url: string) => {
     const fullUrl = getNavUrl(url);
     if (url === "/") {
@@ -89,9 +92,9 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
         <Sidebar className="border-r-0">
           <SidebarHeader className="p-4 pb-6">
             <div className="flex items-center gap-3">
-              <div 
+              <div
                 className="flex h-11 w-11 items-center justify-center rounded-xl text-white font-bold text-lg shadow-lg"
-                style={{ 
+                style={{
                   backgroundColor: site.brandColor,
                   boxShadow: `0 4px 14px ${site.brandColor}40`
                 }}
@@ -115,7 +118,7 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
               </div>
             </div>
           </SidebarHeader>
-          
+
           <SidebarContent className="px-2">
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 mb-1">
@@ -125,12 +128,12 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
                 <SidebarMenu>
                   {navItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
+                      <SidebarMenuButton
+                        asChild
                         isActive={isActive(item.url)}
                       >
-                        <Link 
-                          href={getNavUrl(item.url)} 
+                        <Link
+                          href={getNavUrl(item.url)}
                           data-testid={`link-tenant-nav-${item.title.toLowerCase()}`}
                         >
                           <item.icon className="h-4 w-4" />
@@ -151,7 +154,7 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <a 
+                      <a
                         href={isPreview ? `/preview/${subdomain}` : (site.customDomain ? `https://${site.customDomain}` : `https://${site.subdomain}.localblue`)}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -167,7 +170,7 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          
+
           <SidebarFooter className="p-4 mt-auto">
             <div className="rounded-xl bg-muted/50 p-4 space-y-3">
               <div className="flex items-center gap-3">
@@ -181,10 +184,10 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
                   <p className="text-xs text-muted-foreground">Administrator</p>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                className="w-full" 
+                className="w-full"
                 onClick={handleLogout}
                 disabled={logoutMutation.isPending}
                 data-testid="button-logout"
@@ -195,7 +198,7 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
             </div>
           </SidebarFooter>
         </Sidebar>
-        
+
         <div className="flex flex-col flex-1 min-w-0 bg-muted/30">
           <header className="flex items-center gap-2 sm:gap-4 px-3 sm:px-6 py-3 sm:py-4 bg-background border-b">
             <SidebarTrigger className="h-10 w-10 min-h-[44px] min-w-[44px]" data-testid="button-tenant-sidebar-toggle" />

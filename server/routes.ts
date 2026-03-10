@@ -1,16 +1,21 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth, requirePlatformAdmin } from "./middleware/tenantMiddleware";
+import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth, requirePlatformAdmin, requireTenantRole } from "./middleware/tenantMiddleware";
 import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES, type TradeType, type StylePreference, LEAD_STAGES, type LeadStage, LEAD_PRIORITIES, type LeadPriority, insertAnalyticsEventSchema } from "@shared/schema";
 import { TRADE_TEMPLATES, STYLE_TEMPLATES, AVAILABLE_PAGES, getTradeTemplate, getStyleTemplate } from "@shared/tradeTemplates";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { registerAdminRoutes } from "./routes/admin";
+import { registerIntegrationRoutes } from "./routes/integration";
+import { setupAuth, registerAuthRoutes } from "./auth";
 import { sendLeadNotification, sendWelcomeEmail, sendContactSalesEmail, sendBetaFeedbackEmail } from "./services/email";
+import { auditService } from "./services/audit";
 import { registerStripeRoutes } from "./stripeRoutes";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import Anthropic from "@anthropic-ai/sdk";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { publishSiteDNS, unpublishSiteDNS, isCloudflareConfigured } from "./cloudflare";
 
 const anthropic = new Anthropic({
@@ -55,690 +60,47 @@ export async function registerRoutes(
   // Setup Replit Auth before other routes
   await setupAuth(app);
   registerAuthRoutes(app);
-  
+
   // Register Stripe routes for payments and billing
   registerStripeRoutes(app);
+
+  // Apply security middleware
+  app.use(helmet({
+    contentSecurityPolicy: false, // Turned off to avoid breaking Vite/React dev server inline scripts
+    crossOriginEmbedderPolicy: false,
+  }));
+
+  // Rate Limiting
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500, // Limit each IP to 500 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." }
+  });
+  app.use("/api/", apiLimiter);
+
+  const authLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 20, // Limit each IP to 20 auth attempts per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many authentication attempts, please try again later." }
+  });
 
   // Apply tenant middleware globally
   app.use(tenantMiddleware);
 
-  // ============================================
-  // Admin API Routes (Platform Admin only)
-  // ============================================
-  
-  // Apply platform admin auth to all /api/admin routes
-  app.use("/api/admin", requirePlatformAdmin);
+  registerAdminRoutes(app);
 
-  // --- Sites CRUD ---
-  
-  // Get all sites
-  app.get("/api/admin/sites", async (req, res) => {
-    try {
-      const sites = await storage.getAllSites();
-      res.json(sites);
-    } catch (error) {
-      console.error("Error fetching sites:", error);
-      res.status(500).json({ error: "Failed to fetch sites" });
-    }
-  });
-
-  // Get all sites with enhanced data (lead count, onboarding status, last activity)
-  app.get("/api/admin/sites/enhanced", async (req, res) => {
-    try {
-      const allSites = await storage.getAllSites();
-      
-      const enhancedSites = await Promise.all(
-        allSites.map(async (site) => {
-          // Get leads for this site
-          const siteLeads = await storage.getLeadsBySiteId(site.id);
-          const leadCount = siteLeads.length;
-          
-          // Get onboarding progress
-          const progress = await storage.getOnboardingProgress(site.id);
-          let onboardingStatus: string;
-          if (!progress) {
-            onboardingStatus = "not_started";
-          } else if (progress.currentPhase === "complete") {
-            onboardingStatus = "completed";
-          } else {
-            onboardingStatus = progress.currentPhase;
-          }
-          
-          // Calculate last activity (most recent lead or onboarding update)
-          let lastActivity: Date | null = null;
-          
-          // Check most recent lead (sort to ensure we get the latest)
-          const sortedLeads = [...siteLeads].sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          if (sortedLeads.length > 0 && sortedLeads[0].createdAt) {
-            lastActivity = new Date(sortedLeads[0].createdAt);
-          }
-          
-          // Check onboarding progress update time
-          if (progress?.updatedAt) {
-            const onboardingDate = new Date(progress.updatedAt);
-            if (!lastActivity || onboardingDate > lastActivity) {
-              lastActivity = onboardingDate;
-            }
-          }
-          
-          return {
-            ...site,
-            leadCount,
-            onboardingStatus,
-            lastActivity: lastActivity?.toISOString() || null,
-          };
-        })
-      );
-      
-      // Sort by last activity (most recent first)
-      enhancedSites.sort((a, b) => {
-        if (!a.lastActivity && !b.lastActivity) return 0;
-        if (!a.lastActivity) return 1;
-        if (!b.lastActivity) return -1;
-        return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
-      });
-      
-      res.json(enhancedSites);
-    } catch (error) {
-      console.error("Error fetching enhanced sites:", error);
-      res.status(500).json({ error: "Failed to fetch enhanced sites" });
-    }
-  });
-
-  // Get single site
-  app.get("/api/admin/sites/:id", async (req, res) => {
-    try {
-      const site = await storage.getSite(req.params.id);
-      if (!site) {
-        return res.status(404).json({ error: "Site not found" });
-      }
-      res.json(site);
-    } catch (error) {
-      console.error("Error fetching site:", error);
-      res.status(500).json({ error: "Failed to fetch site" });
-    }
-  });
-
-  // Create site
-  app.post("/api/admin/sites", async (req, res) => {
-    try {
-      const result = insertSiteSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ error: "Invalid site data", details: result.error.flatten() });
-      }
-
-      // Check if subdomain is already taken
-      const existingSite = await storage.getSiteBySubdomain(result.data.subdomain);
-      if (existingSite) {
-        return res.status(409).json({ error: "Subdomain already taken" });
-      }
-
-      const site = await storage.createSite(result.data);
-      res.status(201).json(site);
-    } catch (error) {
-      console.error("Error creating site:", error);
-      res.status(500).json({ error: "Failed to create site" });
-    }
-  });
-
-  // Update site
-  app.patch("/api/admin/sites/:id", async (req, res) => {
-    try {
-      const partialSchema = insertSiteSchema.partial();
-      const result = partialSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ error: "Invalid site data", details: result.error.flatten() });
-      }
-
-      // If subdomain is being changed, check if it's already taken
-      if (result.data.subdomain) {
-        const existingSite = await storage.getSiteBySubdomain(result.data.subdomain);
-        if (existingSite && existingSite.id !== req.params.id) {
-          return res.status(409).json({ error: "Subdomain already taken" });
-        }
-      }
-
-      const site = await storage.updateSite(req.params.id, result.data);
-      if (!site) {
-        return res.status(404).json({ error: "Site not found" });
-      }
-      res.json(site);
-    } catch (error) {
-      console.error("Error updating site:", error);
-      res.status(500).json({ error: "Failed to update site" });
-    }
-  });
-
-  // Delete site
-  app.delete("/api/admin/sites/:id", async (req, res) => {
-    try {
-      const deleted = await storage.deleteSite(req.params.id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Site not found" });
-      }
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting site:", error);
-      res.status(500).json({ error: "Failed to delete site" });
-    }
-  });
-
-  // Get comprehensive site details for admin view
-  app.get("/api/admin/sites/:siteId/details", async (req, res) => {
-    try {
-      const { siteId } = req.params;
-      const site = await storage.getSite(siteId);
-      
-      if (!site) {
-        return res.status(404).json({ error: "Site not found" });
-      }
-      
-      // Get all related data with fallbacks for missing methods
-      let leads: any[] = [];
-      let onboardingProgress: any = null;
-      let pages: any[] = [];
-      let users: any[] = [];
-      let photos: any[] = [];
-      let testimonials: any[] = [];
-      
-      try {
-        leads = await storage.getLeadsBySiteId(siteId);
-      } catch (e) {
-        console.error("Error fetching leads:", e);
-      }
-      
-      try {
-        onboardingProgress = await storage.getOnboardingProgress(siteId);
-      } catch (e) {
-        console.error("Error fetching onboarding progress:", e);
-      }
-      
-      try {
-        pages = await storage.getPagesBySiteId(siteId);
-      } catch (e) {
-        console.error("Error fetching pages:", e);
-      }
-      
-      try {
-        users = await storage.getTenantUsersBySiteId(siteId);
-      } catch (e) {
-        console.error("Error fetching users:", e);
-      }
-      
-      try {
-        photos = await storage.getSitePhotos(siteId);
-      } catch (e) {
-        console.error("Error fetching photos:", e);
-      }
-      
-      try {
-        testimonials = await storage.getTestimonials(siteId);
-      } catch (e) {
-        console.error("Error fetching testimonials:", e);
-      }
-      
-      // Sanitize user data - remove passwords
-      const sanitizedUsers = users.map(({ password, ...user }) => user);
-      
-      res.json({
-        site,
-        leads,
-        onboardingProgress,
-        pages,
-        users: sanitizedUsers,
-        photos,
-        testimonials
-      });
-    } catch (error) {
-      console.error("Error fetching site details:", error);
-      res.status(500).json({ error: "Failed to fetch site details" });
-    }
-  });
-
-  // Platform Admin: Impersonate tenant admin
-  app.post("/api/admin/sites/:siteId/impersonate", async (req, res) => {
-    try {
-      const { siteId } = req.params;
-      const site = await storage.getSite(siteId);
-      
-      if (!site) {
-        return res.status(404).json({ error: "Site not found" });
-      }
-      
-      // Get or create a default admin user for this site
-      let tenantUsers = await storage.getTenantUsersBySiteId(siteId);
-      let targetUser = tenantUsers.find(u => u.role === 'admin') || tenantUsers[0];
-      
-      if (!targetUser) {
-        // Create a default admin user if none exists
-        const hashedPassword = await bcrypt.hash('impersonate-only', 10);
-        targetUser = await storage.createTenantUser({
-          siteId,
-          email: `admin@${site.subdomain}.local`,
-          password: hashedPassword,
-          name: 'Site Admin',
-          role: 'admin'
-        });
-      }
-      
-      // Create a short-lived JWT token for impersonation
-      const token = jwt.sign(
-        { 
-          type: 'impersonate',
-          siteId,
-          userId: targetUser.id,
-          adminEmail: (req as any).user?.claims?.email || 'platform-admin'
-        },
-        process.env.SESSION_SECRET || 'localblue-secret',
-        { expiresIn: '2m' }
-      );
-      
-      // Return the impersonation URL
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      res.json({ 
-        impersonateUrl: `${baseUrl}/tenant/${site.subdomain}/impersonate?token=${token}`,
-        subdomain: site.subdomain,
-        token
-      });
-    } catch (error) {
-      console.error("Error creating impersonation token:", error);
-      res.status(500).json({ error: "Failed to create impersonation session" });
-    }
-  });
-
-  // Preview routes require platform admin authentication
-  app.use("/api/preview", requirePlatformAdmin);
-
-  // Preview site by subdomain (for development)
-  app.get("/api/preview/:subdomain", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) {
-        return res.status(404).json({ error: "Site not found" });
-      }
-      res.json(site);
-    } catch (error) {
-      console.error("Error fetching site for preview:", error);
-      res.status(500).json({ error: "Failed to fetch site" });
-    }
-  });
-
-  // List all pages for a preview site
-  app.get("/api/preview/:subdomain/pages", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const pages = await storage.getPagesBySiteId(site.id);
-      res.json(pages);
-    } catch (error) {
-      console.error("Error fetching pages for preview:", error);
-      res.status(500).json({ error: "Failed to fetch pages" });
-    }
-  });
-
-  // Get single page for preview site
-  app.get("/api/preview/:subdomain/pages/:slug", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) {
-        return res.status(404).json({ error: "Site not found" });
-      }
-      const page = await storage.getPageBySiteAndSlug(site.id, req.params.slug);
-      if (!page) {
-        return res.status(404).json({ error: "Page not found" });
-      }
-      res.json(page);
-    } catch (error) {
-      console.error("Error fetching page for preview:", error);
-      res.status(500).json({ error: "Failed to fetch page" });
-    }
-  });
-
-  // Get photos for preview site
-  app.get("/api/preview/:subdomain/photos", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const photos = await storage.getSitePhotos(site.id);
-      res.json(photos.filter(p => p.type !== 'logo'));
-    } catch (error) {
-      console.error("Error fetching photos for preview:", error);
-      res.status(500).json({ error: "Failed to fetch photos" });
-    }
-  });
-
-  // Get testimonials for preview site
-  app.get("/api/preview/:subdomain/testimonials", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const testimonials = await storage.getTestimonials(site.id);
-      res.json(testimonials);
-    } catch (error) {
-      console.error("Error fetching testimonials for preview:", error);
-      res.status(500).json({ error: "Failed to fetch testimonials" });
-    }
-  });
-
-  // Get lead metrics for preview
-  app.get("/api/preview/:subdomain/leads/metrics", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const leads = await storage.getLeadsBySiteId(site.id);
-      const now = new Date();
-      const thisMonth = leads.filter(l => { const d = new Date(l.createdAt); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
-      const won = leads.filter(l => l.stage === 'won');
-      const totalValue = won.reduce((sum, l) => sum + (l.estimatedValue || 0), 0);
-      res.json({
-        total: leads.length,
-        thisMonth: thisMonth.length,
-        conversionRate: leads.length > 0 ? Math.round((won.length / leads.length) * 100) : 0,
-        totalValue,
-        byStage: { new: leads.filter(l => l.stage === 'new').length, contacted: leads.filter(l => l.stage === 'contacted').length, quoted: leads.filter(l => l.stage === 'quoted').length, won: won.length, lost: leads.filter(l => l.stage === 'lost').length }
-      });
-    } catch (error) {
-      console.error("Error fetching lead metrics for preview:", error);
-      res.status(500).json({ error: "Failed to fetch lead metrics" });
-    }
-  });
-
-  // Get leads for preview site
-  app.get("/api/preview/:subdomain/leads", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const leads = await storage.getLeadsBySiteId(site.id);
-      res.json(leads);
-    } catch (error) {
-      console.error("Error fetching leads for preview:", error);
-      res.status(500).json({ error: "Failed to fetch leads" });
-    }
-  });
-
-  // Get users for preview site
-  app.get("/api/preview/:subdomain/users", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const users = await storage.getTenantUsersBySiteId(site.id);
-      const sanitized = users.map(({ password, ...u }) => u);
-      res.json(sanitized);
-    } catch (error) {
-      console.error("Error fetching users for preview:", error);
-      res.status(500).json({ error: "Failed to fetch users" });
-    }
-  });
-
-  // Get settings for preview site
-  app.get("/api/preview/:subdomain/settings", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      res.json(site);
-    } catch (error) {
-      console.error("Error fetching settings for preview:", error);
-      res.status(500).json({ error: "Failed to fetch settings" });
-    }
-  });
-
-  // Analytics summary for preview
-  app.get("/api/preview/:subdomain/analytics/summary", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      res.json({ dailyData: [], totals: { pageViews: 0, uniqueVisitors: 0, avgDuration: 0, bounceRate: 0 } });
-    } catch (error) {
-      console.error("Error fetching analytics for preview:", error);
-      res.status(500).json({ error: "Failed to fetch analytics" });
-    }
-  });
-
-  // Get lead notes for preview
-  app.get("/api/preview/:subdomain/leads/:id/notes", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const notes = await storage.getLeadNotes(parseInt(req.params.id));
-      res.json(notes);
-    } catch (error) {
-      console.error("Error fetching lead notes for preview:", error);
-      res.status(500).json({ error: "Failed to fetch lead notes" });
-    }
-  });
-
-  // Toggle publish for preview site
-  app.post("/api/preview/:subdomain/publish", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const updatedSite = await storage.updateSite(site.id, { isPublished: !site.isPublished });
-      res.json(updatedSite);
-    } catch (error) {
-      console.error("Error toggling publish for preview:", error);
-      res.status(500).json({ error: "Failed to toggle publish" });
-    }
-  });
-
-  // Submit lead from preview site
-  app.post("/api/preview/:subdomain/leads", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const lead = await storage.createLead({ ...req.body, siteId: site.id });
-      res.json(lead);
-    } catch (error) {
-      console.error("Error creating lead for preview:", error);
-      res.status(500).json({ error: "Failed to create lead" });
-    }
-  });
-
-  // Create lead note for preview
-  app.post("/api/preview/:subdomain/leads/:id/notes", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const note = await storage.createLeadNote({ leadId: parseInt(req.params.id), siteId: site.id, content: req.body.content });
-      res.json(note);
-    } catch (error) {
-      console.error("Error creating lead note for preview:", error);
-      res.status(500).json({ error: "Failed to create lead note" });
-    }
-  });
-
-  // Update settings for preview
-  app.patch("/api/preview/:subdomain/settings", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const { businessName, brandColor, phone, email, address, enableChatbot, enableQuoteCalculator } = req.body;
-      const updatedSite = await storage.updateSite(site.id, { businessName, brandColor, phone, email, address, enableChatbot, enableQuoteCalculator });
-      res.json(updatedSite);
-    } catch (error) {
-      console.error("Error updating settings for preview:", error);
-      res.status(500).json({ error: "Failed to update settings" });
-    }
-  });
-
-  // Update page content for preview
-  app.patch("/api/preview/:subdomain/pages/:slug", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const page = await storage.getPageBySiteAndSlug(site.id, req.params.slug);
-      if (!page) return res.status(404).json({ error: "Page not found" });
-      const updated = await storage.updatePage(page.id, req.body);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating page for preview:", error);
-      res.status(500).json({ error: "Failed to update page" });
-    }
-  });
-
-  // Update lead stage for preview
-  app.patch("/api/preview/:subdomain/leads/:id/stage", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const lead = await storage.updateLead(parseInt(req.params.id), { stage: req.body.stage });
-      res.json(lead);
-    } catch (error) {
-      console.error("Error updating lead stage for preview:", error);
-      res.status(500).json({ error: "Failed to update lead stage" });
-    }
-  });
-
-  // Update lead priority for preview
-  app.patch("/api/preview/:subdomain/leads/:id/priority", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const lead = await storage.updateLead(parseInt(req.params.id), { priority: req.body.priority });
-      res.json(lead);
-    } catch (error) {
-      console.error("Error updating lead priority for preview:", error);
-      res.status(500).json({ error: "Failed to update lead priority" });
-    }
-  });
-
-  // Update lead for preview
-  app.patch("/api/preview/:subdomain/leads/:id", async (req, res) => {
-    try {
-      const site = await storage.getSiteBySubdomain(req.params.subdomain);
-      if (!site) return res.status(404).json({ error: "Site not found" });
-      const lead = await storage.updateLead(parseInt(req.params.id), req.body);
-      res.json(lead);
-    } catch (error) {
-      console.error("Error updating lead for preview:", error);
-      res.status(500).json({ error: "Failed to update lead" });
-    }
-  });
-
-  // --- Users CRUD ---
-
-  // Get all users (optionally filtered by site)
-  app.get("/api/admin/users", async (req, res) => {
-    try {
-      const siteId = req.query.siteId as string | undefined;
-      let users;
-      
-      if (siteId) {
-        users = await storage.getTenantUsersBySiteId(siteId);
-      } else {
-        users = await storage.getAllTenantUsers();
-      }
-      
-      // Remove passwords from response
-      const sanitizedUsers = users.map(({ password, ...user }) => user);
-      res.json(sanitizedUsers);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({ error: "Failed to fetch users" });
-    }
-  });
-
-  // Get single user
-  app.get("/api/admin/users/:id", async (req, res) => {
-    try {
-      const user = await storage.getTenantUser(req.params.id);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      const { password, ...sanitizedUser } = user;
-      res.json(sanitizedUser);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ error: "Failed to fetch user" });
-    }
-  });
-
-  // Create user
-  app.post("/api/admin/users", async (req, res) => {
-    try {
-      const result = insertTenantUserSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ error: "Invalid user data", details: result.error.flatten() });
-      }
-
-      // Check if email is already taken
-      const existingUser = await storage.getTenantUserByEmail(result.data.email);
-      if (existingUser) {
-        return res.status(409).json({ error: "Email already registered" });
-      }
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(result.data.password, SALT_ROUNDS);
-
-      const user = await storage.createTenantUser({
-        ...result.data,
-        password: hashedPassword,
-      });
-
-      const { password, ...sanitizedUser } = user;
-      res.status(201).json(sanitizedUser);
-    } catch (error) {
-      console.error("Error creating user:", error);
-      res.status(500).json({ error: "Failed to create user" });
-    }
-  });
-
-  // Update user
-  app.patch("/api/admin/users/:id", async (req, res) => {
-    try {
-      const partialSchema = insertTenantUserSchema.partial();
-      const result = partialSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ error: "Invalid user data", details: result.error.flatten() });
-      }
-
-      // If email is being changed, check if it's already taken
-      if (result.data.email) {
-        const existingUser = await storage.getTenantUserByEmail(result.data.email);
-        if (existingUser && existingUser.id !== req.params.id) {
-          return res.status(409).json({ error: "Email already registered" });
-        }
-      }
-
-      // If password is being updated, hash it
-      let updateData = { ...result.data };
-      if (updateData.password) {
-        updateData.password = await bcrypt.hash(updateData.password, SALT_ROUNDS);
-      }
-
-      const user = await storage.updateTenantUser(req.params.id, updateData);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      
-      const { password, ...sanitizedUser } = user;
-      res.json(sanitizedUser);
-    } catch (error) {
-      console.error("Error updating user:", error);
-      res.status(500).json({ error: "Failed to update user" });
-    }
-  });
-
-  // Delete user
-  app.delete("/api/admin/users/:id", async (req, res) => {
-    try {
-      const deleted = await storage.deleteTenantUser(req.params.id);
-      if (!deleted) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      res.status(500).json({ error: "Failed to delete user" });
-    }
-  });
+  // Register FB-Brain integration webhook routes (API-key auth)
+  registerIntegrationRoutes(app);
 
   // ============================================
   // Public Signup Route (for contractors)
   // ============================================
 
-  app.post("/api/signup", async (req, res) => {
+  app.post("/api/signup", authLimiter, async (req, res) => {
     try {
       const result = signupSchema.safeParse(req.body);
       if (!result.success) {
@@ -755,7 +117,7 @@ export async function registerRoutes(
 
       // Generate subdomain from business name
       let subdomain = generateSubdomain(businessName);
-      
+
       // Ensure subdomain is not empty
       if (!subdomain) {
         subdomain = "site";
@@ -783,6 +145,7 @@ export async function registerRoutes(
         email,
         password: hashedPassword,
         siteId: site.id,
+        role: "owner",
       });
 
       // Set session so user is logged in
@@ -801,7 +164,7 @@ export async function registerRoutes(
   app.post("/api/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      
+
       if (!email || !password) {
         return res.status(400).json({ error: "Email and password are required" });
       }
@@ -873,7 +236,7 @@ export async function registerRoutes(
       const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
       const now = Date.now();
       const rateData = leadRateLimit.get(clientIp);
-      
+
       if (rateData) {
         if (now < rateData.resetTime) {
           if (rateData.count >= RATE_LIMIT_MAX) {
@@ -918,7 +281,7 @@ export async function registerRoutes(
       }
 
       const lead = await storage.createLead(result.data);
-      
+
       // Send email notification to the contractor (non-blocking)
       const site = req.site!;
       if (site.email) {
@@ -931,7 +294,7 @@ export async function registerRoutes(
           leadMessage: lead.message || '',
         }).catch(err => console.error('Failed to send lead notification:', err));
       }
-      
+
       res.status(201).json({ success: true, id: lead.id });
     } catch (error) {
       console.error("Error creating lead:", error);
@@ -1012,7 +375,7 @@ export async function registerRoutes(
       const tradeTemplate = site.tradeType ? getTradeTemplate(site.tradeType) : null;
       const services = site.services || [];
       const faqs = site.chatbotFaqs || tradeTemplate?.commonFaqs || [];
-      
+
       const systemPrompt = `You are a friendly, professional virtual assistant for ${site.businessName}, a ${tradeTemplate?.name || 'contractor'} business.
 
 BUSINESS INFORMATION:
@@ -1062,7 +425,7 @@ IMPORTANT:
 
       // Stream response from Anthropic
       let fullResponse = "";
-      
+
       const stream = await anthropic.messages.stream({
         model: "claude-sonnet-4-20250514",
         max_tokens: 500,
@@ -1079,7 +442,7 @@ IMPORTANT:
       }
 
       // Update conversation with new messages
-      const existingMessages = (conversation.messages || []) as Array<{role: string, content: string, timestamp: string}>;
+      const existingMessages = (conversation.messages || []) as Array<{ role: string, content: string, timestamp: string }>;
       const updatedMessages = [
         ...existingMessages,
         { role: "user", content: message, timestamp: new Date().toISOString() },
@@ -1156,7 +519,7 @@ IMPORTANT:
         return res.json({ messages: [] });
       }
 
-      res.json({ 
+      res.json({
         messages: conversation.messages || [],
         leadCaptured: conversation.leadCaptured,
       });
@@ -1174,11 +537,11 @@ IMPORTANT:
   app.get("/api/tenant/impersonate", async (req, res) => {
     try {
       const { token } = req.query;
-      
+
       if (!token || typeof token !== 'string') {
         return res.status(400).json({ error: "Missing token" });
       }
-      
+
       try {
         const decoded = jwt.verify(token, process.env.SESSION_SECRET || 'localblue-secret') as {
           type: string;
@@ -1186,25 +549,25 @@ IMPORTANT:
           userId: string;
           adminEmail: string;
         };
-        
+
         if (decoded.type !== 'impersonate') {
           return res.status(400).json({ error: "Invalid token type" });
         }
-        
+
         // Set up session like a regular login
         req.session.userId = decoded.userId;
         req.session.siteId = decoded.siteId;
         req.session.isImpersonating = true;
         req.session.impersonatedBy = decoded.adminEmail;
-        
+
         // Get the site to redirect to proper tenant admin
         const site = await storage.getSite(decoded.siteId);
         if (!site) {
           return res.status(404).json({ error: "Site not found" });
         }
-        
-        res.json({ 
-          success: true, 
+
+        res.json({
+          success: true,
           message: "Impersonation session created",
           siteId: decoded.siteId,
           subdomain: site.subdomain
@@ -1278,7 +641,7 @@ IMPORTANT:
       }
 
       const { password, ...sanitizedUser } = user;
-      res.json({ user: sanitizedUser });
+      res.json({ user: sanitizedUser, site: req.site });
     } catch (error) {
       console.error("Error fetching current user:", error);
       res.status(500).json({ error: "Failed to fetch user" });
@@ -1292,11 +655,11 @@ IMPORTANT:
   });
 
   // Tenant Settings: Update settings
-  app.patch("/api/tenant/settings", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+  app.patch("/api/tenant/settings", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
     try {
       // Only allow updating certain fields (not subdomain or id)
       const updateData: Record<string, any> = {};
-      
+
       if (req.body.businessName !== undefined) {
         updateData.businessName = req.body.businessName;
       }
@@ -1319,6 +682,15 @@ IMPORTANT:
         return res.status(404).json({ error: "Site not found" });
       }
 
+      await auditService.log({
+        siteId: req.site!.id,
+        userId: req.user!.id,
+        action: "update",
+        resourceType: "site_settings",
+        resourceId: updatedSite.id,
+        details: updateData
+      });
+
       const { id, subdomain, businessName, brandColor, services, isPublished, customDomain } = updatedSite;
       res.json({ id, subdomain, businessName, brandColor, services, isPublished, customDomain });
     } catch (error) {
@@ -1328,7 +700,7 @@ IMPORTANT:
   });
 
   // Tenant Users: Get users belonging to this tenant
-  app.get("/api/tenant/users", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+  app.get("/api/tenant/users", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
     try {
       const users = await storage.getTenantUsersBySiteId(req.site!.id);
       const sanitizedUsers = users.map(({ password, ...user }) => user);
@@ -1340,13 +712,13 @@ IMPORTANT:
   });
 
   // Tenant Users: Create a user for this tenant
-  app.post("/api/tenant/users", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+  app.post("/api/tenant/users", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
     try {
       const result = insertTenantUserSchema.safeParse({
         ...req.body,
         siteId: req.site!.id, // Force the user to belong to this tenant
       });
-      
+
       if (!result.success) {
         return res.status(400).json({ error: "Invalid user data", details: result.error.flatten() });
       }
@@ -1363,6 +735,15 @@ IMPORTANT:
       const user = await storage.createTenantUser({
         ...result.data,
         password: hashedPassword,
+      });
+
+      await auditService.log({
+        siteId: req.site!.id,
+        userId: req.user!.id,
+        action: "create",
+        resourceType: "tenant_user",
+        resourceId: user.id,
+        details: { email: user.email, role: user.role }
       });
 
       const { password, ...sanitizedUser } = user;
@@ -1403,7 +784,7 @@ IMPORTANT:
   });
 
   // Tenant Pages: Update a page by slug
-  app.patch("/api/tenant/pages/:slug", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+  app.patch("/api/tenant/pages/:slug", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
     try {
       const page = await storage.getPageBySiteAndSlug(req.site!.id, req.params.slug as string);
       if (!page) {
@@ -1412,7 +793,7 @@ IMPORTANT:
 
       const { title, content } = req.body;
       const updateData: { title?: string; content?: Record<string, any> } = {};
-      
+
       if (title !== undefined) {
         updateData.title = title;
       }
@@ -1425,6 +806,19 @@ IMPORTANT:
       }
 
       const updatedPage = await storage.updatePage(page.id, updateData);
+      if (!updatedPage) {
+        return res.status(500).json({ error: "Failed to update page" });
+      }
+
+      await auditService.log({
+        siteId: req.site!.id,
+        userId: req.user!.id,
+        action: "update",
+        resourceType: "page",
+        resourceId: updatedPage.id,
+        details: { slug: page.slug, title: updateData.title }
+      });
+
       res.json(updatedPage);
     } catch (error) {
       console.error("Error updating tenant page:", error);
@@ -1464,7 +858,7 @@ IMPORTANT:
   });
 
   // Update custom domain
-  app.patch("/api/tenant/settings/domain", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+  app.patch("/api/tenant/settings/domain", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
     try {
       const result = domainSchema.safeParse(req.body);
       if (!result.success) {
@@ -1487,6 +881,15 @@ IMPORTANT:
         return res.status(404).json({ error: "Site not found" });
       }
 
+      await auditService.log({
+        siteId: req.site!.id,
+        userId: req.user!.id,
+        action: "update_domain",
+        resourceType: "site_settings",
+        resourceId: updatedSite.id,
+        details: { oldDomain: req.site!.customDomain, newDomain: normalizedDomain }
+      });
+
       const { id, subdomain, businessName, brandColor, services, isPublished, customDomain: domain } = updatedSite;
       res.json({ id, subdomain, businessName, brandColor, services, isPublished, customDomain: domain });
     } catch (error) {
@@ -1496,25 +899,25 @@ IMPORTANT:
   });
 
   // Toggle publish status
-  app.post("/api/tenant/publish", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+  app.post("/api/tenant/publish", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
     try {
       const currentSite = req.site!;
       const newPublishStatus = !currentSite.isPublished;
 
       let dnsMessages: string[] = [];
       let dnsSuccess = true;
-      
+
       if (isCloudflareConfigured()) {
         if (newPublishStatus) {
           const dnsResult = await publishSiteDNS(currentSite.subdomain);
           dnsMessages = dnsResult.messages;
           dnsSuccess = dnsResult.success;
           console.log(`DNS setup for ${currentSite.subdomain}:`, dnsResult);
-          
+
           if (!dnsSuccess) {
-            return res.status(500).json({ 
+            return res.status(500).json({
               error: "Failed to create DNS records. Site was not published.",
-              dnsMessages 
+              dnsMessages
             });
           }
         } else {
@@ -1529,8 +932,17 @@ IMPORTANT:
         return res.status(404).json({ error: "Site not found" });
       }
 
+      await auditService.log({
+        siteId: req.site!.id,
+        userId: req.user!.id,
+        action: newPublishStatus ? "publish" : "unpublish",
+        resourceType: "site",
+        resourceId: updatedSite.id,
+        details: { dnsSuccess }
+      });
+
       const { id, subdomain, businessName, brandColor, services, isPublished, customDomain } = updatedSite;
-      res.json({ 
+      res.json({
         id, subdomain, businessName, brandColor, services, isPublished, customDomain,
         message: isPublished ? "Site published successfully!" : "Site unpublished successfully!",
         dnsMessages,
@@ -1781,7 +1193,7 @@ Continue the conversation from here.`;
           const progressData = JSON.parse(progressMatch[1]);
           const existingData = progress.collectedData || {};
           const newCollectedData = { ...existingData, ...progressData.collected };
-          
+
           // Map AI phase names to our schema phase names
           const phaseMapping: Record<string, string> = {
             "WELCOME": "welcome",
@@ -1796,9 +1208,9 @@ Continue the conversation from here.`;
             "PAGES": "pages",
             "REVIEW": "review",
           };
-          
+
           const mappedPhase = phaseMapping[progressData.phase] || progressData.phase?.toLowerCase() || progress.currentPhase;
-          
+
           await storage.updateOnboardingProgress(site.id, {
             currentPhase: mappedPhase as any,
             collectedData: newCollectedData,
@@ -1810,10 +1222,10 @@ Continue the conversation from here.`;
 
       // Check if ready to generate
       const readyToGenerate = fullResponse.includes("READY_TO_GENERATE");
-      
+
       // Get updated progress to send back
       const updatedProgress = await storage.getOnboardingProgress(site.id);
-      
+
       // Get updated site data to reflect any changes from extraction
       const updatedSite = await storage.getSite(site.id);
 
@@ -1836,12 +1248,12 @@ Continue the conversation from here.`;
         ...progressData,
       };
 
-      res.write(`data: ${JSON.stringify({ 
-        done: true, 
+      res.write(`data: ${JSON.stringify({
+        done: true,
         readyToGenerate,
         phase: updatedProgress?.currentPhase,
         collectedData: mergedData,
-        progress: updatedProgress 
+        progress: updatedProgress
       })}\n\n`);
       res.end();
     } catch (error) {
@@ -1952,8 +1364,8 @@ Only return valid JSON, nothing else.`;
       };
 
       try {
-        let responseText = extractionResponse.content[0].type === "text" 
-          ? extractionResponse.content[0].text 
+        let responseText = extractionResponse.content[0].type === "text"
+          ? extractionResponse.content[0].text
           : "";
         // Strip markdown code blocks if present
         responseText = responseText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
@@ -1994,8 +1406,8 @@ Only return valid JSON, nothing else.`;
       // Use only the services the contractor actually mentioned during onboarding.
       // Only fall back to trade defaults if no services were extracted at all.
       const extractedServices = extractedData.services || [];
-      const mergedServices = extractedServices.length > 0 
-        ? extractedServices 
+      const mergedServices = extractedServices.length > 0
+        ? extractedServices
         : tradeTemplate.defaultServices;
 
       // Use tradeLabel for display copy, tradeType for template matching
@@ -2072,7 +1484,7 @@ Return ONLY valid JSON.`;
         aboutContent?: string;
         whyChooseUsTitle?: string;
         serviceDescriptions?: Record<string, string>;
-        serviceFaqs?: Record<string, Array<{question: string; answer: string}>>;
+        serviceFaqs?: Record<string, Array<{ question: string; answer: string }>>;
         trustStatements?: string[];
         ctaPrimary?: string;
         ctaSecondary?: string;
@@ -2134,8 +1546,8 @@ Return ONLY valid JSON.`;
       const chatbotFaqs = [...tradeTemplate.commonFaqs];
 
       // Determine which pages to create
-      const selectedPages = extractedData.selectedPages?.length 
-        ? extractedData.selectedPages 
+      const selectedPages = extractedData.selectedPages?.length
+        ? extractedData.selectedPages
         : ["home", "services", "contact", "about", "gallery", "testimonials", "faq"];
 
       // Ensure required pages are included
@@ -2557,8 +1969,8 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
 
       // Handle phase updates for onboarding progress - use all valid OnboardingPhase values
       const validPhases = [
-        "welcome", "business_basics", "trade_detection", "services", 
-        "story", "differentiators", "service_area", "style", 
+        "welcome", "business_basics", "trade_detection", "services",
+        "story", "differentiators", "service_area", "style",
         "pages", "photos", "review", "complete"
       ];
       if (currentPhase && validPhases.includes(currentPhase)) {
@@ -2767,10 +2179,10 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
   app.get("/api/tenant/leads/metrics", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
       const allLeads = await storage.getLeadsBySiteIdWithFilters(req.site!.id);
-      
+
       const byStage: Record<string, number> = {};
       const byPriority: Record<string, number> = {};
-      
+
       for (const lead of allLeads) {
         byStage[lead.stage] = (byStage[lead.stage] || 0) + 1;
         byPriority[lead.priority] = (byPriority[lead.priority] || 0) + 1;
@@ -2806,7 +2218,7 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
 
   app.patch("/api/tenant/leads/:id/stage", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const leadId = parseInt(req.params.id);
+      const leadId = parseInt(req.params.id as string);
       const { stage } = req.body;
 
       if (!stage || !(LEAD_STAGES as readonly string[]).includes(stage)) {
@@ -2828,7 +2240,7 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
 
   app.patch("/api/tenant/leads/:id/priority", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const leadId = parseInt(req.params.id);
+      const leadId = parseInt(req.params.id as string);
       const { priority } = req.body;
 
       if (!priority || !(LEAD_PRIORITIES as readonly string[]).includes(priority)) {
@@ -2850,7 +2262,7 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
 
   app.patch("/api/tenant/leads/:id", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const leadId = parseInt(req.params.id);
+      const leadId = parseInt(req.params.id as string);
 
       const lead = await storage.getLeadById(leadId);
       if (!lead || lead.siteId !== req.site!.id) {
@@ -2891,7 +2303,7 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
 
   app.get("/api/tenant/leads/:id/notes", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const leadId = parseInt(req.params.id);
+      const leadId = parseInt(req.params.id as string);
       const lead = await storage.getLeadById(leadId);
       if (!lead || lead.siteId !== req.site!.id) {
         return res.status(404).json({ error: "Lead not found" });
@@ -2906,7 +2318,7 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
 
   app.post("/api/tenant/leads/:id/notes", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const leadId = parseInt(req.params.id);
+      const leadId = parseInt(req.params.id as string);
       const lead = await storage.getLeadById(leadId);
       if (!lead || lead.siteId !== req.site!.id) {
         return res.status(404).json({ error: "Lead not found" });
@@ -2928,6 +2340,119 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
     } catch (error) {
       console.error("Error creating lead note:", error);
       res.status(500).json({ error: "Failed to create lead note" });
+    }
+  });
+
+  // ============================================
+  // Tenant Service Pricing Routes
+  // ============================================
+
+  app.get("/api/tenant/service-pricing", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const pricing = await storage.getServicePricing(req.site!.id);
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error fetching service pricing:", error);
+      res.status(500).json({ error: "Failed to fetch service pricing" });
+    }
+  });
+
+  app.post("/api/tenant/service-pricing", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
+    try {
+      const { name, basePrice, description, requiresQuote, isActive, priceType, unitSettings, icon } = req.body;
+      const pricing = await storage.createServicePricing({
+        siteId: req.site!.id,
+        name,
+        basePrice,
+        description,
+        requiresQuote: requiresQuote || false,
+        isActive: isActive !== undefined ? isActive : true,
+        priceType: priceType || "fixed",
+        unitSettings,
+        icon,
+      } as any);
+      res.status(201).json(pricing);
+    } catch (error) {
+      console.error("Error creating service pricing:", error);
+      res.status(500).json({ error: "Failed to create service pricing" });
+    }
+  });
+
+  app.patch("/api/tenant/service-pricing/:id", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
+    try {
+      const pricingId = parseInt(req.params.id as string);
+      const updateData = req.body;
+      const updated = await storage.updateServicePricing(pricingId, updateData as any);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating service pricing:", error);
+      res.status(500).json({ error: "Failed to update service pricing" });
+    }
+  });
+
+  app.delete("/api/tenant/service-pricing/:id", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
+    try {
+      const pricingId = parseInt(req.params.id as string);
+      await storage.deleteServicePricing(pricingId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting service pricing:", error);
+      res.status(500).json({ error: "Failed to delete service pricing" });
+    }
+  });
+
+  // ============================================
+  // Tenant Testimonials Routes
+  // ============================================
+
+  app.get("/api/tenant/testimonials", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const ts = await storage.getTestimonials(req.site!.id);
+      res.json(ts);
+    } catch (error) {
+      console.error("Error fetching testimonials:", error);
+      res.status(500).json({ error: "Failed to fetch testimonials" });
+    }
+  });
+
+  app.post("/api/tenant/testimonials", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
+    try {
+      const { authorName, content, rating, isVisible, photoUrl } = req.body;
+      const ts = await storage.createTestimonial({
+        siteId: req.site!.id,
+        authorName,
+        content,
+        rating: rating || 5,
+        isVisible: isVisible !== undefined ? isVisible : true,
+        photoUrl,
+      } as any);
+      res.status(201).json(ts);
+    } catch (error) {
+      console.error("Error creating testimonial:", error);
+      res.status(500).json({ error: "Failed to create testimonial" });
+    }
+  });
+
+  app.patch("/api/tenant/testimonials/:id", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
+    try {
+      const tsId = parseInt(req.params.id as string);
+      const updateData = req.body;
+      const updated = await storage.updateTestimonial(tsId, updateData as any);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating testimonial:", error);
+      res.status(500).json({ error: "Failed to update testimonial" });
+    }
+  });
+
+  app.delete("/api/tenant/testimonials/:id", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
+    try {
+      const tsId = parseInt(req.params.id as string);
+      await storage.deleteTestimonial(tsId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting testimonial:", error);
+      res.status(500).json({ error: "Failed to delete testimonial" });
     }
   });
 
@@ -3135,7 +2660,7 @@ Return ONLY valid JSON array, nothing else.`;
   app.post("/api/contact-sales", async (req, res) => {
     try {
       const { name, email, phone, businessName, message } = req.body;
-      
+
       if (!name || !email || !businessName) {
         return res.status(400).json({ error: "Name, email, and business name are required" });
       }
@@ -3163,7 +2688,7 @@ Return ONLY valid JSON array, nothing else.`;
   app.post("/api/feedback", async (req, res) => {
     try {
       const { name, email, message } = req.body;
-      
+
       if (!email || !message || message.trim().length === 0) {
         return res.status(400).json({ error: "Email and message are required" });
       }
@@ -3182,6 +2707,113 @@ Return ONLY valid JSON array, nothing else.`;
     } catch (error) {
       console.error("Error processing feedback request:", error);
       res.status(500).json({ error: "Failed to process request" });
+    }
+  });
+
+  // ============================================
+  // Tenant RFQ Inbox Routes (FB-Brain integration)
+  // ============================================
+
+  const FB_BRAIN_WEBHOOK_URL = process.env.FB_BRAIN_URL || "http://localhost:8082";
+  const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || "fb-brain-demo-key-2026";
+
+  // List inbound RFQs for the tenant's site
+  app.get("/api/tenant/rfqs", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const rfqs = await storage.getRfqsBySite(req.site!.id);
+      res.json(rfqs);
+    } catch (error) {
+      console.error("Error fetching RFQs:", error);
+      res.status(500).json({ error: "Failed to fetch RFQs" });
+    }
+  });
+
+  // Get RFQ detail with scope items
+  app.get("/api/tenant/rfqs/:id", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const rfqId = parseInt(req.params.id, 10);
+      const rfq = await storage.getRfqById(rfqId);
+      if (!rfq || rfq.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "RFQ not found" });
+      }
+
+      // Mark as viewed if pending
+      if (rfq.status === "pending") {
+        await storage.updateRfqStatus(rfq.id, "viewed");
+        rfq.status = "viewed";
+      }
+
+      // Get associated bid if exists
+      const bid = await storage.getBidByRfq(rfq.id);
+      res.json({ ...rfq, bid: bid || null });
+    } catch (error) {
+      console.error("Error fetching RFQ:", error);
+      res.status(500).json({ error: "Failed to fetch RFQ" });
+    }
+  });
+
+  // Submit a bid for an RFQ
+  app.post("/api/tenant/rfqs/:id/bid", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const rfqId = parseInt(req.params.id, 10);
+      const rfq = await storage.getRfqById(rfqId);
+      if (!rfq || rfq.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "RFQ not found" });
+      }
+
+      const { totalAmountCents, laborCostCents, notes, lineItems, estimatedDays } = req.body;
+      if (!totalAmountCents || totalAmountCents <= 0) {
+        return res.status(400).json({ error: "Total amount is required" });
+      }
+
+      // Create bid
+      const bid = await storage.createBid({
+        rfqId: rfq.id,
+        siteId: req.site!.id,
+        totalAmountCents,
+        laborCostCents: laborCostCents || null,
+        notes: notes || null,
+        lineItems: lineItems || [],
+        estimatedDays: estimatedDays || null,
+        status: "submitted",
+        submittedAt: new Date(),
+      });
+
+      // Update RFQ status
+      await storage.updateRfqStatus(rfq.id, "bid_submitted");
+
+      // Notify FB-Brain via webhook
+      try {
+        const webhookPayload = {
+          external_rfq_id: rfq.externalRfqId,
+          site_id: req.site!.id,
+          bid_data: {
+            bid_id: bid.id,
+            total_amount_cents: bid.totalAmountCents,
+            labor_cost_cents: bid.laborCostCents,
+            estimated_days: bid.estimatedDays,
+            notes: bid.notes,
+            line_items: bid.lineItems,
+          },
+        };
+
+        await fetch(`${FB_BRAIN_WEBHOOK_URL}/api/webhooks/localblue/bid-submitted`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Integration-Key": INTEGRATION_API_KEY,
+          },
+          body: JSON.stringify(webhookPayload),
+        });
+      } catch (webhookError) {
+        console.error("Failed to notify FB-Brain of bid submission:", webhookError);
+        // Don't fail the bid creation if webhook fails
+      }
+
+      res.status(201).json(bid);
+    } catch (error) {
+      console.error("Error submitting bid:", error);
+      res.status(500).json({ error: "Failed to submit bid" });
     }
   });
 

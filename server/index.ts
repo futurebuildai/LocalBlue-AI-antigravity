@@ -6,7 +6,15 @@ import { seedDatabase } from "./seed";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
+import pino from "pino";
+import pinoHttp from "pino-http";
 
+export const logger = pino({
+  transport: process.env.NODE_ENV !== "production" ? {
+    target: "pino-pretty",
+    options: { colorize: true }
+  } : undefined,
+});
 const app = express();
 const httpServer = createServer(app);
 
@@ -17,14 +25,7 @@ declare module "http" {
 }
 
 export function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  console.log(`${formattedTime} [${source}] ${message}`);
+  logger.info({ source }, message);
 }
 
 async function initStripe() {
@@ -43,7 +44,7 @@ async function initStripe() {
     const stripeSync = await getStripeSync();
 
     log('Setting up managed webhook...', 'stripe');
-    const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+    const webhookBaseUrl = `https://${process.env.MAIN_DOMAIN || 'localhost:5000'}`;
     const { webhook } = await stripeSync.findOrCreateManagedWebhook(
       `${webhookBaseUrl}/api/stripe/webhook`
     );
@@ -97,38 +98,24 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      log(logLine);
+app.use(pinoHttp({
+  logger,
+  customLogLevel: function (req, res, err) {
+    if (res.statusCode >= 400 && res.statusCode < 500) {
+      return 'warn'
+    } else if (res.statusCode >= 500 || err) {
+      return 'error'
     }
-  });
-
-  next();
-});
+    return 'info'
+  },
+}));
 
 (async () => {
   // Initialize Stripe before other routes
   await initStripe();
-  
+
   await registerRoutes(httpServer, app);
-  
+
   // Seed the database with sample data
   await seedDatabase();
 
@@ -136,7 +123,7 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    console.error("Internal Server Error:", err);
+    logger.error({ err, path: _req.path }, "Internal Server Error");
 
     if (res.headersSent) {
       return next(err);

@@ -39,7 +39,7 @@ export const TRADE_TEMPLATES: Record<TradeType, TradeTemplate> = {
     description: "Home remodeling, new construction, and renovation specialists",
     defaultServices: [
       "Home Remodeling",
-      "Kitchen Renovation", 
+      "Kitchen Renovation",
       "Bathroom Renovation",
       "Room Additions",
       "Basement Finishing",
@@ -119,7 +119,7 @@ export const TRADE_TEMPLATES: Record<TradeType, TradeTemplate> = {
 
   electrician: {
     id: "electrician",
-    name: "Electrician", 
+    name: "Electrician",
     description: "Residential and commercial electrical services",
     defaultServices: [
       "Electrical Panel Upgrades",
@@ -432,5 +432,5 @@ export function getStyleTemplate(stylePreference: StylePreference): StyleTemplat
 export function getDefaultPagesForTrade(tradeType: TradeType): string[] {
   const requiredPages = AVAILABLE_PAGES.filter(p => p.required).map(p => p.id);
   const recommendedPages = ["about", "gallery", "testimonials", "faq"];
-  return [...new Set([...requiredPages, ...recommendedPages])];
+  return Array.from(new Set([...requiredPages, ...recommendedPages]));
 }

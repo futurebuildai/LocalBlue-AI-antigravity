@@ -12,13 +12,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { usePreview } from "@/contexts/PreviewContext";
-import type { User } from "@shared/schema";
+import type { TenantUser } from "@shared/schema";
 
-type SanitizedUser = Omit<User, "password">;
+type SanitizedUser = Omit<TenantUser, "password">;
 
 const userFormSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["owner", "admin", "editor", "viewer"]).default("editor"),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -31,6 +32,21 @@ export default function TenantUsers() {
   const { data: users = [], isLoading } = useQuery<SanitizedUser[]>({
     queryKey: [getApiPath("/api/tenant/users")],
   });
+
+  const { data: settings } = useQuery<{ subscriptionPlan?: string }>({
+    queryKey: [getApiPath("/api/tenant/settings")],
+  });
+
+  // Calculate seat limits
+  const subscriptionPlan = settings?.subscriptionPlan || "starter";
+  const seatLimits: Record<string, number> = {
+    starter: 1,
+    growth: 3,
+    scale: 999 // Unlimited for practical purposes
+  };
+  const maxSeats = seatLimits[subscriptionPlan];
+  const currentSeats = users.length;
+  const isAtSeatLimit = currentSeats >= maxSeats;
 
   const createMutation = useMutation({
     mutationFn: async (data: UserFormValues) => {
@@ -69,7 +85,7 @@ export default function TenantUsers() {
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="min-h-[44px]" data-testid="button-create-tenant-user">
+            <Button className="min-h-[44px]" disabled={isAtSeatLimit} data-testid="button-create-tenant-user">
               <Plus className="h-4 w-4 mr-2" />
               Add User
             </Button>
@@ -87,7 +103,9 @@ export default function TenantUsers() {
       <Card>
         <CardHeader className="pb-3 sm:pb-6">
           <CardTitle className="text-base sm:text-lg">Site Users</CardTitle>
-          <CardDescription className="text-sm">{users.length} users in your site</CardDescription>
+          <CardDescription className="text-sm">
+            {users.length} of {maxSeats === 999 ? "unlimited" : maxSeats} seats used
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
           {users.length > 0 ? (
@@ -105,7 +123,7 @@ export default function TenantUsers() {
                     <span className="font-medium block truncate" data-testid={`text-user-email-${user.id}`}>
                       {user.email}
                     </span>
-                    <span className="text-xs text-muted-foreground">Administrator</span>
+                    <span className="text-xs text-muted-foreground capitalize">{user.role || 'Editor'}</span>
                   </div>
                 </div>
               ))}
@@ -139,6 +157,7 @@ function UserForm({
     defaultValues: {
       email: "",
       password: "",
+      role: "editor",
     },
   });
 
@@ -152,12 +171,12 @@ function UserForm({
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input 
-                  type="email" 
-                  placeholder="user@example.com" 
+                <Input
+                  type="email"
+                  placeholder="user@example.com"
                   className="min-h-[44px]"
-                  {...field} 
-                  data-testid="input-tenant-user-email" 
+                  {...field}
+                  data-testid="input-tenant-user-email"
                 />
               </FormControl>
               <FormMessage />
@@ -171,13 +190,35 @@ function UserForm({
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input 
-                  type="password" 
+                <Input
+                  type="password"
                   placeholder="Minimum 6 characters"
                   className="min-h-[44px]"
-                  {...field} 
-                  data-testid="input-tenant-user-password" 
+                  {...field}
+                  data-testid="input-tenant-user-password"
                 />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Role</FormLabel>
+              <FormControl>
+                <select
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...field}
+                  data-testid="select-tenant-user-role"
+                >
+                  <option value="owner">Owner</option>
+                  <option value="admin">Admin</option>
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
+                </select>
               </FormControl>
               <FormMessage />
             </FormItem>

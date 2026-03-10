@@ -8,7 +8,7 @@ export * from "./models/auth";
 // Trade types for contractors
 export const TRADE_TYPES = [
   "general_contractor",
-  "plumber", 
+  "plumber",
   "electrician",
   "roofer",
   "hvac",
@@ -20,7 +20,7 @@ export type TradeType = typeof TRADE_TYPES[number];
 // Style preferences for generated sites
 export const STYLE_PREFERENCES = [
   "professional",
-  "bold", 
+  "bold",
   "warm",
   "luxury",
 ] as const;
@@ -60,11 +60,21 @@ export const ONBOARDING_PHASES = [
 ] as const;
 export type OnboardingPhase = typeof ONBOARDING_PHASES[number];
 
+// Tenant user roles
+export const TENANT_USER_ROLES = [
+  "owner",
+  "admin",
+  "editor",
+  "viewer",
+] as const;
+export type TenantUserRole = typeof TENANT_USER_ROLES[number];
+
 export const tenantUsers = pgTable("tenant_users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   siteId: varchar("site_id").references(() => sites.id),
+  role: text("role").$type<TenantUserRole>().notNull().default("editor"),
 });
 
 export const sites = pgTable("sites", {
@@ -75,7 +85,7 @@ export const sites = pgTable("sites", {
   brandColor: text("brand_color").notNull().default("#3B82F6"),
   services: jsonb("services").$type<string[]>().default([]),
   isPublished: boolean("is_published").notNull().default(false),
-  
+
   // Subscription & billing fields
   subscriptionPlan: text("subscription_plan").$type<SubscriptionPlan>().default("growth"),
   trialPhase: text("trial_phase").$type<TrialPhase>().default("test_drive"),
@@ -83,16 +93,16 @@ export const sites = pgTable("sites", {
   trialEndDate: timestamp("trial_end_date"),
   hasCreditCard: boolean("has_credit_card").notNull().default(false),
   billingPeriod: text("billing_period").$type<"monthly" | "annual">().default("monthly"),
-  
+
   // Stripe integration fields
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
-  
+
   // Enhanced fields for spectacular sites
   tradeType: text("trade_type").$type<TradeType>(),
   stylePreference: text("style_preference").$type<StylePreference>().default("professional"),
   selectedPages: jsonb("selected_pages").$type<string[]>().default([]),
-  
+
   // Business details collected during onboarding
   tagline: text("tagline"),
   businessDescription: text("business_description"),
@@ -104,16 +114,16 @@ export const sites = pgTable("sites", {
   ownerStory: text("owner_story"),
   uniqueSellingPoints: jsonb("unique_selling_points").$type<string[]>().default([]),
   certifications: jsonb("certifications").$type<string[]>().default([]),
-  
+
   // Contact info
   phone: text("phone"),
   email: text("contact_email"),
   address: text("address"),
-  
+
   // AI chatbot settings
   enableChatbot: boolean("enable_chatbot").notNull().default(true),
-  chatbotFaqs: jsonb("chatbot_faqs").$type<Array<{question: string, answer: string}>>().default([]),
-  
+  chatbotFaqs: jsonb("chatbot_faqs").$type<Array<{ question: string, answer: string }>>().default([]),
+
   // Interactive elements toggles
   enableQuoteCalculator: boolean("enable_quote_calculator").notNull().default(false),
   enableAppointmentScheduler: boolean("enable_appointment_scheduler").notNull().default(false),
@@ -133,7 +143,9 @@ export const sitesRelations = relations(sites, ({ many }) => ({
   tenantUsers: many(tenantUsers),
 }));
 
-export const insertTenantUserSchema = createInsertSchema(tenantUsers).omit({
+export const insertTenantUserSchema = createInsertSchema(tenantUsers, {
+  role: z.enum(TENANT_USER_ROLES).optional()
+}).omit({
   id: true,
 });
 
@@ -359,7 +371,7 @@ export const chatbotConversations = pgTable("chatbot_conversations", {
   id: serial("id").primaryKey(),
   siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
   visitorId: text("visitor_id").notNull(),
-  messages: jsonb("messages").$type<Array<{role: string, content: string, timestamp: string}>>().default([]),
+  messages: jsonb("messages").$type<Array<{ role: string, content: string, timestamp: string }>>().default([]),
   leadCaptured: boolean("lead_captured").notNull().default(false),
   leadName: text("lead_name"),
   leadEmail: text("lead_email"),
@@ -428,9 +440,9 @@ export const analyticsDaily = pgTable("analytics_daily", {
   uniqueVisitors: integer("unique_visitors").notNull().default(0),
   avgSessionDuration: integer("avg_session_duration").default(0),
   bounceRate: integer("bounce_rate").default(0),
-  topPages: jsonb("top_pages").$type<Array<{page: string, views: number}>>().default([]),
-  topReferrers: jsonb("top_referrers").$type<Array<{referrer: string, count: number}>>().default([]),
-  deviceBreakdown: jsonb("device_breakdown").$type<{desktop: number, mobile: number, tablet: number}>().default({desktop: 0, mobile: 0, tablet: 0}),
+  topPages: jsonb("top_pages").$type<Array<{ page: string, views: number }>>().default([]),
+  topReferrers: jsonb("top_referrers").$type<Array<{ referrer: string, count: number }>>().default([]),
+  deviceBreakdown: jsonb("device_breakdown").$type<{ desktop: number, mobile: number, tablet: number }>().default({ desktop: 0, mobile: 0, tablet: 0 }),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
@@ -447,7 +459,7 @@ export const seoMetrics = pgTable("seo_metrics", {
   id: serial("id").primaryKey(),
   siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
   month: text("month").notNull(),
-  keywords: jsonb("keywords").$type<Array<{keyword: string, position: number | null, impressions: number, clicks: number}>>().default([]),
+  keywords: jsonb("keywords").$type<Array<{ keyword: string, position: number | null, impressions: number, clicks: number }>>().default([]),
   organicTraffic: integer("organic_traffic").default(0),
   totalLeads: integer("total_leads").default(0),
   conversionRate: integer("conversion_rate").default(0),
@@ -471,7 +483,7 @@ export const seoOptimizations = pgTable("seo_optimizations", {
   page: text("page"),
   description: text("description").notNull(),
   changesMade: jsonb("changes_made").$type<Record<string, any>>().default({}),
-  impactMetrics: jsonb("impact_metrics").$type<{leadsBefore?: number, leadsAfter?: number, trafficBefore?: number, trafficAfter?: number}>().default({}),
+  impactMetrics: jsonb("impact_metrics").$type<{ leadsBefore?: number, leadsAfter?: number, trafficBefore?: number, trafficAfter?: number }>().default({}),
   status: text("status").notNull().default("applied"),
   crossSiteInsight: boolean("cross_site_insight").notNull().default(false),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
@@ -484,3 +496,90 @@ export const insertSeoOptimizationSchema = createInsertSchema(seoOptimizations).
 
 export type SeoOptimization = typeof seoOptimizations.$inferSelect;
 export type InsertSeoOptimization = z.infer<typeof insertSeoOptimizationSchema>;
+
+// RFQ status values for integration with FB-Brain
+export const RFQ_STATUSES = [
+  "pending",
+  "viewed",
+  "bid_submitted",
+  "accepted",
+  "rejected",
+] as const;
+export type RfqStatus = typeof RFQ_STATUSES[number];
+
+// Bid status values
+export const BID_STATUSES = [
+  "draft",
+  "submitted",
+  "accepted",
+  "rejected",
+] as const;
+export type BidStatus = typeof BID_STATUSES[number];
+
+// RFQs received from FB-Brain integration
+export const rfqs = pgTable("rfqs", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  externalRfqId: varchar("external_rfq_id").notNull(),
+  builderName: text("builder_name").notNull(),
+  projectName: text("project_name").notNull(),
+  projectAddress: text("project_address"),
+  phaseDescription: text("phase_description").notNull(),
+  scopeItems: jsonb("scope_items").$type<Array<{ item: string; quantity: number; unit: string }>>().default([]),
+  startDate: text("start_date"),
+  status: text("status").$type<RfqStatus>().notNull().default("pending"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertRfqSchema = createInsertSchema(rfqs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Rfq = typeof rfqs.$inferSelect;
+export type InsertRfq = z.infer<typeof insertRfqSchema>;
+
+// Bids submitted by the tenant in response to RFQs
+export const bids = pgTable("bids", {
+  id: serial("id").primaryKey(),
+  rfqId: integer("rfq_id").notNull().references(() => rfqs.id, { onDelete: "cascade" }),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  totalAmountCents: integer("total_amount_cents").notNull(),
+  laborCostCents: integer("labor_cost_cents"),
+  notes: text("notes"),
+  lineItems: jsonb("line_items").$type<Array<{ description: string; amountCents: number }>>().default([]),
+  estimatedDays: integer("estimated_days"),
+  status: text("status").$type<BidStatus>().notNull().default("draft"),
+  submittedAt: timestamp("submitted_at"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertBidSchema = createInsertSchema(bids).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Bid = typeof bids.$inferSelect;
+export type InsertBid = z.infer<typeof insertBidSchema>;
+
+// Audit Logs for RBAC tracking
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => tenantUsers.id, { onDelete: "set null" }),
+  action: text("action").notNull(),
+  resourceType: text("resource_type").notNull(),
+  resourceId: text("resource_id"),
+  details: jsonb("details").$type<Record<string, any>>().default({}),
+  ipAddress: text("ip_address"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;

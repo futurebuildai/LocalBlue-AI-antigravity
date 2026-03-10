@@ -1,7 +1,8 @@
-import { 
+import {
   tenantUsers, sites, conversations, messages, pages, leads,
   onboardingProgress, sitePhotos, testimonials, servicePricing, appointments, chatbotConversations,
   leadNotes, analyticsEvents, analyticsDaily, seoMetrics, seoOptimizations,
+  rfqs, bids,
   type TenantUser, type InsertTenantUser,
   type Site, type InsertSite,
   type Conversation, type Message,
@@ -17,7 +18,10 @@ import {
   type AnalyticsEvent, type InsertAnalyticsEvent,
   type AnalyticsDaily, type InsertAnalyticsDaily,
   type SeoMetric, type InsertSeoMetric,
-  type SeoOptimization, type InsertSeoOptimization
+  type SeoOptimization, type InsertSeoOptimization,
+  type Rfq, type InsertRfq,
+  type Bid, type InsertBid,
+  type RfqStatus, type BidStatus
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
@@ -113,6 +117,17 @@ export interface IStorage {
   createSeoMetric(metric: InsertSeoMetric): Promise<SeoMetric>;
   getSeoOptimizations(siteId: string): Promise<SeoOptimization[]>;
   createSeoOptimization(optimization: InsertSeoOptimization): Promise<SeoOptimization>;
+
+  // RFQ operations (FB-Brain integration)
+  createRfq(rfq: InsertRfq): Promise<Rfq>;
+  getRfqsBySite(siteId: string): Promise<Rfq[]>;
+  getRfqById(id: number): Promise<Rfq | undefined>;
+  updateRfqStatus(id: number, status: RfqStatus): Promise<Rfq | undefined>;
+
+  // Bid operations (FB-Brain integration)
+  createBid(bid: InsertBid): Promise<Bid>;
+  getBidByRfq(rfqId: number): Promise<Bid | undefined>;
+  updateBidStatus(id: number, status: BidStatus): Promise<Bid | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -174,7 +189,7 @@ export class DatabaseStorage implements IStorage {
     const [site] = await db.insert(sites).values({
       ...insertSite,
       services: insertSite.services as string[] | undefined,
-    }).returning();
+    } as any).returning();
     return site;
   }
 
@@ -183,7 +198,7 @@ export class DatabaseStorage implements IStorage {
       ...siteData,
       services: siteData.services as string[] | undefined,
     };
-    const [site] = await db.update(sites).set(updateData).where(eq(sites.id, id)).returning();
+    const [site] = await db.update(sites).set(updateData as any).where(eq(sites.id, id)).returning();
     return site || undefined;
   }
 
@@ -254,7 +269,7 @@ export class DatabaseStorage implements IStorage {
 
   // Lead operations
   async createLead(insertLead: InsertLead): Promise<Lead> {
-    const [lead] = await db.insert(leads).values(insertLead).returning();
+    const [lead] = await db.insert(leads).values(insertLead as any).returning();
     return lead;
   }
 
@@ -269,13 +284,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOnboardingProgress(progress: InsertOnboardingProgress): Promise<OnboardingProgress> {
-    const [created] = await db.insert(onboardingProgress).values(progress).returning();
+    const [created] = await db.insert(onboardingProgress).values(progress as any).returning();
     return created;
   }
 
   async updateOnboardingProgress(siteId: string, progressData: Partial<InsertOnboardingProgress>): Promise<OnboardingProgress | undefined> {
     const [updated] = await db.update(onboardingProgress)
-      .set({ ...progressData, updatedAt: new Date() })
+      .set({ ...progressData, updatedAt: new Date() } as any)
       .where(eq(onboardingProgress.siteId, siteId))
       .returning();
     return updated || undefined;
@@ -288,12 +303,12 @@ export class DatabaseStorage implements IStorage {
 
   async getSitePhotosByType(siteId: string, type: string): Promise<SitePhoto[]> {
     return db.select().from(sitePhotos)
-      .where(and(eq(sitePhotos.siteId, siteId), eq(sitePhotos.type, type)))
+      .where(and(eq(sitePhotos.siteId, siteId), eq(sitePhotos.type, type as any)))
       .orderBy(sitePhotos.sortOrder);
   }
 
   async createSitePhoto(photo: InsertSitePhoto): Promise<SitePhoto> {
-    const [created] = await db.insert(sitePhotos).values(photo).returning();
+    const [created] = await db.insert(sitePhotos).values(photo as any).returning();
     return created;
   }
 
@@ -388,7 +403,7 @@ export class DatabaseStorage implements IStorage {
 
   // Lead CRM operations
   async updateLead(id: number, data: Partial<InsertLead>): Promise<Lead | undefined> {
-    const [updated] = await db.update(leads).set(data).where(eq(leads.id, id)).returning();
+    const [updated] = await db.update(leads).set(data as any).where(eq(leads.id, id)).returning();
     return updated || undefined;
   }
 
@@ -400,10 +415,10 @@ export class DatabaseStorage implements IStorage {
   async getLeadsBySiteIdWithFilters(siteId: string, filters?: { stage?: string; priority?: string }): Promise<Lead[]> {
     const conditions = [eq(leads.siteId, siteId)];
     if (filters?.stage) {
-      conditions.push(eq(leads.stage, filters.stage));
+      conditions.push(eq(leads.stage, filters.stage as import("@shared/schema").LeadStage));
     }
     if (filters?.priority) {
-      conditions.push(eq(leads.priority, filters.priority));
+      conditions.push(eq(leads.priority, filters.priority as import("@shared/schema").LeadPriority));
     }
     return db.select().from(leads).where(and(...conditions)).orderBy(desc(leads.createdAt));
   }
@@ -437,7 +452,7 @@ export class DatabaseStorage implements IStorage {
   async upsertAnalyticsDaily(data: InsertAnalyticsDaily): Promise<AnalyticsDaily> {
     const existing = await db.select().from(analyticsDaily)
       .where(and(eq(analyticsDaily.siteId, data.siteId), eq(analyticsDaily.date, data.date)));
-    
+
     if (existing.length > 0) {
       const [updated] = await db.update(analyticsDaily)
         .set(data)
@@ -473,6 +488,42 @@ export class DatabaseStorage implements IStorage {
   async createSeoOptimization(optimization: InsertSeoOptimization): Promise<SeoOptimization> {
     const [created] = await db.insert(seoOptimizations).values(optimization).returning();
     return created;
+  }
+
+  // RFQ operations (FB-Brain integration)
+  async createRfq(rfq: InsertRfq): Promise<Rfq> {
+    const [created] = await db.insert(rfqs).values(rfq as any).returning();
+    return created;
+  }
+
+  async getRfqsBySite(siteId: string): Promise<Rfq[]> {
+    return db.select().from(rfqs).where(eq(rfqs.siteId, siteId)).orderBy(desc(rfqs.createdAt));
+  }
+
+  async getRfqById(id: number): Promise<Rfq | undefined> {
+    const [rfq] = await db.select().from(rfqs).where(eq(rfqs.id, id));
+    return rfq || undefined;
+  }
+
+  async updateRfqStatus(id: number, status: RfqStatus): Promise<Rfq | undefined> {
+    const [updated] = await db.update(rfqs).set({ status }).where(eq(rfqs.id, id)).returning();
+    return updated || undefined;
+  }
+
+  // Bid operations (FB-Brain integration)
+  async createBid(bid: InsertBid): Promise<Bid> {
+    const [created] = await db.insert(bids).values(bid as any).returning();
+    return created;
+  }
+
+  async getBidByRfq(rfqId: number): Promise<Bid | undefined> {
+    const [bid] = await db.select().from(bids).where(eq(bids.rfqId, rfqId));
+    return bid || undefined;
+  }
+
+  async updateBidStatus(id: number, status: BidStatus): Promise<Bid | undefined> {
+    const [updated] = await db.update(bids).set({ status }).where(eq(bids.id, id)).returning();
+    return updated || undefined;
   }
 }
 

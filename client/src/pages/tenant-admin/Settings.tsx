@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Save } from "lucide-react";
+import { Save, CreditCard } from "lucide-react";
 import DomainSetup from "@/components/DomainSetup";
 import PublishButton from "@/components/PublishButton";
 import { usePreview } from "@/contexts/PreviewContext";
@@ -42,8 +42,8 @@ export default function Settings({ site }: SettingsProps) {
 
   const updateMutation = useMutation({
     mutationFn: async (data: SettingsFormValues) => {
-      const services = data.services 
-        ? data.services.split(",").map((s) => s.trim()).filter(Boolean) 
+      const services = data.services
+        ? data.services.split(",").map((s) => s.trim()).filter(Boolean)
         : [];
       return apiRequest("PATCH", getApiPath("/api/tenant/settings"), {
         businessName: data.businessName,
@@ -64,6 +64,26 @@ export default function Settings({ site }: SettingsProps) {
   const handleSubmit = (values: SettingsFormValues) => {
     updateMutation.mutate(values);
   };
+
+  const portalMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId: site.id })
+      });
+      if (!res.ok) throw new Error("Failed to create portal session");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Portal access failed", description: error.message, variant: "destructive" });
+    }
+  });
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -87,6 +107,25 @@ export default function Settings({ site }: SettingsProps) {
       </Card>
 
       <DomainSetup site={site} />
+
+      <Card>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Billing & Subscription
+          </CardTitle>
+          <CardDescription className="text-sm">Manage your plan and payment methods securely via Stripe.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+          <Button
+            onClick={() => portalMutation.mutate()}
+            disabled={portalMutation.isPending}
+            variant="outline"
+          >
+            {portalMutation.isPending ? "Connecting..." : "Manage Subscription"}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-3 sm:pb-6">
@@ -122,7 +161,7 @@ export default function Settings({ site }: SettingsProps) {
                     <FormControl>
                       <div className="flex gap-2">
                         <Input className="min-h-[44px] flex-1" {...field} data-testid="input-settings-brand-color" />
-                        <div 
+                        <div
                           className="h-11 w-11 rounded-md border flex-shrink-0"
                           style={{ backgroundColor: field.value }}
                         />
@@ -143,12 +182,12 @@ export default function Settings({ site }: SettingsProps) {
                   <FormItem>
                     <FormLabel>Services</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         placeholder="e.g., Consulting, Development, Support"
                         className="min-h-[44px]"
-                        {...field} 
+                        {...field}
                         value={field.value || ""}
-                        data-testid="input-settings-services" 
+                        data-testid="input-settings-services"
                       />
                     </FormControl>
                     <FormDescription className="text-xs sm:text-sm">
@@ -160,8 +199,8 @@ export default function Settings({ site }: SettingsProps) {
               />
 
               <div className="pt-2">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="min-h-[44px] w-full sm:w-auto"
                   disabled={updateMutation.isPending}
                   data-testid="button-save-settings"
