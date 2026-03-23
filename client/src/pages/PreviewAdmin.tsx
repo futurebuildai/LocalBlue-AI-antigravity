@@ -13,6 +13,7 @@ import TenantRFQInbox from "./tenant-admin/RFQInbox";
 import TenantUsers from "./tenant-admin/TenantUsers";
 import TenantAnalytics from "./tenant-admin/Analytics";
 import { PreviewProvider } from "@/contexts/PreviewContext";
+import { getBaseDomain } from "@/lib/domain";
 import type { Site } from "@shared/schema";
 
 export default function PreviewAdmin() {
@@ -65,7 +66,7 @@ export default function PreviewAdmin() {
 
   const previewUser = {
     id: "preview-user",
-    email: "preview@localblue.co",
+    email: `preview@${getBaseDomain()}`,
     firstName: "Preview",
     lastName: "User",
     profileImageUrl: null,

@@ -244,8 +244,9 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   try {
     const { client, fromEmail } = getResendClient();
     
-    const siteUrl = `https://${data.subdomain}.localblue.co`;
-    const adminUrl = `https://admin.${data.subdomain}.localblue.co`;
+    const baseDomain = process.env.BASE_DOMAIN || "localblue.co";
+    const siteUrl = `https://${data.subdomain}.${baseDomain}`;
+    const adminUrl = `https://admin.${data.subdomain}.${baseDomain}`;
     
     const emailHtml = `
 <!DOCTYPE html>

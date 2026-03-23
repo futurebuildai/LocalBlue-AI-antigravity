@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { ArrowRight, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getBaseDomain } from "@/lib/domain";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -17,7 +18,7 @@ export default function Login() {
           <h1 className="text-2xl font-bold mb-3">Welcome Back</h1>
           <p className="text-muted-foreground mb-6">
             To manage your contractor website, sign in through your admin portal at{" "}
-            <strong>admin.yoursite.localblue.co</strong>
+            <strong>admin.yoursite.{getBaseDomain()}</strong>
           </p>
           <div className="space-y-3">
             <Button
@@ -29,7 +30,7 @@ export default function Login() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <p className="text-xs text-muted-foreground">
-              Already have a site? Go to <strong>admin.&lt;your-subdomain&gt;.localhost:5000</strong> to sign in.
+              Already have a site? Go to <strong>admin.&lt;your-subdomain&gt;.{getBaseDomain()}</strong> to sign in.
             </p>
           </div>
         </CardContent>

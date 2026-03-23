@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Globe, Copy, Check, ExternalLink, Info, RefreshCw, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { getBaseDomain } from "@/lib/domain";
 import type { Site } from "@shared/schema";
 
 interface DomainSetupProps {
@@ -35,7 +36,7 @@ export default function DomainSetup({ site }: DomainSetupProps) {
   const [copied, setCopied] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const subdomainUrl = `${site.subdomain}.localblue.co`;
+  const subdomainUrl = `${site.subdomain}.${getBaseDomain()}`;
 
   const updateDomainMutation = useMutation({
     mutationFn: async (domain: string | null) => {
@@ -130,7 +131,7 @@ export default function DomainSetup({ site }: DomainSetupProps) {
     }
   };
 
-  const cnameTarget = "localblue.co";
+  const cnameTarget = getBaseDomain();
 
   return (
     <Card>
