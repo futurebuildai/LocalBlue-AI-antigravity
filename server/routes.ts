@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { tenantMiddleware, requireTenant, requireTenantAdmin, requireTenantAuth, requirePlatformAdmin, requireTenantRole } from "./middleware/tenantMiddleware";
@@ -6,6 +6,9 @@ import { insertTenantUserSchema, insertSiteSchema, insertLeadSchema, TRADE_TYPES
 import { TRADE_TEMPLATES, STYLE_TEMPLATES, AVAILABLE_PAGES, getTradeTemplate, getStyleTemplate } from "@shared/tradeTemplates";
 import { registerAdminRoutes } from "./routes/admin";
 import { registerIntegrationRoutes } from "./routes/integration";
+import { registerAgentRoutes } from "./routes/agents";
+import { AGENT_TYPES } from "@shared/schema";
+import type { AgentRunner } from "./agents/runner";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import { sendLeadNotification, sendWelcomeEmail, sendContactSalesEmail, sendBetaFeedbackEmail } from "./services/email";
 import { auditService } from "./services/audit";
@@ -16,7 +19,10 @@ import jwt from "jsonwebtoken";
 import Anthropic from "@anthropic-ai/sdk";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { publishSiteDNS, unpublishSiteDNS, isCloudflareConfigured } from "./cloudflare";
+import { publishSiteDNS, unpublishSiteDNS, isCloudflareConfigured, addCustomHostname, getCustomHostnameStatus, deleteCustomHostname, verifyCustomDomainDNS } from "./cloudflare";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 const anthropic = new Anthropic({
   apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
@@ -70,6 +76,13 @@ export async function registerRoutes(
     crossOriginEmbedderPolicy: false,
   }));
 
+  // Ensure uploads directory exists and serve static files
+  const uploadsDir = path.resolve("uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use("/uploads", express.static(uploadsDir));
+
   // Rate Limiting
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -95,6 +108,21 @@ export async function registerRoutes(
 
   // Register FB-Brain integration webhook routes (API-key auth)
   registerIntegrationRoutes(app);
+
+  // Register AI agent routes (deferred until agentRunner is available)
+  // The agentRunner is set on app after server starts; routes access it lazily
+  registerAgentRoutes(app, {
+    triggerAgent: async (...args: any[]) => {
+      const runner = app.get("agentRunner") as AgentRunner | undefined;
+      if (runner) return runner.triggerAgent(args[0], args[1], args[2]);
+      throw new Error("AgentRunner not initialized");
+    },
+    triggerManual: async (...args: any[]) => {
+      const runner = app.get("agentRunner") as AgentRunner | undefined;
+      if (runner) return runner.triggerManual(args[0], args[1]);
+      throw new Error("AgentRunner not initialized");
+    },
+  } as any);
 
   // ============================================
   // Public Signup Route (for contractors)
@@ -147,6 +175,24 @@ export async function registerRoutes(
         siteId: site.id,
         role: "owner",
       });
+
+      // Seed default AI agent configs for the new site
+      const agentDefaults: Array<{ type: typeof AGENT_TYPES[number]; schedule: string }> = [
+        { type: "lead_scorer", schedule: "on_event" },
+        { type: "content_optimizer", schedule: "monthly" },
+        { type: "seo_agent", schedule: "monthly" },
+        { type: "bid_advisor", schedule: "on_event" },
+        { type: "outreach_agent", schedule: "weekly" },
+        { type: "analytics_insights", schedule: "weekly" },
+      ];
+      for (const def of agentDefaults) {
+        await storage.upsertAgentConfig({
+          siteId: site.id,
+          agentType: def.type,
+          enabled: true,
+          schedule: def.schedule,
+        });
+      }
 
       // Set session so user is logged in
       req.session.userId = user.id;
@@ -294,6 +340,15 @@ export async function registerRoutes(
           leadMessage: lead.message || '',
         }).catch(err => console.error('Failed to send lead notification:', err));
       }
+
+      // Trigger AI lead scoring (non-blocking)
+      try {
+        const runner = app.get("agentRunner") as AgentRunner | undefined;
+        if (runner) {
+          runner.triggerAgent(site.id, "lead_scorer", { leadId: lead.id })
+            .catch(err => console.error("Failed to trigger lead scorer:", err));
+        }
+      } catch {}
 
       res.status(201).json({ success: true, id: lead.id });
     } catch (error) {
@@ -579,6 +634,14 @@ IMPORTANT:
       console.error("Impersonation error:", error);
       res.status(500).json({ error: "Impersonation failed" });
     }
+  });
+
+  // Tenant: Public site info (for login page branding, no auth required)
+  app.get("/api/tenant/site-info", requireTenantAdmin, (req, res) => {
+    res.json({
+      businessName: req.site!.businessName,
+      brandColor: req.site!.brandColor,
+    });
   });
 
   // Tenant Auth: Login
@@ -867,34 +930,128 @@ IMPORTANT:
 
       const { customDomain } = result.data;
       const normalizedDomain = customDomain || null;
+      const currentSite = req.site!;
 
       // Check if domain is already in use by another site
       if (normalizedDomain) {
         const existingSite = await storage.getSiteByCustomDomain(normalizedDomain);
-        if (existingSite && existingSite.id !== req.site!.id) {
+        if (existingSite && existingSite.id !== currentSite.id) {
           return res.status(409).json({ error: "This domain is already connected to another site" });
         }
       }
 
-      const updatedSite = await storage.updateSite(req.site!.id, { customDomain: normalizedDomain });
+      // If removing a custom domain, clean up Cloudflare custom hostname
+      if (!normalizedDomain && currentSite.cloudflareHostnameId) {
+        if (isCloudflareConfigured()) {
+          await deleteCustomHostname(currentSite.cloudflareHostnameId);
+        }
+      }
+
+      // If setting a new custom domain, register with Cloudflare for SaaS
+      let cloudflareHostnameId = currentSite.cloudflareHostnameId;
+      let domainStatus: "pending" | "active" | "error" | null = currentSite.domainStatus as any;
+
+      if (normalizedDomain && normalizedDomain !== currentSite.customDomain) {
+        // Remove old hostname if switching domains
+        if (currentSite.cloudflareHostnameId && isCloudflareConfigured()) {
+          await deleteCustomHostname(currentSite.cloudflareHostnameId);
+        }
+
+        if (isCloudflareConfigured()) {
+          const cfResult = await addCustomHostname(normalizedDomain);
+          cloudflareHostnameId = cfResult.hostnameId || null;
+          domainStatus = cfResult.success ? "pending" : "error";
+        } else {
+          cloudflareHostnameId = null;
+          domainStatus = "pending";
+        }
+      } else if (!normalizedDomain) {
+        cloudflareHostnameId = null;
+        domainStatus = null;
+      }
+
+      const updatedSite = await storage.updateSite(currentSite.id, {
+        customDomain: normalizedDomain,
+        cloudflareHostnameId,
+        domainStatus,
+      });
       if (!updatedSite) {
         return res.status(404).json({ error: "Site not found" });
       }
 
       await auditService.log({
-        siteId: req.site!.id,
+        siteId: currentSite.id,
         userId: req.user!.id,
         action: "update_domain",
         resourceType: "site_settings",
         resourceId: updatedSite.id,
-        details: { oldDomain: req.site!.customDomain, newDomain: normalizedDomain }
+        details: { oldDomain: currentSite.customDomain, newDomain: normalizedDomain }
       });
 
       const { id, subdomain, businessName, brandColor, services, isPublished, customDomain: domain } = updatedSite;
-      res.json({ id, subdomain, businessName, brandColor, services, isPublished, customDomain: domain });
+      res.json({
+        id, subdomain, businessName, brandColor, services, isPublished, customDomain: domain,
+        domainStatus: updatedSite.domainStatus,
+        cloudflareHostnameId: updatedSite.cloudflareHostnameId,
+      });
     } catch (error) {
       console.error("Error updating custom domain:", error);
       res.status(500).json({ error: "Failed to update domain" });
+    }
+  });
+
+  // Verify custom domain DNS and SSL status
+  app.post("/api/tenant/settings/domain/verify", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
+    try {
+      const currentSite = req.site!;
+
+      if (!currentSite.customDomain) {
+        return res.status(400).json({ error: "No custom domain configured" });
+      }
+
+      // Check DNS resolution
+      const dnsResult = await verifyCustomDomainDNS(currentSite.customDomain);
+
+      // Check Cloudflare custom hostname status if we have one
+      let sslStatus = "unknown";
+      let cfStatus = "unknown";
+      let ownershipVerification: any = null;
+
+      if (currentSite.cloudflareHostnameId && isCloudflareConfigured()) {
+        try {
+          const cfResult = await getCustomHostnameStatus(currentSite.cloudflareHostnameId);
+          sslStatus = cfResult.sslStatus;
+          cfStatus = cfResult.status;
+          ownershipVerification = cfResult.ownershipVerification;
+
+          // Update domain status based on CF status
+          let newStatus: "pending" | "active" | "error" = "pending";
+          if (cfStatus === "active" && sslStatus === "active") {
+            newStatus = "active";
+          } else if (cfResult.status === "moved" || cfResult.status === "deleted") {
+            newStatus = "error";
+          }
+
+          if (newStatus !== currentSite.domainStatus) {
+            await storage.updateSite(currentSite.id, { domainStatus: newStatus });
+          }
+        } catch (err) {
+          console.error("Failed to get custom hostname status:", err);
+        }
+      }
+
+      res.json({
+        dnsVerified: dnsResult.verified,
+        dnsMessage: dnsResult.message,
+        dnsTarget: dnsResult.currentTarget,
+        sslStatus,
+        cfStatus,
+        ownershipVerification,
+        domainStatus: currentSite.domainStatus,
+      });
+    } catch (error) {
+      console.error("Error verifying domain:", error);
+      res.status(500).json({ error: "Failed to verify domain" });
     }
   });
 
@@ -1162,6 +1319,14 @@ Start the conversation now.`;
 - Already Collected: ${JSON.stringify(progress.collectedData || {})}
 
 Continue the conversation from here.`;
+
+      // Check if Anthropic API key is configured
+      if (!process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY) {
+        res.write(`data: ${JSON.stringify({ content: "I'm currently unavailable because the AI service hasn't been configured yet. Please contact your administrator to set up the API key, or try again later." })}\n\n`);
+        res.write(`data: ${JSON.stringify({ done: true, phase: progress.currentPhase, collectedData: progress.collectedData })}\n\n`);
+        res.end();
+        return;
+      }
 
       // Stream response from Anthropic
       const stream = anthropic.messages.stream({
@@ -1577,7 +1742,7 @@ Return ONLY valid JSON.`;
         enableChatbot: true,
         chatbotFaqs,
         enableProjectGallery: finalPages.includes("gallery"),
-        isPublished: true,
+        isPublished: false,
       });
 
       const sitePhotos = await storage.getSitePhotos(site.id);
@@ -1894,8 +2059,313 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
   });
 
   // ============================================
+  // Session-Auth Preview Routes (for onboarding flow)
+  // ============================================
+
+  // Helper to verify session auth and site ownership
+  const verifyOnboardingSession = async (req: any, res: any, subdomain: string) => {
+    if (!req.session.userId || !req.session.siteId) {
+      res.status(401).json({ error: "Not authenticated" });
+      return null;
+    }
+    const site = await storage.getSiteBySubdomain(subdomain);
+    if (!site) {
+      res.status(404).json({ error: "Site not found" });
+      return null;
+    }
+    if (site.id !== req.session.siteId) {
+      res.status(403).json({ error: "Not authorized to view this site" });
+      return null;
+    }
+    return site;
+  };
+
+  // Get site data (session auth)
+  app.get("/api/onboarding/preview/:subdomain", async (req, res) => {
+    try {
+      const site = await verifyOnboardingSession(req, res, req.params.subdomain);
+      if (!site) return;
+      res.json(site);
+    } catch (error) {
+      console.error("Error fetching onboarding preview site:", error);
+      res.status(500).json({ error: "Failed to fetch site" });
+    }
+  });
+
+  // Get single page (session auth)
+  app.get("/api/onboarding/preview/:subdomain/pages/:slug", async (req, res) => {
+    try {
+      const site = await verifyOnboardingSession(req, res, req.params.subdomain);
+      if (!site) return;
+      const page = await storage.getPageBySiteAndSlug(site.id, req.params.slug);
+      if (!page) {
+        return res.status(404).json({ error: "Page not found" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error fetching onboarding preview page:", error);
+      res.status(500).json({ error: "Failed to fetch page" });
+    }
+  });
+
+  // Get photos (session auth)
+  app.get("/api/onboarding/preview/:subdomain/photos", async (req, res) => {
+    try {
+      const site = await verifyOnboardingSession(req, res, req.params.subdomain);
+      if (!site) return;
+      const photos = await storage.getSitePhotos(site.id);
+      res.json(photos.filter(p => p.type !== 'logo'));
+    } catch (error) {
+      console.error("Error fetching onboarding preview photos:", error);
+      res.status(500).json({ error: "Failed to fetch photos" });
+    }
+  });
+
+  // Get testimonials (session auth)
+  app.get("/api/onboarding/preview/:subdomain/testimonials", async (req, res) => {
+    try {
+      const site = await verifyOnboardingSession(req, res, req.params.subdomain);
+      if (!site) return;
+      const testimonials = await storage.getTestimonials(site.id);
+      res.json(testimonials);
+    } catch (error) {
+      console.error("Error fetching onboarding preview testimonials:", error);
+      res.status(500).json({ error: "Failed to fetch testimonials" });
+    }
+  });
+
+  // Submit lead via onboarding preview (session auth)
+  app.post("/api/onboarding/preview/:subdomain/leads", async (req, res) => {
+    try {
+      const site = await verifyOnboardingSession(req, res, req.params.subdomain);
+      if (!site) return;
+      // During preview, just acknowledge the lead submission without actually creating it
+      res.status(201).json({ success: true, id: 0 });
+    } catch (error) {
+      console.error("Error in onboarding preview lead:", error);
+      res.status(500).json({ error: "Failed to submit lead" });
+    }
+  });
+
+  // Analytics no-op for onboarding preview
+  app.post("/api/onboarding/preview/:subdomain/analytics", async (req, res) => {
+    res.json({ success: true });
+  });
+
+  // ============================================
+  // Publish Endpoint (for onboarding flow)
+  // ============================================
+
+  app.post("/api/onboarding/publish", async (req, res) => {
+    try {
+      if (!req.session.userId || !req.session.siteId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const site = await storage.getSite(req.session.siteId);
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+
+      let dnsMessages: string[] = [];
+
+      if (isCloudflareConfigured()) {
+        const dnsResult = await publishSiteDNS(site.subdomain);
+        dnsMessages = dnsResult.messages;
+        console.log(`DNS setup for ${site.subdomain}:`, dnsResult);
+
+        if (!dnsResult.success) {
+          return res.status(500).json({
+            error: "Failed to create DNS records. Site was not published.",
+            dnsMessages,
+          });
+        }
+      }
+
+      const updatedSite = await storage.updateSite(site.id, { isPublished: true });
+
+      res.json({
+        success: true,
+        liveUrl: `https://${site.subdomain}.localblue.co`,
+        adminUrl: `https://admin.${site.subdomain}.localblue.co`,
+        dnsMessages,
+      });
+    } catch (error) {
+      console.error("Error publishing site:", error);
+      res.status(500).json({ error: "Failed to publish site" });
+    }
+  });
+
+  // ============================================
+  // Chat-Based Feedback Endpoint (SSE streaming)
+  // ============================================
+
+  app.post("/api/site/feedback/chat", async (req, res) => {
+    try {
+      if (!req.session.userId || !req.session.siteId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { message, history = [] } = req.body as { message: string; history?: Array<{ role: string; content: string }> };
+
+      if (!message || typeof message !== "string" || message.trim().length === 0) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const site = await storage.getSite(req.session.siteId);
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+
+      const sitePages = await storage.getPagesBySiteId(site.id);
+      const pageData = sitePages.map(p => ({
+        slug: p.slug,
+        title: p.title,
+        content: p.content,
+      }));
+
+      const siteDetails = {
+        businessName: site.businessName,
+        tradeType: site.tradeType,
+        tagline: site.tagline,
+        services: site.services,
+        serviceArea: site.serviceArea,
+        stylePreference: site.stylePreference,
+        brandColor: site.brandColor,
+        ownerStory: site.ownerStory,
+      };
+
+      const systemPrompt = `You are a friendly website refinement assistant for ${site.businessName}. The contractor has just generated their professional website and is reviewing it. Help them make changes.
+
+CURRENT SITE DATA:
+${JSON.stringify(siteDetails)}
+
+CURRENT PAGE CONTENT:
+${JSON.stringify(pageData)}
+
+YOUR ROLE:
+1. Be conversational, friendly, and helpful
+2. When the user requests changes, describe what you're changing and include the changes in a special marker format
+3. For content changes, wrap them in <!--CHANGES:{JSON}-->  markers where the JSON has page slugs as keys and updated field values
+4. Only include fields that actually change - don't repeat unchanged content
+5. Keep responses concise (2-4 sentences) plus the changes marker
+
+CHANGE MARKER FORMAT:
+When making changes, include at the END of your response:
+<!--CHANGES:{"home": {"heroHeadline": "New Headline"}, "about": {"companyStory": "Updated story..."}}-->
+
+EXAMPLES:
+- User: "Make the headline punchier" → Respond with a friendly acknowledgment + <!--CHANGES:{"home": {"heroHeadline": "..."}}-->
+- User: "I want to mention my 20 years of experience in the about section" → Update about content + marker
+- User: "The colors look great!" → Just acknowledge, no changes needed, no marker
+
+If the user just wants to chat or asks questions, respond naturally without any change markers.`;
+
+      // Set up SSE headers
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const apiMessages = [
+        ...history.slice(-10).map((m: { role: string; content: string }) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        })),
+        { role: "user" as const, content: message },
+      ];
+
+      let fullResponse = "";
+
+      const stream = await anthropic.messages.stream({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: apiMessages,
+      });
+
+      for await (const event of stream) {
+        if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+          const text = event.delta.text;
+          fullResponse += text;
+          res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+        }
+      }
+
+      // Parse and apply changes from the response
+      const changesMatch = fullResponse.match(/<!--CHANGES:([\s\S]*?)-->/);
+      let updatedSlugs: string[] = [];
+
+      if (changesMatch) {
+        try {
+          const changes = JSON.parse(changesMatch[1]);
+          for (const [slug, content] of Object.entries(changes)) {
+            if (typeof content === "object" && content !== null) {
+              await storage.updatePageContent(site.id, slug, content as Record<string, any>);
+              updatedSlugs.push(slug);
+            }
+          }
+        } catch (parseError) {
+          console.error("Failed to parse changes from chat response:", parseError);
+        }
+      }
+
+      // Send done event with updated slugs
+      res.write(`data: ${JSON.stringify({ done: true, updatedSlugs })}\n\n`);
+      res.end();
+    } catch (error) {
+      console.error("Error in chat feedback:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Failed to process chat feedback" });
+      } else {
+        res.write(`data: ${JSON.stringify({ error: "An error occurred" })}\n\n`);
+        res.end();
+      }
+    }
+  });
+
+  // ============================================
   // Onboarding Photo and Preference Routes
   // ============================================
+
+  // Multer config for file uploads
+  const uploadStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadsDir),
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      cb(null, `${uniqueSuffix}${ext}`);
+    },
+  });
+  const upload = multer({
+    storage: uploadStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (_req, file, cb) => {
+      if (file.mimetype.startsWith("image/")) {
+        cb(null, true);
+      } else {
+        cb(new Error("Only image files are allowed"));
+      }
+    },
+  });
+
+  // Upload a file and get a persistent URL
+  app.post("/api/onboarding/upload", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.session.userId || !req.session.siteId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const url = `/uploads/${req.file.filename}`;
+      res.json({ url });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ error: "Failed to upload file" });
+    }
+  });
 
   // Get photos for the current onboarding session
   app.get("/api/onboarding/photos", async (req, res) => {
@@ -2731,7 +3201,7 @@ Return ONLY valid JSON array, nothing else.`;
   // Get RFQ detail with scope items
   app.get("/api/tenant/rfqs/:id", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const rfqId = parseInt(req.params.id, 10);
+      const rfqId = parseInt(req.params.id as string, 10);
       const rfq = await storage.getRfqById(rfqId);
       if (!rfq || rfq.siteId !== req.site!.id) {
         return res.status(404).json({ error: "RFQ not found" });
@@ -2752,10 +3222,53 @@ Return ONLY valid JSON array, nothing else.`;
     }
   });
 
+  // Check supplier connection status for this site
+  app.get("/api/tenant/rfqs/:id/supplier-status", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const rfqId = parseInt(req.params.id as string, 10);
+      const rfq = await storage.getRfqById(rfqId);
+      if (!rfq || rfq.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "RFQ not found" });
+      }
+
+      const { checkSupplierStatus } = await import("./services/fbBrainClient");
+      const status = await checkSupplierStatus(req.site!.id);
+      res.json(status);
+    } catch (error) {
+      console.error("Error checking supplier status:", error);
+      res.status(500).json({ error: "Failed to check supplier status" });
+    }
+  });
+
+  // Get material pricing for an RFQ's scope items
+  app.post("/api/tenant/rfqs/:id/material-pricing", requireTenantAdmin, requireTenantAuth, async (req, res) => {
+    try {
+      const rfqId = parseInt(req.params.id as string, 10);
+      const rfq = await storage.getRfqById(rfqId);
+      if (!rfq || rfq.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "RFQ not found" });
+      }
+
+      // Build scope items from the stored RFQ scope data
+      const scopeItems = (rfq.scopeItems as any[]).map((si: any) => ({
+        item: si.item || si.description || si.name,
+        quantity: si.quantity || 1,
+        unit: si.unit || si.uom || "Each",
+      }));
+
+      const { getMaterialPricing } = await import("./services/fbBrainClient");
+      const pricing = await getMaterialPricing(req.site!.id, scopeItems);
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error getting material pricing:", error);
+      res.status(500).json({ error: "Failed to get material pricing" });
+    }
+  });
+
   // Submit a bid for an RFQ
   app.post("/api/tenant/rfqs/:id/bid", requireTenantAdmin, requireTenantAuth, async (req, res) => {
     try {
-      const rfqId = parseInt(req.params.id, 10);
+      const rfqId = parseInt(req.params.id as string, 10);
       const rfq = await storage.getRfqById(rfqId);
       if (!rfq || rfq.siteId !== req.site!.id) {
         return res.status(404).json({ error: "RFQ not found" });

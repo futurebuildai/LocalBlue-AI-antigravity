@@ -3,9 +3,10 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { seedDatabase } from "./seed";
-import { runMigrations } from 'stripe-replit-sync';
-import { getStripeSync } from "./stripeClient";
-import { WebhookHandlers } from "./webhookHandlers";
+import { getStripeClient } from "./stripeClient";
+import { AgentRunner } from "./agents/runner";
+import { storage } from "./storage";
+import Anthropic from "@anthropic-ai/sdk";
 import pino from "pino";
 import pinoHttp from "pino-http";
 
@@ -28,37 +29,6 @@ export function log(message: string, source = "express") {
   logger.info({ source }, message);
 }
 
-async function initStripe() {
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
-    log('DATABASE_URL not found, skipping Stripe initialization', 'stripe');
-    return;
-  }
-
-  try {
-    log('Initializing Stripe schema...', 'stripe');
-    await runMigrations({ databaseUrl });
-    log('Stripe schema ready', 'stripe');
-
-    const stripeSync = await getStripeSync();
-
-    log('Setting up managed webhook...', 'stripe');
-    const webhookBaseUrl = `https://${process.env.MAIN_DOMAIN || 'localhost:5000'}`;
-    const { webhook } = await stripeSync.findOrCreateManagedWebhook(
-      `${webhookBaseUrl}/api/stripe/webhook`
-    );
-    log(`Webhook configured: ${webhook.url}`, 'stripe');
-
-    log('Syncing Stripe data in background...', 'stripe');
-    stripeSync.syncBackfill()
-      .then(() => log('Stripe data synced', 'stripe'))
-      .catch((err: Error) => log(`Error syncing Stripe data: ${err.message}`, 'stripe'));
-  } catch (error: any) {
-    log(`Stripe initialization warning: ${error.message}`, 'stripe');
-  }
-}
-
 // Register Stripe webhook route BEFORE express.json()
 app.post(
   '/api/stripe/webhook',
@@ -78,7 +48,35 @@ app.post(
         return res.status(500).json({ error: 'Webhook processing error' });
       }
 
-      await WebhookHandlers.processWebhook(req.body as Buffer, sig);
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      if (!webhookSecret) {
+        log('STRIPE_WEBHOOK_SECRET not configured', 'stripe');
+        return res.status(500).json({ error: 'Webhook not configured' });
+      }
+
+      const stripe = getStripeClient();
+      const event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+
+      // Handle relevant events
+      switch (event.type) {
+        case 'checkout.session.completed':
+          log(`Checkout completed: ${event.data.object.id}`, 'stripe');
+          break;
+        case 'customer.subscription.created':
+        case 'customer.subscription.updated':
+        case 'customer.subscription.deleted':
+          log(`Subscription ${event.type}: ${(event.data.object as any).id}`, 'stripe');
+          break;
+        case 'invoice.paid':
+          log(`Invoice paid: ${(event.data.object as any).id}`, 'stripe');
+          break;
+        case 'invoice.payment_failed':
+          log(`Invoice payment failed: ${(event.data.object as any).id}`, 'stripe');
+          break;
+        default:
+          log(`Unhandled Stripe event: ${event.type}`, 'stripe');
+      }
+
       res.status(200).json({ received: true });
     } catch (error: any) {
       log(`Webhook error: ${error.message}`, 'stripe');
@@ -111,13 +109,35 @@ app.use(pinoHttp({
 }));
 
 (async () => {
-  // Initialize Stripe before other routes
-  await initStripe();
-
   await registerRoutes(httpServer, app);
 
   // Seed the database with sample data
   await seedDatabase();
+
+  // Initialize and start the AI agent runner
+  const anthropic = new Anthropic({
+    apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+    baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+  });
+  const agentRunner = new AgentRunner(storage, anthropic);
+  // Explicitly import registry to ensure all agents are registered (#21)
+  await import("./agents/registry");
+  agentRunner.start();
+  app.set("agentRunner", agentRunner);
+
+  // Graceful shutdown: drain in-flight execution before closing (#17)
+  const gracefulShutdown = async (signal: string) => {
+    logger.info({ signal }, "Received shutdown signal, draining...");
+    await agentRunner.stop();
+    httpServer.close(() => {
+      logger.info("HTTP server closed");
+      process.exit(0);
+    });
+    // Force exit after 35s if drain takes too long
+    setTimeout(() => process.exit(1), 35_000).unref();
+  };
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

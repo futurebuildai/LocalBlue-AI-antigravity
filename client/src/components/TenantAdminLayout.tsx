@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard, FileText, Settings, Users, MessageSquare, LogOut, ExternalLink, Globe, BarChart3, Tag, Star, Inbox } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, Users, MessageSquare, LogOut, ExternalLink, Globe, BarChart3, Tag, Star, Inbox, Bot } from "lucide-react";
 import { usePreview } from "@/contexts/PreviewContext";
 import type { Site, User } from "@shared/schema";
 
@@ -38,6 +38,7 @@ const navItems = [
   { title: "Pages", url: "/pages", icon: FileText },
   { title: "Leads", url: "/leads", icon: MessageSquare },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "AI Agents", url: "/agents", icon: Bot },
   { title: "Service Pricing", url: "/service-pricing", icon: Tag },
   { title: "Testimonials", url: "/testimonials", icon: Star },
   { title: "Users", url: "/users", icon: Users },

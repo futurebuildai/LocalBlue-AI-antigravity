@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +23,12 @@ interface LoginProps {
 
 export default function Login({ onLoginSuccess }: LoginProps) {
   const { toast } = useToast();
+
+  const { data: siteInfo } = useQuery<{ businessName: string; brandColor: string }>({
+    queryKey: ["/api/tenant/site-info"],
+    retry: false,
+    staleTime: Infinity,
+  });
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -66,14 +72,21 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
       <div className="relative z-10 w-full max-w-md px-1">
         <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl gradient-primary shadow-xl shadow-primary/30 mb-4 sm:mb-6">
-            <Shield className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+          <div
+            className={`inline-flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl shadow-xl shadow-primary/30 mb-4 sm:mb-6 ${!siteInfo?.brandColor ? "gradient-primary" : ""}`}
+            style={siteInfo?.brandColor ? { backgroundColor: siteInfo.brandColor } : undefined}
+          >
+            {siteInfo ? (
+              <span className="text-2xl sm:text-3xl font-bold text-white">{siteInfo.businessName.charAt(0)}</span>
+            ) : (
+              <Shield className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+            )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2" data-testid="text-login-title">
-            Admin Portal
+            {siteInfo?.businessName || "Admin Portal"}
           </h1>
           <p className="text-sm sm:text-base text-white/70">
-            Sign in to manage your business website
+            Sign in to manage your {siteInfo ? "website" : "business website"}
           </p>
         </div>
 

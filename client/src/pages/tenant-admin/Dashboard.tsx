@@ -13,6 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import PublishButton from "@/components/PublishButton";
 import { usePreview } from "@/contexts/PreviewContext";
+import { AgentActivityFeed } from "@/components/agents/AgentActivityFeed";
+import { InsightCard } from "@/components/agents/InsightCard";
+import { Bot } from "lucide-react";
 import type { Site, User, Lead } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -34,6 +37,11 @@ export default function Dashboard({ site }: TenantDashboardProps) {
   const { data: leads = [], isLoading: leadsLoading } = useQuery<Lead[]>({
     queryKey: [getApiPath("/api/tenant/leads")],
   });
+
+  const { data: agentExecPage } = useQuery<{ data: any[]; nextCursor?: number }>({
+    queryKey: [getApiPath("/api/tenant/agents/executions?limit=5")],
+  });
+  const agentExecutions = agentExecPage?.data ?? [];
 
   const publicUrl = site.customDomain 
     ? `https://${site.customDomain}`
@@ -481,6 +489,26 @@ export default function Dashboard({ site }: TenantDashboardProps) {
             </Button>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              AI Agent Activity
+            </CardTitle>
+            <CardDescription>Recent agent runs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AgentActivityFeed executions={agentExecutions} limit={5} />
+            <Link href={navPath("/agents")}>
+              <Button variant="ghost" size="sm" className="w-full mt-2">
+                View All Agents <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <InsightCard />
       </div>
 
       <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">

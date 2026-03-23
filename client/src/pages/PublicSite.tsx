@@ -1729,7 +1729,7 @@ function Footer({ site }: { site: Site }) {
                   {site.businessName.charAt(0)}
                 </span>
               </div>
-              <span className="font-bold text-lg sm:text-xl truncate">{site.businessName}</span>
+              <span className="font-bold text-lg sm:text-xl">{site.businessName}</span>
             </div>
             <p className="text-background/70 text-sm sm:text-base mb-3 sm:mb-4 leading-relaxed">
               Your trusted local contractor for all your home service needs. Quality workmanship guaranteed.
@@ -1741,21 +1741,23 @@ function Footer({ site }: { site: Site }) {
             )}
           </div>
 
-          <div className="hidden md:block">
-            <h4 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Services</h4>
-            <ul className="space-y-1.5 sm:space-y-2">
-              {services.slice(0, 6).map((service, index) => (
-                <li key={index}>
-                  <button 
-                    onClick={() => scrollToSection("services")}
-                    className="text-background/70 hover:text-background transition-colors text-left text-sm sm:text-base min-h-[36px] flex items-center"
-                  >
-                    {service}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {services.length > 0 && (
+            <div className="hidden md:block">
+              <h4 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Services</h4>
+              <ul className="space-y-1.5 sm:space-y-2">
+                {services.slice(0, 6).map((service, index) => (
+                  <li key={index}>
+                    <button
+                      onClick={() => scrollToSection("services")}
+                      className="text-background/70 hover:text-background transition-colors text-left text-sm sm:text-base min-h-[36px] flex items-center"
+                    >
+                      {service}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div>
             <h4 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Quick Links</h4>
@@ -1779,39 +1781,41 @@ function Footer({ site }: { site: Site }) {
             </ul>
           </div>
 
-          <div>
-            <h4 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Contact</h4>
-            <ul className="space-y-2 sm:space-y-3">
-              {site.phone && (
-                <li>
-                  <a 
-                    href={`tel:${site.phone}`}
-                    className="flex items-center gap-2 text-background/70 hover:text-background transition-colors text-sm sm:text-base min-h-[36px]"
-                  >
-                    <Phone className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">{site.phone}</span>
-                  </a>
-                </li>
-              )}
-              {site.email && (
-                <li>
-                  <a 
-                    href={`mailto:${site.email}`}
-                    className="flex items-center gap-2 text-background/70 hover:text-background transition-colors text-sm sm:text-base min-h-[36px]"
-                  >
-                    <Mail className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">{site.email}</span>
-                  </a>
-                </li>
-              )}
-              {site.serviceArea && (
-                <li className="flex items-center gap-2 text-background/70 text-sm sm:text-base">
-                  <MapPin className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{site.serviceArea}</span>
-                </li>
-              )}
-            </ul>
-          </div>
+          {(site.phone || site.email || site.serviceArea) && (
+            <div>
+              <h4 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4">Contact</h4>
+              <ul className="space-y-2 sm:space-y-3">
+                {site.phone && (
+                  <li>
+                    <a
+                      href={`tel:${site.phone}`}
+                      className="flex items-center gap-2 text-background/70 hover:text-background transition-colors text-sm sm:text-base min-h-[36px]"
+                    >
+                      <Phone className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{site.phone}</span>
+                    </a>
+                  </li>
+                )}
+                {site.email && (
+                  <li>
+                    <a
+                      href={`mailto:${site.email}`}
+                      className="flex items-center gap-2 text-background/70 hover:text-background transition-colors text-sm sm:text-base min-h-[36px]"
+                    >
+                      <Mail className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{site.email}</span>
+                    </a>
+                  </li>
+                )}
+                {site.serviceArea && (
+                  <li className="flex items-center gap-2 text-background/70 text-sm sm:text-base">
+                    <MapPin className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{site.serviceArea}</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-background/20 pt-6 sm:pt-8">

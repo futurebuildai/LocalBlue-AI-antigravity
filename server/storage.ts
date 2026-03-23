@@ -2,7 +2,7 @@ import {
   tenantUsers, sites, conversations, messages, pages, leads,
   onboardingProgress, sitePhotos, testimonials, servicePricing, appointments, chatbotConversations,
   leadNotes, analyticsEvents, analyticsDaily, seoMetrics, seoOptimizations,
-  rfqs, bids,
+  rfqs, bids, agentConfigs, agentExecutions, generatedContent,
   type TenantUser, type InsertTenantUser,
   type Site, type InsertSite,
   type Conversation, type Message,
@@ -21,10 +21,15 @@ import {
   type SeoOptimization, type InsertSeoOptimization,
   type Rfq, type InsertRfq,
   type Bid, type InsertBid,
-  type RfqStatus, type BidStatus
+  type RfqStatus, type BidStatus,
+  type AgentConfig, type InsertAgentConfig,
+  type AgentExecution, type InsertAgentExecution,
+  type AgentType, type AgentExecutionStatus,
+  type GeneratedContent, type InsertGeneratedContent,
+  type ContentReviewStatus,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, lt, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Tenant User operations
@@ -128,6 +133,36 @@ export interface IStorage {
   createBid(bid: InsertBid): Promise<Bid>;
   getBidByRfq(rfqId: number): Promise<Bid | undefined>;
   updateBidStatus(id: number, status: BidStatus): Promise<Bid | undefined>;
+
+  // Agent config operations
+  getAgentConfigs(siteId: string): Promise<AgentConfig[]>;
+  getAgentConfig(siteId: string, agentType: AgentType): Promise<AgentConfig | undefined>;
+  upsertAgentConfig(config: InsertAgentConfig): Promise<AgentConfig>;
+
+  // Agent execution operations
+  createAgentExecution(execution: InsertAgentExecution): Promise<AgentExecution>;
+  getAgentExecution(id: number): Promise<AgentExecution | undefined>;
+  updateAgentExecution(id: number, data: Partial<AgentExecution>): Promise<AgentExecution | undefined>;
+  getAgentExecutionsBySite(siteId: string, limit?: number): Promise<AgentExecution[]>;
+  getPendingAgentExecutions(limit?: number): Promise<AgentExecution[]>;
+  claimPendingExecution(): Promise<AgentExecution | null>;
+  hasPendingOrRunningExecution(siteId: string, agentType: AgentType): Promise<boolean>;
+  getOverdueScheduledConfigs(): Promise<AgentConfig[]>;
+  getLeadsBySiteIdInDateRange(siteId: string, start: Date, end: Date): Promise<Lead[]>;
+  cleanupOldExecutions(olderThanDays: number): Promise<number>;
+  markStaleRunningExecutions(olderThanMs: number): Promise<number>;
+
+  // Generated content operations
+  createGeneratedContent(content: InsertGeneratedContent): Promise<GeneratedContent>;
+  getGeneratedContentBySite(siteId: string, status?: ContentReviewStatus, limit?: number, cursor?: number): Promise<GeneratedContent[]>;
+  getGeneratedContentById(id: number): Promise<GeneratedContent | undefined>;
+  updateGeneratedContentStatus(id: number, status: ContentReviewStatus, reviewedBy?: string): Promise<GeneratedContent | undefined>;
+
+  // Transactional content approval — atomically approve + apply content to page
+  approveAndApplyContent(id: number, siteId: string, reviewedBy?: string): Promise<{ content: GeneratedContent; applied: boolean }>;
+
+  // Cursor-based pagination for executions
+  getAgentExecutionsBySitePaginated(siteId: string, limit: number, cursor?: number): Promise<AgentExecution[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -524,6 +559,265 @@ export class DatabaseStorage implements IStorage {
   async updateBidStatus(id: number, status: BidStatus): Promise<Bid | undefined> {
     const [updated] = await db.update(bids).set({ status }).where(eq(bids.id, id)).returning();
     return updated || undefined;
+  }
+
+  // Agent config operations
+  async getAgentConfigs(siteId: string): Promise<AgentConfig[]> {
+    return db.select().from(agentConfigs).where(eq(agentConfigs.siteId, siteId));
+  }
+
+  async getAgentConfig(siteId: string, agentType: AgentType): Promise<AgentConfig | undefined> {
+    const [config] = await db.select().from(agentConfigs)
+      .where(and(eq(agentConfigs.siteId, siteId), eq(agentConfigs.agentType, agentType as any)));
+    return config || undefined;
+  }
+
+  async upsertAgentConfig(config: InsertAgentConfig): Promise<AgentConfig> {
+    const existing = await this.getAgentConfig(config.siteId, config.agentType as AgentType);
+    if (existing) {
+      // Merge: only overwrite fields that are explicitly provided (#8)
+      const mergedUpdate: Record<string, any> = { updatedAt: new Date() };
+      if (config.enabled !== undefined) mergedUpdate.enabled = config.enabled;
+      if (config.schedule !== undefined) mergedUpdate.schedule = config.schedule;
+      if (config.preferences !== undefined) mergedUpdate.preferences = config.preferences;
+      if (config.lastRunAt !== undefined) mergedUpdate.lastRunAt = config.lastRunAt;
+      const [updated] = await db.update(agentConfigs)
+        .set(mergedUpdate)
+        .where(eq(agentConfigs.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(agentConfigs).values(config as any).returning();
+    return created;
+  }
+
+  // Agent execution operations
+  async createAgentExecution(execution: InsertAgentExecution): Promise<AgentExecution> {
+    const [created] = await db.insert(agentExecutions).values(execution as any).returning();
+    return created;
+  }
+
+  async getAgentExecution(id: number): Promise<AgentExecution | undefined> {
+    const [execution] = await db.select().from(agentExecutions).where(eq(agentExecutions.id, id));
+    return execution || undefined;
+  }
+
+  async updateAgentExecution(id: number, data: Partial<AgentExecution>): Promise<AgentExecution | undefined> {
+    const [updated] = await db.update(agentExecutions).set(data as any).where(eq(agentExecutions.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getAgentExecutionsBySite(siteId: string, limit = 50): Promise<AgentExecution[]> {
+    return db.select().from(agentExecutions)
+      .where(eq(agentExecutions.siteId, siteId))
+      .orderBy(desc(agentExecutions.createdAt))
+      .limit(limit);
+  }
+
+  async getPendingAgentExecutions(limit = 10): Promise<AgentExecution[]> {
+    return db.select().from(agentExecutions)
+      .where(eq(agentExecutions.status, "pending"))
+      .orderBy(agentExecutions.createdAt)
+      .limit(limit);
+  }
+
+  // Atomically claim a pending execution using FOR UPDATE SKIP LOCKED (#3)
+  async claimPendingExecution(): Promise<AgentExecution | null> {
+    const result = await db.execute(sql`
+      UPDATE agent_executions
+      SET status = 'running', started_at = NOW()
+      WHERE id = (
+        SELECT id FROM agent_executions
+        WHERE status = 'pending'
+        ORDER BY created_at ASC
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING *
+    `);
+    const rows = result.rows as any[];
+    if (!rows || rows.length === 0) return null;
+    const row = rows[0];
+    return {
+      id: row.id,
+      siteId: row.site_id,
+      agentType: row.agent_type,
+      status: row.status,
+      trigger: row.trigger,
+      input: row.input,
+      output: row.output,
+      error: row.error,
+      retryCount: row.retry_count ?? 0,
+      tokensUsed: row.tokens_used,
+      durationMs: row.duration_ms,
+      startedAt: row.started_at,
+      completedAt: row.completed_at,
+      createdAt: row.created_at,
+    } as AgentExecution;
+  }
+
+  // Check if an agent already has a pending or running execution (#6, #18)
+  async hasPendingOrRunningExecution(siteId: string, agentType: AgentType): Promise<boolean> {
+    const result = await db.select({ id: agentExecutions.id })
+      .from(agentExecutions)
+      .where(and(
+        eq(agentExecutions.siteId, siteId),
+        eq(agentExecutions.agentType, agentType as any),
+        sql`${agentExecutions.status} IN ('pending', 'running')`
+      ))
+      .limit(1);
+    return result.length > 0;
+  }
+
+  // Get all overdue scheduled configs in one query (#2)
+  async getOverdueScheduledConfigs(): Promise<AgentConfig[]> {
+    return db.select().from(agentConfigs)
+      .where(and(
+        eq(agentConfigs.enabled, true),
+        sql`${agentConfigs.schedule} != 'on_event'`,
+        sql`(
+          ${agentConfigs.lastRunAt} IS NULL
+          OR (
+            (${agentConfigs.schedule} = 'daily' AND ${agentConfigs.lastRunAt} < NOW() - INTERVAL '1 day')
+            OR (${agentConfigs.schedule} = 'weekly' AND ${agentConfigs.lastRunAt} < NOW() - INTERVAL '7 days')
+            OR (${agentConfigs.schedule} = 'monthly' AND ${agentConfigs.lastRunAt} < NOW() - INTERVAL '30 days')
+          )
+        )`
+      ));
+  }
+
+  // Get leads in a date range without loading all leads (#16)
+  async getLeadsBySiteIdInDateRange(siteId: string, start: Date, end: Date): Promise<Lead[]> {
+    return db.select().from(leads)
+      .where(and(
+        eq(leads.siteId, siteId),
+        gte(leads.createdAt, start),
+        lte(leads.createdAt, end)
+      ));
+  }
+
+  // Cleanup old executions (#25)
+  async cleanupOldExecutions(olderThanDays: number): Promise<number> {
+    const result = await db.execute(sql`
+      DELETE FROM agent_executions
+      WHERE status IN ('completed', 'failed', 'cancelled')
+      AND created_at < NOW() - ${olderThanDays} * INTERVAL '1 day'
+    `);
+    return (result as any).rowCount || 0;
+  }
+
+  // Mark stale 'running' executions as failed (#17)
+  async markStaleRunningExecutions(olderThanMs: number): Promise<number> {
+    const cutoff = new Date(Date.now() - olderThanMs);
+    const result = await db.update(agentExecutions)
+      .set({
+        status: "failed" as any,
+        error: "Execution timed out (stale running state)",
+        completedAt: new Date(),
+      } as any)
+      .where(and(
+        eq(agentExecutions.status, "running" as any),
+        lte(agentExecutions.startedAt, cutoff)
+      ));
+    return (result as any).rowCount || 0;
+  }
+
+  // Generated content operations
+  async createGeneratedContent(content: InsertGeneratedContent): Promise<GeneratedContent> {
+    const [created] = await db.insert(generatedContent).values(content as any).returning();
+    return created;
+  }
+
+  async getGeneratedContentBySite(siteId: string, status?: ContentReviewStatus, limit = 100, cursor?: number): Promise<GeneratedContent[]> {
+    const conditions = [eq(generatedContent.siteId, siteId)];
+    if (status) {
+      conditions.push(eq(generatedContent.status, status));
+    }
+    if (cursor) {
+      conditions.push(lt(generatedContent.id, cursor));
+    }
+    return db.select().from(generatedContent)
+      .where(and(...conditions))
+      .orderBy(desc(generatedContent.id))
+      .limit(limit);
+  }
+
+  async getGeneratedContentById(id: number): Promise<GeneratedContent | undefined> {
+    const [content] = await db.select().from(generatedContent).where(eq(generatedContent.id, id));
+    return content || undefined;
+  }
+
+  async updateGeneratedContentStatus(id: number, status: ContentReviewStatus, reviewedBy?: string): Promise<GeneratedContent | undefined> {
+    const updateData: Record<string, any> = { status };
+    if (reviewedBy) {
+      updateData.reviewedBy = reviewedBy;
+      updateData.reviewedAt = new Date();
+    }
+    const [updated] = await db.update(generatedContent).set(updateData).where(eq(generatedContent.id, id)).returning();
+    return updated || undefined;
+  }
+
+  // Transactional content approval — atomically locks the row, approves, and applies to page
+  async approveAndApplyContent(id: number, siteId: string, reviewedBy?: string): Promise<{ content: GeneratedContent; applied: boolean }> {
+    return db.transaction(async (tx) => {
+      // Lock the row with FOR UPDATE to prevent concurrent approvals
+      const lockedRows = await tx.execute(sql`
+        SELECT * FROM generated_content
+        WHERE id = ${id} AND site_id = ${siteId} AND status = 'pending_review'
+        FOR UPDATE
+      `);
+      const rows = lockedRows.rows as any[];
+      if (!rows || rows.length === 0) {
+        throw new Error("Content not found, already reviewed, or does not belong to this site");
+      }
+      const row = rows[0];
+
+      // Mark as approved
+      const updateData: Record<string, any> = { status: "approved", reviewedAt: new Date() };
+      if (reviewedBy) updateData.reviewedBy = reviewedBy;
+      const [approved] = await tx.update(generatedContent).set(updateData).where(eq(generatedContent.id, id)).returning();
+
+      let applied = false;
+
+      // If it's a meta_description or page_update, apply to page atomically
+      if (row.target_page && (row.content_type === "meta_description" || row.content_type === "page_update")) {
+        const slug = (row.target_page as string).replace(/^\//, "");
+        const [targetPage] = await tx.select().from(pages)
+          .where(and(eq(pages.siteId, siteId), eq(pages.slug, slug)));
+
+        if (targetPage) {
+          const currentPageContent = (targetPage.content || {}) as Record<string, any>;
+          const proposedContent = (row.content || {}) as Record<string, any>;
+          const updatedContent = { ...currentPageContent };
+
+          if (row.content_type === "meta_description") {
+            if (proposedContent.proposedValue) updatedContent.metaDescription = proposedContent.proposedValue;
+            if (proposedContent.proposedTitle) updatedContent.metaTitle = proposedContent.proposedTitle;
+          } else if (row.content_type === "page_update") {
+            if (proposedContent.proposedValue) updatedContent.content = proposedContent.proposedValue;
+          }
+
+          await tx.update(pages).set({ content: updatedContent } as any)
+            .where(and(eq(pages.siteId, siteId), eq(pages.slug, slug)));
+          await tx.update(generatedContent).set({ status: "applied" } as any).where(eq(generatedContent.id, id));
+          applied = true;
+        }
+      }
+
+      return { content: approved, applied };
+    });
+  }
+
+  // Cursor-based pagination for executions
+  async getAgentExecutionsBySitePaginated(siteId: string, limit: number, cursor?: number): Promise<AgentExecution[]> {
+    const conditions = [eq(agentExecutions.siteId, siteId)];
+    if (cursor) {
+      conditions.push(lt(agentExecutions.id, cursor));
+    }
+    return db.select().from(agentExecutions)
+      .where(and(...conditions))
+      .orderBy(desc(agentExecutions.id))
+      .limit(limit);
   }
 }
 

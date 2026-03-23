@@ -9,6 +9,7 @@ import { Send, Loader2, Sparkles, ArrowLeft, ImagePlus, Bot, User } from "lucide
 import { apiRequest } from "@/lib/queryClient";
 import { FormattedMessage } from "@/lib/message-utils";
 import { PhotoUpload } from "@/components/PhotoUpload";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
 import type { Site, User as UserType, OnboardingPhase, PhotoType } from "@shared/schema";
 
 type SanitizedUser = Omit<UserType, "password">;
@@ -236,10 +237,14 @@ export default function Onboarding() {
       }
     } catch (err) {
       console.error("Error sending message:", err);
-      setMessages(prev => [
-        ...prev,
-        { role: "assistant", content: "Sorry, something went wrong. Please try again." },
-      ]);
+      const errorMessage = err instanceof Error && err.message.includes("Failed to send")
+        ? "Sorry, the AI assistant is temporarily unavailable. Please try again in a moment."
+        : "Sorry, something went wrong. Please try again.";
+      setMessages(prev => {
+        // Remove the empty assistant message placeholder if it was added
+        const cleaned = prev.filter((m, i) => !(i === prev.length - 1 && m.role === "assistant" && m.content === ""));
+        return [...cleaned, { role: "assistant", content: errorMessage }];
+      });
     } finally {
       setIsStreaming(false);
       inputRef.current?.focus();
@@ -349,6 +354,17 @@ export default function Onboarding() {
           </div>
         </div>
       </header>
+
+      {/* Progress Indicator */}
+      <div className="flex-shrink-0 bg-white/10 backdrop-blur-md border-b border-white/20">
+        <div className="max-w-3xl mx-auto">
+          <OnboardingProgress
+            currentPhase={currentPhase}
+            completedPhases={completedPhases}
+            onPhaseClick={handlePhaseClick}
+          />
+        </div>
+      </div>
 
       <main className="flex-1 flex flex-col overflow-hidden min-h-0">
         {showPhotoUpload && currentPhase === "photos" ? (

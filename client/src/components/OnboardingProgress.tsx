@@ -67,12 +67,12 @@ export function OnboardingProgress({
   const progressPercent = (completedCount / DISPLAY_PHASES.length) * 100;
 
   return (
-    <div className="w-full bg-card border-b" data-testid="onboarding-progress">
+    <div className="w-full" data-testid="onboarding-progress">
       <div className="px-2 sm:px-4 py-2 sm:py-3">
         <div className="relative mb-2">
-          <div className="h-0.5 sm:h-1 w-full bg-muted rounded-full overflow-hidden">
+          <div className="h-0.5 sm:h-1 w-full bg-white/20 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#2563EB] transition-all duration-300"
+              className="h-full bg-white/80 transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
               data-testid="progress-bar"
             />
@@ -100,11 +100,11 @@ export function OnboardingProgress({
                   className={cn(
                     "flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full text-[9px] sm:text-xs font-medium transition-colors",
                     status === "completed" &&
-                      "bg-[#2563EB] text-white",
+                      "bg-white/90 text-blue-700",
                     status === "current" &&
-                      "bg-[#2563EB] text-white ring-2 ring-[#2563EB]/30 ring-offset-1 sm:ring-offset-2 ring-offset-background",
+                      "bg-white text-blue-700 ring-2 ring-white/40 ring-offset-1 sm:ring-offset-2 ring-offset-transparent",
                     status === "upcoming" &&
-                      "bg-muted text-muted-foreground"
+                      "bg-white/20 text-white/50"
                   )}
                 >
                   {status === "completed" ? (
@@ -116,9 +116,9 @@ export function OnboardingProgress({
                 <span
                   className={cn(
                     "text-[8px] sm:text-[10px] whitespace-nowrap transition-colors leading-tight",
-                    status === "current" && "font-medium text-foreground",
-                    status === "completed" && "text-muted-foreground",
-                    status === "upcoming" && "text-muted-foreground"
+                    status === "current" && "font-medium text-white",
+                    status === "completed" && "text-white/70",
+                    status === "upcoming" && "text-white/40"
                   )}
                 >
                   <span className="hidden sm:inline">{phase.label}</span>

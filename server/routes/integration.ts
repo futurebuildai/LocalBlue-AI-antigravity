@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
 import { z } from "zod";
+import type { AgentRunner } from "../agents/runner";
 
 const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || "fb-brain-demo-key-2026";
 
@@ -34,7 +35,7 @@ const updateBidStatusSchema = z.object({
   status: z.enum(["accepted", "rejected"]),
 });
 
-export function registerIntegrationRoutes(app: Express) {
+export function registerIntegrationRoutes(app: Express & { get(key: string): any }) {
   // POST /api/integration/rfqs — FB-Brain pushes an RFQ to a tenant site
   app.post("/api/integration/rfqs", requireIntegrationKey, async (req: Request, res: Response) => {
     try {
@@ -63,6 +64,15 @@ export function registerIntegrationRoutes(app: Express) {
         status: "pending",
         expiresAt: data.expires_at ? new Date(data.expires_at) : null,
       });
+
+      // Trigger AI bid advisor (non-blocking)
+      try {
+        const runner = app.get("agentRunner") as AgentRunner | undefined;
+        if (runner) {
+          runner.triggerAgent(data.site_id, "bid_advisor", { rfqId: rfq.id })
+            .catch(err => console.error("Failed to trigger bid advisor:", err));
+        }
+      } catch {}
 
       res.status(201).json({ rfq_id: rfq.id, status: "created" });
     } catch (error) {

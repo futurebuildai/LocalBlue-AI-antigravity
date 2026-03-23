@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, jsonb, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, jsonb, serial, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -114,6 +114,10 @@ export const sites = pgTable("sites", {
   ownerStory: text("owner_story"),
   uniqueSellingPoints: jsonb("unique_selling_points").$type<string[]>().default([]),
   certifications: jsonb("certifications").$type<string[]>().default([]),
+
+  // Custom domain Cloudflare integration
+  cloudflareHostnameId: text("cloudflare_hostname_id"),
+  domainStatus: text("domain_status").$type<"pending" | "active" | "error">(),
 
   // Contact info
   phone: text("phone"),
@@ -241,6 +245,12 @@ export const leads = pgTable("leads", {
   lastContactedAt: timestamp("last_contacted_at"),
   assignedTo: varchar("assigned_to").references(() => tenantUsers.id),
   estimatedValue: integer("estimated_value"),
+
+  // AI scoring fields
+  aiScore: integer("ai_score"),
+  aiSuggestedActions: jsonb("ai_suggested_actions").$type<Array<{ action: string; reason: string; priority: string }>>().default([]),
+  aiScoredAt: timestamp("ai_scored_at"),
+
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
@@ -562,6 +572,130 @@ export const insertBidSchema = createInsertSchema(bids).omit({
 
 export type Bid = typeof bids.$inferSelect;
 export type InsertBid = z.infer<typeof insertBidSchema>;
+
+// AI Agent types
+export const AGENT_TYPES = [
+  "lead_scorer",
+  "content_optimizer",
+  "seo_agent",
+  "bid_advisor",
+  "outreach_agent",
+  "analytics_insights",
+] as const;
+export type AgentType = typeof AGENT_TYPES[number];
+
+// Agent execution statuses
+export const AGENT_EXECUTION_STATUSES = [
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+] as const;
+export type AgentExecutionStatus = typeof AGENT_EXECUTION_STATUSES[number];
+
+// Generated content review statuses
+export const CONTENT_REVIEW_STATUSES = [
+  "pending_review",
+  "approved",
+  "rejected",
+  "applied",
+] as const;
+export type ContentReviewStatus = typeof CONTENT_REVIEW_STATUSES[number];
+
+// Generated content types (#20)
+export const CONTENT_TYPES = [
+  "page_update",
+  "blog_post",
+  "meta_description",
+  "bid_proposal",
+  "outreach_email",
+  "insight",
+] as const;
+export type ContentType = typeof CONTENT_TYPES[number];
+
+// Agent configuration per site
+export const agentConfigs = pgTable("agent_configs", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  agentType: text("agent_type").$type<AgentType>().notNull(),
+  enabled: boolean("enabled").notNull().default(true),
+  schedule: text("schedule").notNull().default("monthly"), // "on_event" | "daily" | "weekly" | "monthly"
+  preferences: jsonb("preferences").$type<Record<string, any>>().default({}),
+  lastRunAt: timestamp("last_run_at"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+  index("idx_agent_configs_site_id").on(table.siteId),
+  index("idx_agent_configs_enabled_schedule").on(table.enabled, table.schedule),
+]);
+
+export const insertAgentConfigSchema = createInsertSchema(agentConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AgentConfig = typeof agentConfigs.$inferSelect;
+export type InsertAgentConfig = z.infer<typeof insertAgentConfigSchema>;
+
+// Agent execution tracking
+export const agentExecutions = pgTable("agent_executions", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  agentType: text("agent_type").$type<AgentType>().notNull(),
+  status: text("status").$type<AgentExecutionStatus>().notNull().default("pending"),
+  trigger: text("trigger").notNull().default("scheduled"), // "scheduled" | "manual" | "event"
+  input: jsonb("input").$type<Record<string, any>>().default({}),
+  output: jsonb("output").$type<Record<string, any>>().default({}),
+  error: text("error"),
+  retryCount: integer("retry_count").notNull().default(0),
+  tokensUsed: integer("tokens_used").default(0),
+  durationMs: integer("duration_ms").default(0),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+  index("idx_agent_executions_status").on(table.status),
+  index("idx_agent_executions_site_created").on(table.siteId, table.createdAt),
+  index("idx_agent_executions_site_type_status").on(table.siteId, table.agentType, table.status),
+]);
+
+export const insertAgentExecutionSchema = createInsertSchema(agentExecutions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type AgentExecution = typeof agentExecutions.$inferSelect;
+export type InsertAgentExecution = z.infer<typeof insertAgentExecutionSchema>;
+
+// AI-generated content awaiting review
+export const generatedContent = pgTable("generated_content", {
+  id: serial("id").primaryKey(),
+  siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  executionId: integer("execution_id").references(() => agentExecutions.id),
+  agentType: text("agent_type").$type<AgentType>().notNull(),
+  contentType: text("content_type").$type<ContentType>().notNull(),
+  targetPage: text("target_page"),
+  title: text("title").notNull(),
+  content: jsonb("content").$type<Record<string, any>>().default({}),
+  currentContent: jsonb("current_content").$type<Record<string, any>>().default({}),
+  status: text("status").$type<ContentReviewStatus>().notNull().default("pending_review"),
+  reviewedBy: varchar("reviewed_by").references(() => tenantUsers.id),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+  index("idx_generated_content_site_status").on(table.siteId, table.status),
+  index("idx_generated_content_site_created").on(table.siteId, table.createdAt),
+]);
+
+export const insertGeneratedContentSchema = createInsertSchema(generatedContent).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type GeneratedContent = typeof generatedContent.$inferSelect;
+export type InsertGeneratedContent = z.infer<typeof insertGeneratedContentSchema>;
 
 // Audit Logs for RBAC tracking
 export const auditLogs = pgTable("audit_logs", {

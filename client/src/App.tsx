@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Switch, Route, useLocation, Link } from "wouter";
 import { queryClient, getQueryFn } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
@@ -24,36 +24,57 @@ import { LayoutDashboard, Building2, Users, ArrowRight, DollarSign, LogOut } fro
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import Dashboard from "@/pages/admin/Dashboard";
-import AdminLogin from "@/pages/admin/Login";
-import Sites from "@/pages/admin/Sites";
-import SiteDetail from "@/pages/admin/SiteDetail";
-import UsersPage from "@/pages/admin/Users";
-import Revenue from "@/pages/admin/Revenue";
+// Eagerly loaded — used on every domain type or needed for routing shell
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
-import SignUp from "@/pages/SignUp";
-import Login from "@/pages/Login";
-import Onboarding from "@/pages/Onboarding";
 import TenantLogin from "@/pages/tenant-admin/Login";
-import TenantDashboard from "@/pages/tenant-admin/Dashboard";
-import TenantSettings from "@/pages/tenant-admin/Settings";
-import TenantUsers from "@/pages/tenant-admin/TenantUsers";
-import TenantPages from "@/pages/tenant-admin/Pages";
-import TenantPageEditor from "@/pages/tenant-admin/PageEditor";
-import TenantLeads from "@/pages/tenant-admin/LeadsCRM";
-import TenantRFQInbox from "@/pages/tenant-admin/RFQInbox";
-import TenantAnalytics from "@/pages/tenant-admin/Analytics";
-import TenantServicePricing from "@/pages/tenant-admin/ServicePricing";
-import TenantTestimonials from "@/pages/tenant-admin/Testimonials";
 import TenantAdminLayout from "@/components/TenantAdminLayout";
-import PublicSite from "@/pages/PublicSite";
-import PreviewSite from "@/pages/PreviewSite";
-import PreviewAdmin from "@/pages/PreviewAdmin";
-import Demo from "@/pages/Demo";
-import Feedback from "@/pages/Feedback";
-import TenantImpersonate from "@/pages/TenantImpersonate";
 import type { Site, User } from "@shared/schema";
+
+// Route-level code splitting: platform admin pages
+const Dashboard = lazy(() => import("@/pages/admin/Dashboard"));
+const AdminLogin = lazy(() => import("@/pages/admin/Login"));
+const Sites = lazy(() => import("@/pages/admin/Sites"));
+const SiteDetail = lazy(() => import("@/pages/admin/SiteDetail"));
+const UsersPage = lazy(() => import("@/pages/admin/Users"));
+const Revenue = lazy(() => import("@/pages/admin/Revenue"));
+
+// Route-level code splitting: main site pages
+const SignUp = lazy(() => import("@/pages/SignUp"));
+const Login = lazy(() => import("@/pages/Login"));
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const Demo = lazy(() => import("@/pages/Demo"));
+const Feedback = lazy(() => import("@/pages/Feedback"));
+const PreviewSite = lazy(() => import("@/pages/PreviewSite"));
+const PreviewAdmin = lazy(() => import("@/pages/PreviewAdmin"));
+const TenantImpersonate = lazy(() => import("@/pages/TenantImpersonate"));
+
+// Route-level code splitting: tenant admin pages
+const TenantDashboard = lazy(() => import("@/pages/tenant-admin/Dashboard"));
+const TenantSettings = lazy(() => import("@/pages/tenant-admin/Settings"));
+const TenantUsers = lazy(() => import("@/pages/tenant-admin/TenantUsers"));
+const TenantPages = lazy(() => import("@/pages/tenant-admin/Pages"));
+const TenantPageEditor = lazy(() => import("@/pages/tenant-admin/PageEditor"));
+const TenantLeads = lazy(() => import("@/pages/tenant-admin/LeadsCRM"));
+const TenantRFQInbox = lazy(() => import("@/pages/tenant-admin/RFQInbox"));
+const TenantAnalytics = lazy(() => import("@/pages/tenant-admin/Analytics"));
+const TenantAIAgents = lazy(() => import("@/pages/tenant-admin/AIAgents"));
+const TenantServicePricing = lazy(() => import("@/pages/tenant-admin/ServicePricing"));
+const TenantTestimonials = lazy(() => import("@/pages/tenant-admin/Testimonials"));
+
+// Route-level code splitting: tenant public site
+const PublicSite = lazy(() => import("@/pages/PublicSite"));
+
+function LazyFallback() {
+  return (
+    <div className="min-h-[200px] flex items-center justify-center">
+      <div className="relative h-8 w-8">
+        <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
+        <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+      </div>
+    </div>
+  );
+}
 
 type SanitizedUser = Omit<User, "password">;
 
@@ -215,10 +236,21 @@ function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
 
 function TenantAdminApp() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [siteNotFound, setSiteNotFound] = useState(false);
 
-  const { data: authData, isLoading, refetch } = useQuery<TenantAuthResponse | null>({
+  const { data: authData, isLoading, refetch, error: authError } = useQuery<TenantAuthResponse | null>({
     queryKey: ["/api/tenant/auth/me"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: async () => {
+      const res = await fetch("/api/tenant/auth/me", { credentials: "include" });
+      if (res.status === 401) return null;
+      if (res.status === 404) {
+        setSiteNotFound(true);
+        return null;
+      }
+      if (!res.ok) throw new Error(`${res.status}`);
+      return res.json();
+    },
+    retry: false,
   });
 
   useEffect(() => {
@@ -235,7 +267,7 @@ function TenantAdminApp() {
     setIsAuthenticated(false);
   };
 
-  if (isLoading || isAuthenticated === null) {
+  if (isLoading || (isAuthenticated === null && !siteNotFound)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4" data-testid="loading-tenant-admin">
@@ -249,45 +281,69 @@ function TenantAdminApp() {
     );
   }
 
+  if (siteNotFound) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-4">
+        <div className="text-center max-w-md" data-testid="error-site-not-found">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+            <Building2 className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl font-bold mb-3">Site Not Found</h1>
+          <p className="text-muted-foreground mb-6">
+            No site is configured for this domain. Please check the URL and try again.
+          </p>
+          <a href="http://localhost:5000" className="text-primary hover:underline text-sm">
+            Go to LocalBlue
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated || !authData) {
     return <TenantLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
   return (
     <TenantAdminLayout site={authData.site} user={authData.user} onLogout={handleLogout}>
-      <Switch>
-        <Route path="/">
-          <TenantDashboard site={authData.site} />
-        </Route>
-        <Route path="/pages/:slug">
-          <TenantPageEditor />
-        </Route>
-        <Route path="/pages">
-          <TenantPages />
-        </Route>
-        <Route path="/settings">
-          <TenantSettings site={authData.site} />
-        </Route>
-        <Route path="/users">
-          <TenantUsers />
-        </Route>
-        <Route path="/rfqs">
-          <TenantRFQInbox />
-        </Route>
-        <Route path="/leads">
-          <TenantLeads />
-        </Route>
-        <Route path="/analytics">
-          <TenantAnalytics />
-        </Route>
-        <Route path="/service-pricing">
-          <TenantServicePricing />
-        </Route>
-        <Route path="/testimonials">
-          <TenantTestimonials />
-        </Route>
-        <Route component={NotFound} />
-      </Switch>
+      <Suspense fallback={<LazyFallback />}>
+        <Switch>
+          <Route path="/">
+            <TenantDashboard site={authData.site} />
+          </Route>
+          <Route path="/pages/:slug">
+            <TenantPageEditor />
+          </Route>
+          <Route path="/pages">
+            <TenantPages />
+          </Route>
+          <Route path="/settings">
+            <TenantSettings site={authData.site} />
+          </Route>
+          <Route path="/users">
+            <TenantUsers />
+          </Route>
+          <Route path="/rfqs">
+            <TenantRFQInbox />
+          </Route>
+          <Route path="/leads">
+            <TenantLeads />
+          </Route>
+          <Route path="/analytics">
+            <TenantAnalytics />
+          </Route>
+          <Route path="/agents">
+            <TenantAIAgents />
+          </Route>
+          <Route path="/service-pricing">
+            <TenantServicePricing />
+          </Route>
+          <Route path="/testimonials">
+            <TenantTestimonials />
+          </Route>
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
     </TenantAdminLayout>
   );
 }
@@ -361,44 +417,50 @@ function TenantPublicApp() {
     );
   }
 
-  return <PublicSite site={site} />;
+  return (
+    <Suspense fallback={<LazyFallback />}>
+      <PublicSite site={site} />
+    </Suspense>
+  );
 }
 
 function MainSiteApp() {
   return (
     <>
-      <Switch>
-        <Route path="/landing" component={Landing} />
-        <Route path="/demo" component={Demo} />
-        <Route path="/signup" component={SignUp} />
-        <Route path="/login" component={Login} />
-        <Route path="/onboarding" component={Onboarding} />
-        <Route path="/feedback/:subdomain" component={Feedback} />
-        <Route path="/preview/:subdomain/admin/:rest*" component={PreviewAdmin} />
-        <Route path="/preview/:subdomain/admin" component={PreviewAdmin} />
-        <Route path="/preview/:subdomain" component={PreviewSite} />
-        <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
-        <Route path="/admin/login" component={AdminLogin} />
-        <Route path="/admin/sites/:id">
-          {() => <PlatformAdminGuard><PlatformAdminLayout><SiteDetail /></PlatformAdminLayout></PlatformAdminGuard>}
-        </Route>
-        <Route path="/admin/sites">
-          {() => <PlatformAdminGuard><PlatformAdminLayout><Sites /></PlatformAdminLayout></PlatformAdminGuard>}
-        </Route>
-        <Route path="/admin/users">
-          {() => <PlatformAdminGuard><PlatformAdminLayout><UsersPage /></PlatformAdminLayout></PlatformAdminGuard>}
-        </Route>
-        <Route path="/admin/revenue">
-          {() => <PlatformAdminGuard><PlatformAdminLayout><Revenue /></PlatformAdminLayout></PlatformAdminGuard>}
-        </Route>
-        <Route path="/admin">
-          {() => <PlatformAdminGuard><PlatformAdminLayout><Dashboard /></PlatformAdminLayout></PlatformAdminGuard>}
-        </Route>
-        <Route path="/">
-          <Landing />
-        </Route>
-        <Route component={NotFound} />
-      </Switch>
+      <Suspense fallback={<LazyFallback />}>
+        <Switch>
+          <Route path="/landing" component={Landing} />
+          <Route path="/demo" component={Demo} />
+          <Route path="/signup" component={SignUp} />
+          <Route path="/login" component={Login} />
+          <Route path="/onboarding" component={Onboarding} />
+          <Route path="/feedback/:subdomain" component={Feedback} />
+          <Route path="/preview/:subdomain/admin/:rest*" component={PreviewAdmin} />
+          <Route path="/preview/:subdomain/admin" component={PreviewAdmin} />
+          <Route path="/preview/:subdomain" component={PreviewSite} />
+          <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
+          <Route path="/admin/login" component={AdminLogin} />
+          <Route path="/admin/sites/:id">
+            {() => <PlatformAdminGuard><PlatformAdminLayout><SiteDetail /></PlatformAdminLayout></PlatformAdminGuard>}
+          </Route>
+          <Route path="/admin/sites">
+            {() => <PlatformAdminGuard><PlatformAdminLayout><Sites /></PlatformAdminLayout></PlatformAdminGuard>}
+          </Route>
+          <Route path="/admin/users">
+            {() => <PlatformAdminGuard><PlatformAdminLayout><UsersPage /></PlatformAdminLayout></PlatformAdminGuard>}
+          </Route>
+          <Route path="/admin/revenue">
+            {() => <PlatformAdminGuard><PlatformAdminLayout><Revenue /></PlatformAdminLayout></PlatformAdminGuard>}
+          </Route>
+          <Route path="/admin">
+            {() => <PlatformAdminGuard><PlatformAdminLayout><Dashboard /></PlatformAdminLayout></PlatformAdminGuard>}
+          </Route>
+          <Route path="/">
+            <Landing />
+          </Route>
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
       <BetaBanner />
       <FeedbackWidget />
     </>

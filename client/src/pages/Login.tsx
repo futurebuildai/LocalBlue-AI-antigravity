@@ -1,22 +1,39 @@
 import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { useLocation } from "wouter";
+import { ArrowRight, LogIn } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Login() {
-  useEffect(() => {
-    window.location.href = "/api/login";
-  }, []);
+  const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-        <h1 className="text-xl font-semibold mb-2" data-testid="text-login-title">
-          Redirecting to login...
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          You'll be redirected momentarily.
-        </p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/30">
+      <Card className="max-w-md w-full shadow-lg">
+        <CardContent className="p-8 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <LogIn className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold mb-3">Welcome Back</h1>
+          <p className="text-muted-foreground mb-6">
+            To manage your contractor website, sign in through your admin portal at{" "}
+            <strong>admin.yoursite.localblue.co</strong>
+          </p>
+          <div className="space-y-3">
+            <Button
+              onClick={() => setLocation("/signup")}
+              className="w-full"
+              size="lg"
+            >
+              Create a New Account
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Already have a site? Go to <strong>admin.&lt;your-subdomain&gt;.localhost:5000</strong> to sign in.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

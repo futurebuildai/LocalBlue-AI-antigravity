@@ -15,6 +15,8 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { usePreview } from "@/contexts/PreviewContext";
+import { LeadScoreBadge } from "@/components/agents/LeadScoreBadge";
+import { LeadSuggestedActions } from "@/components/agents/LeadSuggestedActions";
 import type { Lead, LeadNote } from "@shared/schema";
 import { LEAD_STAGES, LEAD_PRIORITIES } from "@shared/schema";
 
@@ -137,6 +139,7 @@ function LeadCard({
               <Badge variant={getPriorityVariant(lead.priority)} data-testid={`badge-priority-${lead.id}`}>
                 {PRIORITY_LABELS[lead.priority] || lead.priority}
               </Badge>
+              <LeadScoreBadge score={(lead as any).aiScore} />
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Select
@@ -194,6 +197,8 @@ function LeadCard({
               </Badge>
             )}
           </div>
+
+          <LeadSuggestedActions actions={(lead as any).aiSuggestedActions} />
 
           {lead.message && (
             <div className="text-sm text-muted-foreground">

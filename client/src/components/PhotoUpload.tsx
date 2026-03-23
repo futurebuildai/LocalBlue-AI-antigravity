@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Upload, X, Image as ImageIcon, Camera, Users, Briefcase, ArrowLeftRight } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Camera, Users, Briefcase, ArrowLeftRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,9 +58,28 @@ const PHOTO_TYPE_CONFIG: Record<PhotoType, { label: string; icon: typeof ImageIc
   },
 };
 
+async function uploadFile(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/onboarding/upload", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Upload failed");
+  }
+
+  const data = await response.json();
+  return data.url;
+}
+
 export function PhotoUpload({ photos, onPhotosChange, disabled = false }: PhotoUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [activeType, setActiveType] = useState<PhotoType>("project");
+  const [uploading, setUploading] = useState<Set<string>>(new Set());
 
   const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -76,6 +95,55 @@ export function PhotoUpload({ photos, onPhotosChange, disabled = false }: PhotoU
     setIsDragging(false);
   }, []);
 
+  const processFiles = useCallback(
+    async (files: File[]) => {
+      if (disabled || files.length === 0) return;
+
+      // Create placeholder photos with temporary blob URLs for instant preview
+      const placeholders: UploadedPhoto[] = files.map((file) => ({
+        id: generateId(),
+        type: activeType,
+        url: URL.createObjectURL(file),
+        file,
+      }));
+
+      const placeholderIds = new Set(placeholders.map((p) => p.id));
+      setUploading((prev) => {
+        const next = new Set(prev);
+        placeholderIds.forEach((id) => next.add(id));
+        return next;
+      });
+      onPhotosChange([...photos, ...placeholders]);
+
+      // Upload each file and replace blob URL with server URL
+      const updatedPhotos = [...photos];
+      for (const placeholder of placeholders) {
+        try {
+          const serverUrl = await uploadFile(placeholder.file!);
+          // Revoke blob URL
+          URL.revokeObjectURL(placeholder.url);
+          updatedPhotos.push({
+            ...placeholder,
+            url: serverUrl,
+            file: undefined,
+          });
+        } catch (error) {
+          console.error("Failed to upload file:", error);
+          // Keep blob URL as fallback
+          updatedPhotos.push(placeholder);
+        }
+        setUploading((prev) => {
+          const next = new Set(prev);
+          next.delete(placeholder.id);
+          return next;
+        });
+      }
+
+      onPhotosChange(updatedPhotos);
+    },
+    [photos, onPhotosChange, activeType, disabled]
+  );
+
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -86,16 +154,9 @@ export function PhotoUpload({ photos, onPhotosChange, disabled = false }: PhotoU
         file.type.startsWith("image/")
       );
 
-      const newPhotos: UploadedPhoto[] = files.map((file) => ({
-        id: generateId(),
-        type: activeType,
-        url: URL.createObjectURL(file),
-        file,
-      }));
-
-      onPhotosChange([...photos, ...newPhotos]);
+      processFiles(files);
     },
-    [photos, onPhotosChange, activeType, disabled]
+    [disabled, processFiles]
   );
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,14 +166,7 @@ export function PhotoUpload({ photos, onPhotosChange, disabled = false }: PhotoU
       file.type.startsWith("image/")
     );
 
-    const newPhotos: UploadedPhoto[] = files.map((file) => ({
-      id: generateId(),
-      type: activeType,
-      url: URL.createObjectURL(file),
-      file,
-    }));
-
-    onPhotosChange([...photos, ...newPhotos]);
+    processFiles(files);
     e.target.value = "";
   };
 
@@ -128,6 +182,7 @@ export function PhotoUpload({ photos, onPhotosChange, disabled = false }: PhotoU
   }, {} as Record<PhotoType, UploadedPhoto[]>);
 
   const availableTypes: PhotoType[] = ["logo", "team", "project", "before", "after", "hero", "service"];
+  const isUploading = uploading.size > 0;
 
   return (
     <div className="space-y-4" data-testid="photo-upload">
@@ -166,7 +221,7 @@ export function PhotoUpload({ photos, onPhotosChange, disabled = false }: PhotoU
         className={cn(
           "border-2 border-dashed transition-colors",
           isDragging && "border-[#2563EB] bg-[#2563EB]/5",
-          disabled && "opacity-50"
+          (disabled || isUploading) && "opacity-50"
         )}
       >
         <CardContent className="p-0">
@@ -177,10 +232,16 @@ export function PhotoUpload({ photos, onPhotosChange, disabled = false }: PhotoU
             className="flex flex-col items-center justify-center py-8 px-4 text-center"
           >
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
-              <Upload className="w-5 h-5 text-muted-foreground" />
+              {isUploading ? (
+                <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+              ) : (
+                <Upload className="w-5 h-5 text-muted-foreground" />
+              )}
             </div>
             <p className="text-sm font-medium mb-1">
-              Drop {PHOTO_TYPE_CONFIG[activeType].label.toLowerCase()} here
+              {isUploading
+                ? `Uploading ${uploading.size} photo${uploading.size !== 1 ? "s" : ""}...`
+                : `Drop ${PHOTO_TYPE_CONFIG[activeType].label.toLowerCase()} here`}
             </p>
             <p className="text-xs text-muted-foreground mb-3">
               {PHOTO_TYPE_CONFIG[activeType].description}
@@ -191,14 +252,14 @@ export function PhotoUpload({ photos, onPhotosChange, disabled = false }: PhotoU
                 accept="image/*"
                 multiple
                 onChange={handleFileInput}
-                disabled={disabled}
+                disabled={disabled || isUploading}
                 className="sr-only"
                 data-testid="photo-file-input"
               />
               <Button
                 variant="outline"
                 size="sm"
-                disabled={disabled}
+                disabled={disabled || isUploading}
                 className="cursor-pointer"
                 asChild
               >
@@ -235,13 +296,18 @@ export function PhotoUpload({ photos, onPhotosChange, disabled = false }: PhotoU
                         alt={`${photo.type} photo`}
                         className="w-full h-full object-cover"
                       />
+                      {uploading.has(photo.id) && (
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 text-white animate-spin" />
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button
                           variant="destructive"
                           size="icon"
                           className="h-7 w-7"
                           onClick={() => handleDelete(photo.id)}
-                          disabled={disabled}
+                          disabled={disabled || uploading.has(photo.id)}
                           data-testid={`delete-photo-${photo.id}`}
                         >
                           <X className="w-4 h-4" />

@@ -1,40 +1,16 @@
 import { Resend } from 'resend';
 
-let connectionSettings: any;
-
-async function getCredentials() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY is not configured');
   }
 
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'LocalBlue <notifications@localblue.co>';
 
-  if (!connectionSettings || (!connectionSettings.settings.api_key)) {
-    throw new Error('Resend not connected');
-  }
-  return { apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email };
-}
-
-async function getResendClient() {
-  const { apiKey, fromEmail } = await getCredentials();
   return {
     client: new Resend(apiKey),
-    fromEmail
+    fromEmail,
   };
 }
 
@@ -61,7 +37,7 @@ function escapeHtml(text: string): string {
 
 export async function sendLeadNotification(data: LeadNotificationData): Promise<boolean> {
   try {
-    const { client, fromEmail } = await getResendClient();
+    const { client, fromEmail } = getResendClient();
     
     const safeName = escapeHtml(data.leadName);
     const safeEmail = escapeHtml(data.leadEmail);
@@ -136,14 +112,14 @@ export async function sendLeadNotification(data: LeadNotificationData): Promise<
   </div>
   
   <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-    <p style="margin: 0;">Powered by <a href="https://localblue" style="color: #2563eb; text-decoration: none;">LocalBlue</a></p>
+    <p style="margin: 0;">Powered by <a href="https://localblue.co" style="color: #2563eb; text-decoration: none;">LocalBlue</a></p>
   </div>
 </body>
 </html>
     `;
 
     const result = await client.emails.send({
-      from: fromEmail || 'LocalBlue <notifications@localblue>',
+      from: fromEmail || 'LocalBlue <notifications@localblue.co>',
       to: data.businessEmail,
       subject: `New Lead: ${data.leadName} - ${data.businessName}`,
       html: emailHtml,
@@ -168,7 +144,7 @@ interface ContactSalesData {
 
 export async function sendContactSalesEmail(data: ContactSalesData): Promise<boolean> {
   try {
-    const { client, fromEmail } = await getResendClient();
+    const { client, fromEmail } = getResendClient();
     
     const safeName = escapeHtml(data.name);
     const safeEmail = escapeHtml(data.email);
@@ -243,7 +219,7 @@ export async function sendContactSalesEmail(data: ContactSalesData): Promise<boo
     `;
 
     const result = await client.emails.send({
-      from: fromEmail || 'LocalBlue <sales@localblue>',
+      from: fromEmail || 'LocalBlue <sales@localblue.co>',
       to: 'colton@futurebuild.ai',
       subject: `Scale Plan Inquiry: ${safeBusinessName} - ${safeName}`,
       html: emailHtml,
@@ -266,10 +242,10 @@ interface WelcomeEmailData {
 
 export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
   try {
-    const { client, fromEmail } = await getResendClient();
+    const { client, fromEmail } = getResendClient();
     
-    const siteUrl = `https://${data.subdomain}.localblue`;
-    const adminUrl = `https://admin.${data.subdomain}.localblue`;
+    const siteUrl = `https://${data.subdomain}.localblue.co`;
+    const adminUrl = `https://admin.${data.subdomain}.localblue.co`;
     
     const emailHtml = `
 <!DOCTYPE html>
@@ -324,14 +300,14 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   </div>
   
   <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-    <p style="margin: 0;">Powered by <a href="https://localblue" style="color: #2563eb; text-decoration: none;">LocalBlue</a></p>
+    <p style="margin: 0;">Powered by <a href="https://localblue.co" style="color: #2563eb; text-decoration: none;">LocalBlue</a></p>
   </div>
 </body>
 </html>
     `;
 
     const result = await client.emails.send({
-      from: fromEmail || 'LocalBlue <hello@localblue>',
+      from: fromEmail || 'LocalBlue <hello@localblue.co>',
       to: data.businessEmail,
       subject: `Your ${data.businessName} website is ready!`,
       html: emailHtml,
@@ -353,7 +329,7 @@ interface BetaFeedbackData {
 
 export async function sendBetaFeedbackEmail(data: BetaFeedbackData): Promise<boolean> {
   try {
-    const { client, fromEmail } = await getResendClient();
+    const { client, fromEmail } = getResendClient();
     
     const safeName = data.name ? escapeHtml(data.name) : 'Anonymous';
     const safeEmail = escapeHtml(data.email);
@@ -411,14 +387,14 @@ export async function sendBetaFeedbackEmail(data: BetaFeedbackData): Promise<boo
   </div>
   
   <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">
-    <p style="margin: 0;">Powered by <a href="https://localblue" style="color: #10b981; text-decoration: none;">LocalBlue</a></p>
+    <p style="margin: 0;">Powered by <a href="https://localblue.co" style="color: #10b981; text-decoration: none;">LocalBlue</a></p>
   </div>
 </body>
 </html>
     `;
 
     const result = await client.emails.send({
-      from: fromEmail || 'LocalBlue <feedback@localblue>',
+      from: fromEmail || 'LocalBlue <feedback@localblue.co>',
       to: 'grant@futurebuild.ai',
       subject: `Beta Feedback: ${data.name || 'Anonymous'}`,
       html: emailHtml,
