@@ -1,10 +1,12 @@
 /**
  * Returns the base domain from environment or default.
- * Production: localblue.co
- * Staging: staging.localblue.co
+ * Reads from server-injected runtime config first (window.__APP_CONFIG__),
+ * then Vite build-time env, then falls back to localblue.co.
  */
 export function getBaseDomain(): string {
-  return import.meta.env.VITE_MAIN_DOMAIN || "localblue.co";
+  return (window as any).__APP_CONFIG__?.baseDomain
+    || import.meta.env.VITE_MAIN_DOMAIN
+    || "localblue.co";
 }
 
 /** Returns the full tenant site URL for a given subdomain */

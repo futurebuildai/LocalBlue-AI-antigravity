@@ -151,7 +151,7 @@ export default function Landing() {
                     Dashboard
                   </Button>
                 </Link>
-                <a href="/api/logout" className="hidden sm:block">
+                <a href="/api/admin/logout" className="hidden sm:block">
                   <Button variant="ghost" size="sm" className="text-white/70" data-testid="button-header-logout">
                     <LogOut className="mr-1.5 h-3.5 w-3.5" />
                     Log Out
@@ -160,11 +160,11 @@ export default function Landing() {
               </>
             ) : (
               <>
-                <a href="/api/login" className="hidden sm:block">
+                <Link href="/login" className="hidden sm:block">
                   <Button variant="ghost" size="sm" className="text-white/70" data-testid="link-header-login">
                     Sign In
                   </Button>
-                </a>
+                </Link>
                 <Link href="/signup" className="hidden md:block">
                   <Button size="sm" className="bg-white text-slate-900 shadow-lg shadow-white/10" data-testid="link-header-signup">
                     Join Beta
@@ -238,7 +238,7 @@ export default function Landing() {
                             Go to Dashboard
                           </Button>
                         </Link>
-                        <a href="/api/logout" onClick={handleMobileNavClick} className="block">
+                        <a href="/api/admin/logout" onClick={handleMobileNavClick} className="block">
                           <Button 
                             variant="outline" 
                             className="w-full bg-white/5 border-white/20 text-white"
@@ -251,15 +251,15 @@ export default function Landing() {
                       </>
                     ) : (
                       <>
-                        <a href="/api/login" onClick={handleMobileNavClick} className="block">
-                          <Button 
-                            variant="outline" 
+                        <Link href="/login" onClick={handleMobileNavClick} className="block">
+                          <Button
+                            variant="outline"
                             className="w-full bg-white/5 border-white/20 text-white"
                             data-testid="link-mobile-login"
                           >
                             Sign In
                           </Button>
-                        </a>
+                        </Link>
                         <Link href="/signup" onClick={handleMobileNavClick} className="block">
                           <Button 
                             className="w-full bg-white text-slate-900 shadow-lg shadow-white/10"
