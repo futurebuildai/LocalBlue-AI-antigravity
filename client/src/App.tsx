@@ -292,7 +292,7 @@ function TenantAdminApp() {
           <p className="text-muted-foreground mb-6">
             No site is configured for this domain. Please check the URL and try again.
           </p>
-          <a href="http://localhost:5000" className="text-primary hover:underline text-sm">
+          <a href={`https://${(window as any).__APP_CONFIG__?.baseDomain || "localblue.co"}`} className="text-primary hover:underline text-sm">
             Go to LocalBlue
           </a>
         </div>
@@ -359,12 +359,15 @@ function detectDomainType(): DomainType {
   }
 
   // Main site: localhost without subdomain, or the main domain
-  const mainDomain = import.meta.env.VITE_MAIN_DOMAIN || "localblue.co";
+  const mainDomain = (window as any).__APP_CONFIG__?.baseDomain
+    || import.meta.env.VITE_MAIN_DOMAIN
+    || "localblue.co";
   const isMainDomain = hostname === "localhost" ||
     hostname === mainDomain ||
     hostname === `www.${mainDomain}` ||
     hostname === "localblue" ||
-    hostname === "www.localblue";
+    hostname === "www.localblue" ||
+    hostname.endsWith(".up.railway.app");
 
   if (isMainDomain) {
     return "main";
@@ -405,7 +408,7 @@ function TenantPublicApp() {
             The site you're looking for doesn't exist or hasn't been configured yet.
           </p>
           <a
-            href="https://localblue"
+            href={`https://${(window as any).__APP_CONFIG__?.baseDomain || "localblue.co"}`}
             className="inline-flex items-center gap-2 text-foreground hover:text-muted-foreground transition-colors"
             data-testid="link-localblue"
           >
