@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { OnboardingPreviewProvider } from "@/contexts/PreviewContext";
 import { FormattedMessage } from "@/lib/message-utils";
 import PublicSite from "./PublicSite";
+import { getBaseDomain } from "@/lib/domain";
 import type { Site } from "@shared/schema";
 
 const QUICK_SUGGESTIONS = [
@@ -536,7 +537,7 @@ export default function Feedback() {
               <p className="text-muted-foreground mb-6">
                 Your website will go live at{" "}
                 <code className="text-foreground font-mono text-sm">
-                  {subdomain}.localblue.co
+                  {subdomain}.{getBaseDomain()}
                 </code>
                 . You can continue to make changes from your admin dashboard after publishing.
               </p>

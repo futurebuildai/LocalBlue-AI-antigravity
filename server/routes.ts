@@ -24,6 +24,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
+const BASE_DOMAIN = process.env.BASE_DOMAIN || "localblue.co";
+
 const anthropic = new Anthropic({
   apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
@@ -1103,8 +1105,8 @@ IMPORTANT:
         id, subdomain, businessName, brandColor, services, isPublished, customDomain,
         message: isPublished ? "Site published successfully!" : "Site unpublished successfully!",
         dnsMessages,
-        liveUrl: isPublished ? `https://${subdomain}.localblue.co` : null,
-        adminUrl: isPublished ? `https://admin.${subdomain}.localblue.co` : null,
+        liveUrl: isPublished ? `https://${subdomain}.${BASE_DOMAIN}` : null,
+        adminUrl: isPublished ? `https://admin.${subdomain}.${BASE_DOMAIN}` : null,
       });
     } catch (error) {
       console.error("Error toggling publish status:", error);
@@ -2186,8 +2188,8 @@ Return valid JSON only. No markdown code fences, no explanation text.`;
 
       res.json({
         success: true,
-        liveUrl: `https://${site.subdomain}.localblue.co`,
-        adminUrl: `https://admin.${site.subdomain}.localblue.co`,
+        liveUrl: `https://${site.subdomain}.${BASE_DOMAIN}`,
+        adminUrl: `https://admin.${site.subdomain}.${BASE_DOMAIN}`,
         dnsMessages,
       });
     } catch (error) {

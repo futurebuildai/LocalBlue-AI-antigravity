@@ -16,6 +16,7 @@ import { usePreview } from "@/contexts/PreviewContext";
 import { AgentActivityFeed } from "@/components/agents/AgentActivityFeed";
 import { InsightCard } from "@/components/agents/InsightCard";
 import { Bot } from "lucide-react";
+import { getBaseDomain, getTenantUrl } from "@/lib/domain";
 import type { Site, User, Lead } from "@shared/schema";
 
 type SanitizedUser = Omit<User, "password">;
@@ -28,7 +29,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
   const { toast } = useToast();
   const { isPreview, subdomain, getApiPath } = usePreview();
   const navPath = (path: string) => isPreview ? `/preview/${subdomain}/admin${path}` : `/admin${path}`;
-  const viewSiteUrl = isPreview ? `/preview/${subdomain}` : (site.customDomain ? `https://${site.customDomain}` : `https://${site.subdomain}.localblue.co`);
+  const viewSiteUrl = isPreview ? `/preview/${subdomain}` : (site.customDomain ? `https://${site.customDomain}` : getTenantUrl(site.subdomain));
   
   const { data: users = [], isLoading: usersLoading } = useQuery<SanitizedUser[]>({
     queryKey: [getApiPath("/api/tenant/users")],
@@ -43,9 +44,9 @@ export default function Dashboard({ site }: TenantDashboardProps) {
   });
   const agentExecutions = agentExecPage?.data ?? [];
 
-  const publicUrl = site.customDomain 
+  const publicUrl = site.customDomain
     ? `https://${site.customDomain}`
-    : `https://${site.subdomain}.localblue.co`;
+    : getTenantUrl(site.subdomain);
 
   const copyUrl = () => {
     navigator.clipboard.writeText(isPreview ? viewSiteUrl : publicUrl);
@@ -151,7 +152,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     {site.trialPhase === 'test_drive' ? (
-                      <>Your site is live at <span className="font-medium text-violet-400">{site.subdomain}.localblue.co</span></>
+                      <>Your site is live at <span className="font-medium text-violet-400">{site.subdomain}.{getBaseDomain()}</span></>
                     ) : (
                       <>Your custom domain is active. Card on file - billing starts soon.</>
                     )}
@@ -356,7 +357,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {site.customDomain || `${site.subdomain}.localblue.co`}
+              {site.customDomain || `${site.subdomain}.${getBaseDomain()}`}
             </p>
           </CardContent>
         </Card>
@@ -524,7 +525,7 @@ export default function Dashboard({ site }: TenantDashboardProps) {
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Subdomain</span>
-              <span className="font-medium">{site.subdomain}.localblue.co</span>
+              <span className="font-medium">{site.subdomain}.{getBaseDomain()}</span>
             </div>
             {site.customDomain && (
               <div className="flex justify-between gap-4">

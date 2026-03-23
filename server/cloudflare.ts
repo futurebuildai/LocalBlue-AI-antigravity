@@ -43,7 +43,7 @@ interface CustomHostnameResult {
 }
 
 const CLOUDFLARE_API_BASE = "https://api.cloudflare.com/client/v4";
-const BASE_DOMAIN = "localblue.co";
+const BASE_DOMAIN = process.env.BASE_DOMAIN || "localblue.co";
 
 function getConfig(): CloudflareConfig {
   const apiToken = process.env.CLOUDFLARE_API_TOKEN;
