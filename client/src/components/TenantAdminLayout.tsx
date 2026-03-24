@@ -83,7 +83,7 @@ export default function TenantAdminLayout({ site, user, onLogout, children, base
   };
 
   const style = {
-    "--sidebar-width": "17rem",
+    "--sidebar-width": "15rem",
     "--sidebar-width-icon": "3.5rem",
   };
 

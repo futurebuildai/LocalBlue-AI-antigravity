@@ -236,6 +236,11 @@ function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
 }
 
 function TenantAdminApp() {
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+    return () => document.documentElement.classList.remove("dark");
+  }, []);
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [siteNotFound, setSiteNotFound] = useState(false);
 

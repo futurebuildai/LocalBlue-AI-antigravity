@@ -60,7 +60,7 @@ function StarRating({ rating, onChange }: { rating: number; onChange?: (r: numbe
           className={onChange ? "cursor-pointer" : "cursor-default"}
         >
           <Star
-            className={`h-5 w-5 ${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+            className={`h-5 w-5 ${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
           />
         </button>
       ))}
