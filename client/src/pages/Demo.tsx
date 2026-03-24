@@ -171,6 +171,18 @@ export default function Demo() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="container mx-auto px-4 py-6">
+        {/* Shade Roofing Demo Banner */}
+        <div className="mb-4">
+          <Link href="/demo/shade-roofing">
+            <div className="bg-[#1E3A5F]/40 border border-blue-500/30 rounded-lg p-3 flex items-center justify-between hover:bg-[#1E3A5F]/60 transition-colors cursor-pointer">
+              <span className="text-blue-200 text-sm">
+                Want to explore the admin portal? <span className="font-semibold text-white">Try the Shade Roofing demo</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-blue-300" />
+            </div>
+          </Link>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <Link href="/">
             <Button variant="ghost" className="text-white" data-testid="link-back-home">

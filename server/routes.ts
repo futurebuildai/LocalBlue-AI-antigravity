@@ -128,6 +128,33 @@ export async function registerRoutes(
   } as any);
 
   // ============================================
+  // Demo Auto-Login (for Shade Roofing demo)
+  // ============================================
+  // NOTE: For production, consider adding rate limiting specific to this endpoint
+  app.post("/api/demo/auto-login", async (req, res) => {
+    try {
+      const site = await storage.getSiteBySubdomain("shade-roofing");
+      if (!site) {
+        return res.status(404).json({ error: "Demo site not found. Run: npx tsx server/seed-shade-roofing.ts" });
+      }
+
+      const user = await storage.getTenantUserByEmail("shade+localblue@futurebuild.ai");
+      if (!user || user.siteId !== site.id) {
+        return res.status(404).json({ error: "Demo user not found" });
+      }
+
+      // Set tenant session (same fields as normal tenant login)
+      req.session.userId = user.id;
+      req.session.siteId = site.id;
+
+      res.json({ success: true, subdomain: "shade-roofing" });
+    } catch (error) {
+      console.error("Demo auto-login error:", error);
+      res.status(500).json({ error: "Auto-login failed" });
+    }
+  });
+
+  // ============================================
   // Public Signup Route (for contractors)
   // ============================================
 

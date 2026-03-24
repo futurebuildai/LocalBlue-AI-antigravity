@@ -44,6 +44,7 @@ const SignUp = lazy(() => import("@/pages/SignUp"));
 const Login = lazy(() => import("@/pages/Login"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const Demo = lazy(() => import("@/pages/Demo"));
+const DemoShadeRoofing = lazy(() => import("@/pages/DemoShadeRoofing"));
 const Feedback = lazy(() => import("@/pages/Feedback"));
 const PreviewSite = lazy(() => import("@/pages/PreviewSite"));
 const PreviewAdmin = lazy(() => import("@/pages/PreviewAdmin"));
@@ -433,6 +434,7 @@ function MainSiteApp() {
       <Suspense fallback={<LazyFallback />}>
         <Switch>
           <Route path="/landing" component={Landing} />
+          <Route path="/demo/shade-roofing" component={DemoShadeRoofing} />
           <Route path="/demo" component={Demo} />
           <Route path="/signup" component={SignUp} />
           <Route path="/login" component={Login} />
