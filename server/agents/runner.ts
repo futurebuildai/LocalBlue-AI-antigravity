@@ -152,42 +152,53 @@ export class AgentRunner {
     const startedAt = execution.startedAt || new Date();
 
     try {
-      // Execute with timeout (#1) — clear timer on completion to avoid leaks
+      // Execute with timeout (#1) — clear timer in finally to prevent leaks
       let timeoutHandle: ReturnType<typeof setTimeout>;
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutHandle = setTimeout(() => reject(new Error(`Agent execution timed out after ${EXECUTION_TIMEOUT_MS / 1000}s`)), EXECUTION_TIMEOUT_MS);
-      });
+      let result: Awaited<ReturnType<typeof agent.execute>>;
+      try {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutHandle = setTimeout(() => reject(new Error(`Agent execution timed out after ${EXECUTION_TIMEOUT_MS / 1000}s`)), EXECUTION_TIMEOUT_MS);
+        });
 
-      const result = await Promise.race([
-        agent.execute({
-          site,
-          config,
-          storage: this.storage,
-          anthropic: this.anthropic,
-          execution,
-          log: (msg: string) => logger.info({ agentType: execution.agentType, siteId: execution.siteId }, msg),
-        }),
-        timeoutPromise,
-      ]);
-      clearTimeout(timeoutHandle!);
+        result = await Promise.race([
+          agent.execute({
+            site,
+            config,
+            storage: this.storage,
+            anthropic: this.anthropic,
+            execution,
+            log: (msg: string) => logger.info({ agentType: execution.agentType, siteId: execution.siteId }, msg),
+          }),
+          timeoutPromise,
+        ]);
+      } finally {
+        clearTimeout(timeoutHandle!);
+      }
 
       const completedAt = new Date();
       const durationMs = completedAt.getTime() - startedAt.getTime();
 
-      // Persist generated content items
+      // Persist generated content items — wrapped in try/catch so a storage
+      // failure here still lets us record the execution result
       if (result.generatedContent && result.generatedContent.length > 0) {
-        for (const item of result.generatedContent) {
-          await this.storage.createGeneratedContent({
-            siteId: execution.siteId,
-            executionId: execution.id,
-            agentType: execution.agentType,
-            contentType: item.contentType,
-            targetPage: item.targetPage || null,
-            title: item.title,
-            content: item.content,
-            currentContent: item.currentContent || {},
-            status: "pending_review",
-          });
+        try {
+          for (const item of result.generatedContent) {
+            await this.storage.createGeneratedContent({
+              siteId: execution.siteId,
+              executionId: execution.id,
+              agentType: execution.agentType,
+              contentType: item.contentType,
+              targetPage: item.targetPage || null,
+              title: item.title || `Generated ${item.contentType}`,
+              content: item.content,
+              currentContent: item.currentContent || {},
+              status: "pending_review",
+            });
+          }
+        } catch (storageErr) {
+          logger.error({ err: storageErr, agentType: execution.agentType }, "Failed to persist generated content");
+          result.error = (result.error ? result.error + "; " : "") + "Content persistence failed";
+          result.success = false;
         }
       }
 

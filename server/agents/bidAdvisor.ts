@@ -26,10 +26,11 @@ export const bidAdvisor: Agent = {
 
   async execute(ctx: AgentContext): Promise<AgentResult> {
     const { site, storage, anthropic, execution, log } = ctx;
-    const rfqId = execution.input?.rfqId as number | undefined;
+    const rawRfqId = execution.input?.rfqId;
+    const rfqId = typeof rawRfqId === "number" && Number.isFinite(rawRfqId) ? rawRfqId : undefined;
 
     if (!rfqId) {
-      return { success: false, output: {}, error: "No rfqId provided in input" };
+      return { success: false, output: {}, error: "No valid rfqId provided in input" };
     }
 
     const rfq = await storage.getRfqById(rfqId);
@@ -132,12 +133,12 @@ Respond with ONLY a JSON object (no markdown):
         messages: [{ role: "user", content: prompt }],
       });
 
+      const tokensUsed = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
       const textBlock = response.content?.find(b => b.type === "text");
       if (!textBlock || textBlock.type !== "text") {
-        return { success: false, output: {}, error: "AI returned no text content" };
+        return { success: false, output: {}, error: "AI returned no text content", tokensUsed };
       }
       const text = textBlock.text;
-      const tokensUsed = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
 
       let rawJson: any;
       try {

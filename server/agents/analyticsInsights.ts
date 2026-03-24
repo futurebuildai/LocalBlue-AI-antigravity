@@ -163,12 +163,12 @@ Respond with ONLY a JSON object (no markdown):
         messages: [{ role: "user", content: prompt }],
       });
 
+      const tokensUsed = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
       const textBlock = response.content?.find(b => b.type === "text");
       if (!textBlock || textBlock.type !== "text") {
-        return { success: false, output: {}, error: "AI returned no text content" };
+        return { success: false, output: {}, error: "AI returned no text content", tokensUsed };
       }
       const text = textBlock.text;
-      const tokensUsed = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
 
       let rawJson: any;
       try {

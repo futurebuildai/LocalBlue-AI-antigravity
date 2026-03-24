@@ -218,6 +218,8 @@ function OutreachSendCard({ item }: { item: GeneratedContentItem }) {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [recipientCompany, setRecipientCompany] = useState("");
 
+  const isValidEmail = recipientEmail.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail);
+
   const sendMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", getApiPath(`/api/tenant/agents/content/${item.id}/send`), {
@@ -298,6 +300,9 @@ function OutreachSendCard({ item }: { item: GeneratedContentItem }) {
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
               />
+              {recipientEmail && !isValidEmail && (
+                <p className="text-xs text-destructive">Please enter a valid email address</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="recipientCompany">Company (optional)</Label>
@@ -318,7 +323,7 @@ function OutreachSendCard({ item }: { item: GeneratedContentItem }) {
             <Button variant="outline" onClick={() => setShowSendDialog(false)}>Cancel</Button>
             <Button
               onClick={() => sendMutation.mutate()}
-              disabled={!recipientName || !recipientEmail || sendMutation.isPending}
+              disabled={!recipientName || !isValidEmail || sendMutation.isPending}
             >
               {sendMutation.isPending ? (
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />

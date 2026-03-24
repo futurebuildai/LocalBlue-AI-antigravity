@@ -35,6 +35,13 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (char) => htmlEntities[char] || char);
 }
 
+/** Strip CRLF to prevent email header injection */
+function sanitizeHeaderValue(text: string): string {
+  return text.replace(/[\r\n]/g, ' ').trim();
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function sendLeadNotification(data: LeadNotificationData): Promise<boolean> {
   try {
     const { client, fromEmail } = getResendClient();
@@ -121,7 +128,7 @@ export async function sendLeadNotification(data: LeadNotificationData): Promise<
     const result = await client.emails.send({
       from: fromEmail || 'LocalBlue <notifications@localblue.co>',
       to: data.businessEmail,
-      subject: `New Lead: ${data.leadName} - ${data.businessName}`,
+      subject: sanitizeHeaderValue(`New Lead: ${data.leadName} - ${data.businessName}`),
       html: emailHtml,
       replyTo: data.leadEmail,
     });
@@ -221,7 +228,7 @@ export async function sendContactSalesEmail(data: ContactSalesData): Promise<boo
     const result = await client.emails.send({
       from: fromEmail || 'LocalBlue <sales@localblue.co>',
       to: 'colton@futurebuild.ai',
-      subject: `Scale Plan Inquiry: ${safeBusinessName} - ${safeName}`,
+      subject: sanitizeHeaderValue(`Scale Plan Inquiry: ${safeBusinessName} - ${safeName}`),
       html: emailHtml,
       replyTo: data.email,
     });
@@ -310,7 +317,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
     const result = await client.emails.send({
       from: fromEmail || 'LocalBlue <hello@localblue.co>',
       to: data.businessEmail,
-      subject: `Your ${data.businessName} website is ready!`,
+      subject: sanitizeHeaderValue(`Your ${data.businessName} website is ready!`),
       html: emailHtml,
     });
 
@@ -397,7 +404,7 @@ export async function sendBetaFeedbackEmail(data: BetaFeedbackData): Promise<boo
     const result = await client.emails.send({
       from: fromEmail || 'LocalBlue <feedback@localblue.co>',
       to: 'grant@futurebuild.ai',
-      subject: `Beta Feedback: ${data.name || 'Anonymous'}`,
+      subject: sanitizeHeaderValue(`Beta Feedback: ${data.name || 'Anonymous'}`),
       html: emailHtml,
       replyTo: data.email,
     });
@@ -421,6 +428,11 @@ interface OutreachEmailData {
 }
 
 export async function sendOutreachEmail(data: OutreachEmailData): Promise<boolean> {
+  if (!EMAIL_REGEX.test(data.recipientEmail)) {
+    console.error('Invalid recipient email format:', data.recipientEmail);
+    return false;
+  }
+
   try {
     const { client, fromEmail } = getResendClient();
 
@@ -451,7 +463,7 @@ export async function sendOutreachEmail(data: OutreachEmailData): Promise<boolea
     const result = await client.emails.send({
       from: fromEmail || 'LocalBlue <outreach@localblue.co>',
       to: data.recipientEmail,
-      subject: data.subject,
+      subject: sanitizeHeaderValue(data.subject),
       html: emailHtml,
       replyTo: data.fromEmail,
     });

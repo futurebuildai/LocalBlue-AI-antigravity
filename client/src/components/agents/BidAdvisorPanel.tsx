@@ -59,7 +59,9 @@ export function BidAdvisorPanel({ rfqId, onApplyBid }: BidAdvisorPanelProps) {
   if (!recommendation) return null;
 
   const { content } = recommendation;
-  const fmt = (cents: number) => `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  if (!content?.recommendedTotalCents || !content?.breakdown) return null;
+
+  const fmt = (cents: number) => `$${((cents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
   const handleApply = () => {
     onApplyBid(

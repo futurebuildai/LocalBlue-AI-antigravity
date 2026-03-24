@@ -1,4 +1,4 @@
-import type { Site, AgentConfig, AgentExecution, AgentType } from "@shared/schema";
+import type { Site, AgentConfig, AgentExecution, AgentType, ContentType } from "@shared/schema";
 import type { IStorage } from "../storage";
 import type Anthropic from "@anthropic-ai/sdk";
 
@@ -12,7 +12,7 @@ export interface AgentContext {
 }
 
 export interface GeneratedContentItem {
-  contentType: string;
+  contentType: ContentType;
   targetPage?: string;
   title: string;
   content: Record<string, any>;

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,13 @@ export function AgentStatusCard({ config, recentExecutions }: AgentStatusCardPro
     },
   });
 
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Cleanup stale timer on unmount
+  useEffect(() => {
+    return () => { if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current); };
+  }, []);
+
   const triggerMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", getApiPath(`/api/tenant/agents/${config.agentType}/trigger`));
@@ -63,7 +71,8 @@ export function AgentStatusCard({ config, recentExecutions }: AgentStatusCardPro
       toast({ title: `${label.name} triggered`, description: "The agent will run shortly." });
       queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/agents/executions")] });
       // Refresh configs to update lastRunAt after a delay
-      setTimeout(() => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/agents/configs")] });
       }, 5000);
     },
@@ -94,6 +103,7 @@ export function AgentStatusCard({ config, recentExecutions }: AgentStatusCardPro
           checked={config.enabled}
           onCheckedChange={(checked) => toggleMutation.mutate(checked)}
           disabled={toggleMutation.isPending}
+          aria-label={`Enable or disable ${label.name}`}
         />
       </CardHeader>
       <CardContent>
@@ -123,6 +133,7 @@ export function AgentStatusCard({ config, recentExecutions }: AgentStatusCardPro
           className="w-full"
           onClick={() => triggerMutation.mutate()}
           disabled={!config.enabled || triggerMutation.isPending}
+          aria-label={`Manually trigger ${label.name}`}
         >
           {triggerMutation.isPending ? (
             <Loader2 className="h-3 w-3 mr-1 animate-spin" />

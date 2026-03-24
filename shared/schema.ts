@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, jsonb, serial, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, jsonb, serial, integer, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -628,6 +628,7 @@ export const agentConfigs = pgTable("agent_configs", {
 }, (table) => [
   index("idx_agent_configs_site_id").on(table.siteId),
   index("idx_agent_configs_enabled_schedule").on(table.enabled, table.schedule),
+  uniqueIndex("idx_agent_configs_site_type").on(table.siteId, table.agentType),
 ]);
 
 export const insertAgentConfigSchema = createInsertSchema(agentConfigs).omit({
@@ -673,7 +674,7 @@ export type InsertAgentExecution = z.infer<typeof insertAgentExecutionSchema>;
 export const generatedContent = pgTable("generated_content", {
   id: serial("id").primaryKey(),
   siteId: varchar("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
-  executionId: integer("execution_id").references(() => agentExecutions.id),
+  executionId: integer("execution_id").references(() => agentExecutions.id, { onDelete: "cascade" }),
   agentType: text("agent_type").$type<AgentType>().notNull(),
   contentType: text("content_type").$type<ContentType>().notNull(),
   targetPage: text("target_page"),
@@ -687,6 +688,7 @@ export const generatedContent = pgTable("generated_content", {
 }, (table) => [
   index("idx_generated_content_site_status").on(table.siteId, table.status),
   index("idx_generated_content_site_created").on(table.siteId, table.createdAt),
+  index("idx_generated_content_execution_id").on(table.executionId),
 ]);
 
 export const insertGeneratedContentSchema = createInsertSchema(generatedContent).omit({

@@ -728,7 +728,12 @@ export default function LeadsCRM() {
         ) : leads.length > 0 ? (
           <div className="space-y-3">
             {[...leads].sort((a, b) => {
-              if (sortBy === "ai_score") return (b.aiScore ?? 0) - (a.aiScore ?? 0);
+              if (sortBy === "ai_score") {
+                // Nulls sort to end
+                const aScore = (a as any).aiScore ?? -1;
+                const bScore = (b as any).aiScore ?? -1;
+                return bScore - aScore;
+              }
               return 0; // default server ordering (newest)
             }).map((lead) => (
               <LeadCard

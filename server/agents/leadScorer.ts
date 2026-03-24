@@ -20,10 +20,11 @@ export const leadScorer: Agent = {
 
   async execute(ctx: AgentContext): Promise<AgentResult> {
     const { site, storage, anthropic, execution, log } = ctx;
-    const leadId = execution.input?.leadId as number | undefined;
+    const rawLeadId = execution.input?.leadId;
+    const leadId = typeof rawLeadId === "number" && Number.isFinite(rawLeadId) ? rawLeadId : undefined;
 
     if (!leadId) {
-      return { success: false, output: {}, error: "No leadId provided in input" };
+      return { success: false, output: {}, error: "No valid leadId provided in input" };
     }
 
     const lead = await storage.getLeadById(leadId);
@@ -84,12 +85,12 @@ Respond with ONLY a JSON object (no markdown, no explanation):
         messages: [{ role: "user", content: prompt }],
       });
 
+      const tokensUsed = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
       const textBlock = response.content?.find(b => b.type === "text");
       if (!textBlock || textBlock.type !== "text") {
-        return { success: false, output: {}, error: "AI returned no text content" };
+        return { success: false, output: {}, error: "AI returned no text content", tokensUsed };
       }
       const text = textBlock.text;
-      const tokensUsed = (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
 
       let rawJson: any;
       try {

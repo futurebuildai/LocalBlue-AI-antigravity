@@ -115,20 +115,25 @@ app.use(pinoHttp({
   await seedDatabase();
 
   // Initialize and start the AI agent runner
-  const anthropic = new Anthropic({
-    apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
-    baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
-  });
-  const agentRunner = new AgentRunner(storage, anthropic);
-  // Explicitly import registry to ensure all agents are registered (#21)
-  await import("./agents/registry");
-  agentRunner.start();
-  app.set("agentRunner", agentRunner);
+  let agentRunner: AgentRunner | null = null;
+  try {
+    const anthropic = new Anthropic({
+      apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY,
+      baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
+    });
+    agentRunner = new AgentRunner(storage, anthropic);
+    // Explicitly import registry to ensure all agents are registered (#21)
+    await import("./agents/registry");
+    agentRunner.start();
+    app.set("agentRunner", agentRunner);
+  } catch (err) {
+    logger.error({ err }, "Failed to initialize AgentRunner — server will run without agent capabilities");
+  }
 
   // Graceful shutdown: drain in-flight execution before closing (#17)
   const gracefulShutdown = async (signal: string) => {
     logger.info({ signal }, "Received shutdown signal, draining...");
-    await agentRunner.stop();
+    if (agentRunner) await agentRunner.stop();
     httpServer.close(() => {
       logger.info("HTTP server closed");
       process.exit(0);

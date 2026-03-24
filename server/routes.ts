@@ -9,6 +9,7 @@ import { registerIntegrationRoutes } from "./routes/integration";
 import { registerAgentRoutes } from "./routes/agents";
 import { AGENT_TYPES } from "@shared/schema";
 import type { AgentRunner } from "./agents/runner";
+import { logger } from "./index";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import { sendLeadNotification, sendWelcomeEmail, sendContactSalesEmail, sendBetaFeedbackEmail } from "./services/email";
 import { auditService } from "./services/audit";
@@ -342,14 +343,16 @@ export async function registerRoutes(
         }).catch(err => console.error('Failed to send lead notification:', err));
       }
 
-      // Trigger AI lead scoring (non-blocking)
+      // Trigger AI lead scoring (non-blocking — must not fail lead creation)
       try {
         const runner = app.get("agentRunner") as AgentRunner | undefined;
         if (runner) {
           runner.triggerAgent(site.id, "lead_scorer", { leadId: lead.id })
-            .catch(err => console.error("Failed to trigger lead scorer:", err));
+            .catch(err => logger.error({ err, leadId: lead.id }, "Failed to trigger lead scorer"));
         }
-      } catch {}
+      } catch (err) {
+        logger.error({ err, leadId: lead.id }, "Lead scorer trigger sync error");
+      }
 
       res.status(201).json({ success: true, id: lead.id });
     } catch (error) {

@@ -207,9 +207,18 @@ export function registerAgentRoutes(app: Express, agentRunner: AgentRunner) {
       if (!recipientEmail || !recipientName) {
         return res.status(400).json({ error: "recipientEmail and recipientName are required" });
       }
+      if (typeof recipientEmail !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+        return res.status(400).json({ error: "Invalid email format" });
+      }
+      if (typeof recipientName !== "string" || recipientName.length > 200) {
+        return res.status(400).json({ error: "recipientName must be a string under 200 characters" });
+      }
 
       const site = req.site!;
       const emailContent = content.content as Record<string, any>;
+      if (!emailContent || typeof emailContent !== "object" || !emailContent.subject || !emailContent.body) {
+        return res.status(400).json({ error: "Email content is malformed — missing subject or body" });
+      }
 
       // Replace placeholders in subject and body
       const fillPlaceholders = (text: string) =>
