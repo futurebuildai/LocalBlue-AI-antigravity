@@ -21,13 +21,13 @@ interface AgentExecution {
   status: string;
 }
 
-const AGENT_LABELS: Record<string, { name: string; description: string }> = {
-  lead_scorer: { name: "Lead Scorer", description: "Scores inbound leads and suggests follow-up actions" },
-  content_optimizer: { name: "Content Optimizer", description: "Monthly content refresh and SEO improvements" },
-  seo_agent: { name: "SEO Agent", description: "Keyword research and page-level SEO optimization" },
-  bid_advisor: { name: "Bid Advisor", description: "Analyzes RFQs and recommends competitive bid amounts" },
-  outreach_agent: { name: "Outreach Agent", description: "Drafts outreach emails to local builders/GCs" },
-  analytics_insights: { name: "Analytics Insights", description: "Weekly traffic insights and recommendations" },
+const AGENT_LABELS: Record<string, { name: string; description: string; scheduleLabel: string }> = {
+  lead_scorer: { name: "Lead Scorer", description: "Scores inbound leads and suggests follow-up actions", scheduleLabel: "On new lead" },
+  content_optimizer: { name: "Content Optimizer", description: "Monthly content refresh and SEO improvements", scheduleLabel: "Monthly" },
+  seo_agent: { name: "SEO Agent", description: "Keyword research and page-level SEO optimization", scheduleLabel: "Monthly" },
+  bid_advisor: { name: "Bid Advisor", description: "Analyzes RFQs and recommends competitive bid amounts", scheduleLabel: "On new RFQ" },
+  outreach_agent: { name: "Outreach Agent", description: "Drafts outreach emails to local builders/GCs", scheduleLabel: "Weekly" },
+  analytics_insights: { name: "Analytics Insights", description: "Weekly traffic insights and recommendations", scheduleLabel: "Weekly" },
 };
 
 interface AgentStatusCardProps {
@@ -38,7 +38,7 @@ interface AgentStatusCardProps {
 export function AgentStatusCard({ config, recentExecutions }: AgentStatusCardProps) {
   const { toast } = useToast();
   const { getApiPath } = usePreview();
-  const label = AGENT_LABELS[config.agentType] || { name: config.agentType, description: "" };
+  const label = AGENT_LABELS[config.agentType] || { name: config.agentType, description: "", scheduleLabel: config.schedule };
 
   const agentExecs = recentExecutions.filter(e => e.agentType === config.agentType);
   const completedCount = agentExecs.filter(e => e.status === "completed").length;
@@ -62,6 +62,10 @@ export function AgentStatusCard({ config, recentExecutions }: AgentStatusCardPro
     onSuccess: () => {
       toast({ title: `${label.name} triggered`, description: "The agent will run shortly." });
       queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/agents/executions")] });
+      // Refresh configs to update lastRunAt after a delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/agents/configs")] });
+      }, 5000);
     },
     onError: () => {
       toast({ title: "Failed to trigger agent", variant: "destructive" });
@@ -69,12 +73,14 @@ export function AgentStatusCard({ config, recentExecutions }: AgentStatusCardPro
   });
 
   const formatLastRun = (dateStr: string | null) => {
-    if (!dateStr) return "Never";
+    if (!dateStr) return "Awaiting first run";
     const d = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
-    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-    if (diffHrs < 1) return "Just now";
+    const diffMin = Math.floor(diffMs / (1000 * 60));
+    if (diffMin < 1) return "Just now";
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHrs = Math.floor(diffMin / 60);
     if (diffHrs < 24) return `${diffHrs}h ago`;
     const diffDays = Math.floor(diffHrs / 24);
     return `${diffDays}d ago`;
@@ -97,7 +103,7 @@ export function AgentStatusCard({ config, recentExecutions }: AgentStatusCardPro
             <Clock className="h-3 w-3" />
             <span>{formatLastRun(config.lastRunAt)}</span>
           </div>
-          <Badge variant="outline" className="text-xs">{config.schedule}</Badge>
+          <Badge variant="outline" className="text-xs">{label.scheduleLabel}</Badge>
           {completedCount > 0 && (
             <div className="flex items-center gap-1 text-green-600">
               <CheckCircle2 className="h-3 w-3" />

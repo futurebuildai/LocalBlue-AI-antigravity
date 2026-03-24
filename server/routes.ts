@@ -254,8 +254,7 @@ export async function registerRoutes(
 
   // Get current tenant site info (requires tenant context)
   app.get("/api/site", requireTenant, (req, res) => {
-    const { id, subdomain, businessName, brandColor, services, isPublished, customDomain } = req.site!;
-    res.json({ id, subdomain, businessName, brandColor, services, isPublished, customDomain });
+    res.json(req.site!);
   });
 
   // Get page content by slug (public route - requires tenant but not auth)

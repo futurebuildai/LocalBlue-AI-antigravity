@@ -8,6 +8,7 @@ interface PhaseConfig {
   shortLabel: string;
 }
 
+// Full internal phase ordering (used for determining completion status)
 const PHASE_CONFIG: PhaseConfig[] = [
   { id: "welcome", label: "Welcome", shortLabel: "Welcome" },
   { id: "business_basics", label: "Business Basics", shortLabel: "Basics" },
@@ -22,6 +23,7 @@ const PHASE_CONFIG: PhaseConfig[] = [
   { id: "review", label: "Review", shortLabel: "Review" },
 ];
 
+// Displayed steps (collapsed view — hidden sub-phases grouped under their parent)
 const DISPLAY_PHASES: PhaseConfig[] = [
   { id: "welcome", label: "Welcome", shortLabel: "Welcome" },
   { id: "business_basics", label: "Business Basics", shortLabel: "Basics" },
@@ -32,6 +34,13 @@ const DISPLAY_PHASES: PhaseConfig[] = [
   { id: "photos", label: "Photos", shortLabel: "Photos" },
   { id: "review", label: "Review", shortLabel: "Review" },
 ];
+
+// Map hidden sub-phases to their parent display phase
+const HIDDEN_PHASE_PARENT: Partial<Record<OnboardingPhase, OnboardingPhase>> = {
+  services: "trade_detection",
+  differentiators: "story",
+  service_area: "story",
+};
 
 interface OnboardingProgressProps {
   currentPhase: OnboardingPhase;
@@ -44,11 +53,14 @@ export function OnboardingProgress({
   completedPhases,
   onPhaseClick,
 }: OnboardingProgressProps) {
-  const currentIndex = PHASE_CONFIG.findIndex((p) => p.id === currentPhase);
+  // Resolve the display-level phase for the current internal phase
+  const displayCurrentPhase = HIDDEN_PHASE_PARENT[currentPhase] || currentPhase;
+  const currentIndex = PHASE_CONFIG.findIndex((p) => p.id === displayCurrentPhase);
 
   const getPhaseStatus = (phase: PhaseConfig) => {
+    // If this display phase IS the current one (or its parent), mark current
+    if (phase.id === displayCurrentPhase) return "current";
     if (completedPhases.includes(phase.id)) return "completed";
-    if (phase.id === currentPhase) return "current";
     const phaseIndex = PHASE_CONFIG.findIndex((p) => p.id === phase.id);
     if (phaseIndex < currentIndex) return "completed";
     return "upcoming";

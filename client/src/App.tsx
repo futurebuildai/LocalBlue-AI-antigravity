@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { Switch, Route, useLocation, Link } from "wouter";
+import { Switch, Route, useLocation, Link, Router } from "wouter";
 import { queryClient, getQueryFn } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -442,6 +442,12 @@ function MainSiteApp() {
           <Route path="/preview/:subdomain/admin" component={PreviewAdmin} />
           <Route path="/preview/:subdomain" component={PreviewSite} />
           <Route path="/tenant/:subdomain/impersonate" component={TenantImpersonate} />
+          <Route path="/tenant">
+            {() => <Router base="/tenant"><TenantAdminApp /></Router>}
+          </Route>
+          <Route path="/tenant/:rest*">
+            {() => <Router base="/tenant"><TenantAdminApp /></Router>}
+          </Route>
           <Route path="/admin/login" component={AdminLogin} />
           <Route path="/admin/sites/:id">
             {() => <PlatformAdminGuard><PlatformAdminLayout><SiteDetail /></PlatformAdminLayout></PlatformAdminGuard>}

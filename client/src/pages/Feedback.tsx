@@ -348,7 +348,7 @@ export default function Feedback() {
                 size="lg"
                 variant="outline"
                 className="flex-1 border-white/30 text-white hover:bg-white/10"
-                onClick={() => setLocation(`/preview/${subdomain}/admin`)}
+                onClick={() => setLocation("/tenant")}
               >
                 Go to Dashboard
               </Button>

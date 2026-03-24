@@ -52,6 +52,10 @@ import { TRADE_TEMPLATES, STYLE_TEMPLATES } from "@shared/tradeTemplates";
 import ChatBot from "@/components/ChatBot";
 import { useSEO } from "@/hooks/use-seo";
 
+function toTitleCase(str: string): string {
+  return str.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 import plumberHero from "@assets/plumber-hero.jpg";
 import electricianHero from "@assets/electrician-hero.jpg";
 import rooferHero from "@assets/roofer-hero.jpg";
@@ -652,7 +656,7 @@ function ServiceCard({ site, service, index, description, faqs, matchingPhoto, s
             <TradeIcon className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: site.brandColor }} />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 font-serif" style={{ fontFamily: 'Playfair Display, serif' }}>{service}</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 font-serif" style={{ fontFamily: 'Playfair Display, serif' }}>{toTitleCase(service)}</h3>
             <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4">
               {description}
             </p>
@@ -697,7 +701,7 @@ function ServiceCard({ site, service, index, description, faqs, matchingPhoto, s
             >
               <TradeIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" style={{ color: site.brandColor }} />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4 uppercase tracking-wider">{service}</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4 uppercase tracking-wider">{toTitleCase(service)}</h3>
             <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
               {description}
             </p>
@@ -741,7 +745,7 @@ function ServiceCard({ site, service, index, description, faqs, matchingPhoto, s
         >
           <TradeIcon className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8" style={{ color: site.brandColor }} />
         </div>
-        <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4">{service}</h3>
+        <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4">{toTitleCase(service)}</h3>
         <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mb-4 sm:mb-6">
           {description}
         </p>
@@ -1751,7 +1755,7 @@ function Footer({ site }: { site: Site }) {
                       onClick={() => scrollToSection("services")}
                       className="text-background/70 hover:text-background transition-colors text-left text-sm sm:text-base min-h-[36px] flex items-center"
                     >
-                      {service}
+                      {toTitleCase(service)}
                     </button>
                   </li>
                 ))}

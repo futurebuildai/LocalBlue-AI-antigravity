@@ -95,6 +95,18 @@ export async function tenantMiddleware(
       req.isTenantAdmin = isTenantAdmin;
     }
 
+    // Fallback: if no site found via hostname, check the session for siteId.
+    // This allows tenant admin access from the main domain (e.g., localblue.co/tenant/...)
+    // when the user is already authenticated with a valid session.
+    if (!req.site && req.session?.siteId) {
+      const sessionSite = await storage.getSite(req.session.siteId);
+      if (sessionSite) {
+        req.site = sessionSite;
+        req.tenantId = sessionSite.id;
+        req.isTenantAdmin = true; // session-based access implies admin
+      }
+    }
+
     next();
   } catch (error) {
     console.error("Tenant middleware error:", error);
