@@ -541,6 +541,7 @@ export default function LeadsCRM() {
   const { getApiPath } = usePreview();
   const [stageFilter, setStageFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"newest" | "ai_score">("newest");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [notesLead, setNotesLead] = useState<Lead | null>(null);
@@ -703,6 +704,18 @@ export default function LeadsCRM() {
             </SelectContent>
           </Select>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-muted-foreground">Sort:</span>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as "newest" | "ai_score")}>
+            <SelectTrigger className="w-[130px]" data-testid="select-sort">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="ai_score">AI Score</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div>
@@ -714,7 +727,10 @@ export default function LeadsCRM() {
           </div>
         ) : leads.length > 0 ? (
           <div className="space-y-3">
-            {leads.map((lead) => (
+            {[...leads].sort((a, b) => {
+              if (sortBy === "ai_score") return (b.aiScore ?? 0) - (a.aiScore ?? 0);
+              return 0; // default server ordering (newest)
+            }).map((lead) => (
               <LeadCard
                 key={lead.id}
                 lead={lead}

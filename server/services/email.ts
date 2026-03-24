@@ -409,3 +409,57 @@ export async function sendBetaFeedbackEmail(data: BetaFeedbackData): Promise<boo
     return false;
   }
 }
+
+interface OutreachEmailData {
+  fromBusinessName: string;
+  fromEmail: string;
+  recipientEmail: string;
+  recipientName: string;
+  recipientCompany?: string;
+  subject: string;
+  body: string;
+}
+
+export async function sendOutreachEmail(data: OutreachEmailData): Promise<boolean> {
+  try {
+    const { client, fromEmail } = getResendClient();
+
+    const safeBody = escapeHtml(data.body).replace(/\n/g, '<br>');
+    const safeBusinessName = escapeHtml(data.fromBusinessName);
+    const safeRecipientName = escapeHtml(data.recipientName);
+
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="padding: 20px 0;">
+    <p style="margin: 0 0 16px;">Hi ${safeRecipientName},</p>
+    <div style="margin: 0 0 24px; color: #374151;">${safeBody}</div>
+    <p style="margin: 0; color: #374151;">Best regards,<br><strong>${safeBusinessName}</strong></p>
+  </div>
+  <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 24px; text-align: center; color: #9ca3af; font-size: 11px;">
+    <p style="margin: 0;">Sent via <a href="https://localblue.co" style="color: #2563eb; text-decoration: none;">LocalBlue</a></p>
+  </div>
+</body>
+</html>
+    `;
+
+    const result = await client.emails.send({
+      from: fromEmail || 'LocalBlue <outreach@localblue.co>',
+      to: data.recipientEmail,
+      subject: data.subject,
+      html: emailHtml,
+      replyTo: data.fromEmail,
+    });
+
+    console.log('Outreach email sent:', result);
+    return true;
+  } catch (error) {
+    console.error('Failed to send outreach email:', error);
+    return false;
+  }
+}

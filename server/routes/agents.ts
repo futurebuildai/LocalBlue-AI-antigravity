@@ -4,6 +4,7 @@ import { requireTenantAdmin, requireTenantAuth, requireTenantRole } from "../mid
 import { AGENT_TYPES, CONTENT_REVIEW_STATUSES, type AgentType, type ContentReviewStatus } from "@shared/schema";
 import type { AgentRunner } from "../agents/runner";
 import { logger } from "../index";
+import { sendOutreachEmail } from "../services/email";
 
 const MAX_QUERY_LIMIT = 200;
 const DEFAULT_PAGE_SIZE = 50;
@@ -181,6 +182,64 @@ export function registerAgentRoutes(app: Express, agentRunner: AgentRunner) {
     } catch (error) {
       logger.error({ err: error, path: req.path }, "Error rejecting content");
       res.status(500).json({ error: "Failed to reject content" });
+    }
+  });
+
+  // Send an approved outreach email
+  app.post("/api/tenant/agents/content/:id/send", requireTenantAdmin, requireTenantAuth, requireTenantRole(["owner", "admin"]), async (req, res) => {
+    try {
+      const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const id = parseInt(idParam);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid content ID" });
+
+      const content = await storage.getGeneratedContentById(id);
+      if (!content || content.siteId !== req.site!.id) {
+        return res.status(404).json({ error: "Content not found" });
+      }
+      if (content.contentType !== "outreach_email") {
+        return res.status(400).json({ error: "Only outreach emails can be sent" });
+      }
+      if (content.status !== "approved" && content.status !== "applied") {
+        return res.status(409).json({ error: "Content must be approved before sending" });
+      }
+
+      const { recipientEmail, recipientName, recipientCompany } = req.body;
+      if (!recipientEmail || !recipientName) {
+        return res.status(400).json({ error: "recipientEmail and recipientName are required" });
+      }
+
+      const site = req.site!;
+      const emailContent = content.content as Record<string, any>;
+
+      // Replace placeholders in subject and body
+      const fillPlaceholders = (text: string) =>
+        text
+          .replace(/\{builder_name\}/gi, recipientName)
+          .replace(/\{builder_company\}/gi, recipientCompany || recipientName);
+
+      const sent = await sendOutreachEmail({
+        fromBusinessName: site.businessName,
+        fromEmail: site.email || `noreply@localblue.co`,
+        recipientEmail,
+        recipientName,
+        recipientCompany,
+        subject: fillPlaceholders(emailContent.subject || content.title),
+        body: fillPlaceholders(emailContent.body || ""),
+      });
+
+      if (!sent) {
+        return res.status(502).json({ error: "Failed to send email" });
+      }
+
+      // Mark as applied if it was only approved
+      if (content.status === "approved") {
+        await storage.updateGeneratedContentStatus(id, "applied", req.session.userId);
+      }
+
+      res.json({ success: true, sentTo: recipientEmail });
+    } catch (error) {
+      logger.error({ err: error, path: req.path }, "Error sending outreach email");
+      res.status(500).json({ error: "Failed to send outreach email" });
     }
   });
 

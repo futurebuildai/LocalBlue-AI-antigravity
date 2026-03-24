@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, FileText, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Check, X, FileText, Loader2, Send, Mail } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -44,8 +48,9 @@ interface AgentContentReviewProps {
 
 export function AgentContentReview({ items }: AgentContentReviewProps) {
   const pendingItems = items.filter(i => i.status === "pending_review");
+  const sendableItems = items.filter(i => i.contentType === "outreach_email" && i.status === "approved");
 
-  if (pendingItems.length === 0) {
+  if (pendingItems.length === 0 && sendableItems.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-4">No items pending review</p>
     );
@@ -56,6 +61,16 @@ export function AgentContentReview({ items }: AgentContentReviewProps) {
       {pendingItems.map((item) => (
         <ContentReviewCard key={item.id} item={item} />
       ))}
+      {sendableItems.length > 0 && (
+        <>
+          {pendingItems.length > 0 && (
+            <p className="text-xs font-medium text-muted-foreground pt-2">Ready to Send</p>
+          )}
+          {sendableItems.map((item) => (
+            <OutreachSendCard key={item.id} item={item} />
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -151,6 +166,25 @@ function ContentReviewCard({ item }: { item: GeneratedContentItem }) {
           </p>
         )}
 
+        {item.contentType === "outreach_email" && item.content?.subject && (
+          <div className="mb-3 space-y-2 text-sm">
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Mail className="h-3 w-3" />
+              <span className="font-medium">Subject:</span> {item.content.subject}
+            </div>
+            <div className="bg-muted/50 rounded-md p-3 text-xs whitespace-pre-wrap max-h-32 overflow-y-auto">
+              {item.content.body}
+            </div>
+            {item.content.targetType && (
+              <Badge variant="outline" className="text-xs">
+                {item.content.targetType === "residential_gc" ? "Residential GC" :
+                 item.content.targetType === "commercial_builder" ? "Commercial Builder" :
+                 "Follow-up"}
+              </Badge>
+            )}
+          </div>
+        )}
+
         <div className="flex gap-2">
           <Button
             variant="default"
@@ -173,5 +207,129 @@ function ContentReviewCard({ item }: { item: GeneratedContentItem }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function OutreachSendCard({ item }: { item: GeneratedContentItem }) {
+  const { toast } = useToast();
+  const { getApiPath } = usePreview();
+  const [showSendDialog, setShowSendDialog] = useState(false);
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientCompany, setRecipientCompany] = useState("");
+
+  const sendMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", getApiPath(`/api/tenant/agents/content/${item.id}/send`), {
+        recipientName,
+        recipientEmail,
+        recipientCompany: recipientCompany || undefined,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Email sent", description: `Outreach email sent to ${recipientEmail}` });
+      setShowSendDialog(false);
+      setRecipientName("");
+      setRecipientEmail("");
+      setRecipientCompany("");
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/agents/content")] });
+      queryClient.invalidateQueries({ queryKey: [getApiPath("/api/tenant/agents/activity")] });
+    },
+    onError: () => {
+      toast({ title: "Failed to send email", variant: "destructive" });
+    },
+  });
+
+  const filledSubject = (item.content?.subject || item.title)
+    .replace(/\{builder_name\}/gi, recipientName || "{builder_name}")
+    .replace(/\{builder_company\}/gi, recipientCompany || recipientName || "{builder_company}");
+
+  return (
+    <>
+      <Card className="border-green-200 bg-green-50/30">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+            <Badge variant="default" className="text-xs bg-green-600">Approved</Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 mb-3 text-sm">
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Mail className="h-3 w-3" />
+              <span className="font-medium">Subject:</span> {item.content?.subject}
+            </div>
+            <div className="bg-white rounded-md p-3 text-xs whitespace-pre-wrap max-h-24 overflow-y-auto border">
+              {item.content?.body}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setShowSendDialog(true)}
+          >
+            <Send className="h-3 w-3 mr-1" />
+            Send to Recipient
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Outreach Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="recipientName">Recipient Name *</Label>
+              <Input
+                id="recipientName"
+                placeholder="e.g. John Smith"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="recipientEmail">Recipient Email *</Label>
+              <Input
+                id="recipientEmail"
+                type="email"
+                placeholder="e.g. john@smithconstruction.com"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="recipientCompany">Company (optional)</Label>
+              <Input
+                id="recipientCompany"
+                placeholder="e.g. Smith Construction"
+                value={recipientCompany}
+                onChange={(e) => setRecipientCompany(e.target.value)}
+              />
+            </div>
+            {recipientName && (
+              <div className="bg-muted/50 rounded-md p-3 text-xs">
+                <p className="font-medium mb-1">Preview subject: {filledSubject}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSendDialog(false)}>Cancel</Button>
+            <Button
+              onClick={() => sendMutation.mutate()}
+              disabled={!recipientName || !recipientEmail || sendMutation.isPending}
+            >
+              {sendMutation.isPending ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <Send className="h-3 w-3 mr-1" />
+              )}
+              Send Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
